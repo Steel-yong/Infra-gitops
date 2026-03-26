@@ -7,7 +7,9 @@ helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
     version: 9.4.16
-valuesInline:
+    releaseName: argocd
+    namespace: argocd
+    valuesInline:
       # [실용주의 설정]
       server:
         service:
