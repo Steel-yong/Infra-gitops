@@ -3,6 +3,8 @@ kind: Kustomization
 
 resources:
   - pool-template.yaml 
+
+helmCharts:
   - name: metallb
     repo: https://metallb.github.io/metallb
     version: 0.15.3
