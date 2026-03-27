@@ -18,7 +18,7 @@ spec:
       source:
         repoURL: 'https://github.com/Steel-yong/Infra-gitops'
         targetRevision: onprem-dev-test
-        path: '{{.path}}'
+        path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
       syncPolicy:
