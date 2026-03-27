@@ -9,7 +9,7 @@ spec:
       repoURL: 'https://github.com/Steel-yong/Infra-gitops'
       revision: onprem-dev-test
       directories:
-      - path: 'clusters/onprem/*'
+      - path: 'clusters/onprem-dev/*'
   template:
     metadata:
       name: '{{path.basename}}'

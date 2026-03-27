@@ -13,7 +13,7 @@ helmCharts:
         enabled: true
       controller:
         enabled: false
-      controller:
+      speaker:
         enabled: false
     
 commonAnnotations:
