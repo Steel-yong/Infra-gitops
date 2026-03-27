@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - pool-template.yaml # <--- 아래에서 만들 IP 껍데기 파일
+
+helmCharts:
+  - name: metallb
+    repo: https://metallb.github.io/metallb
+    version: 0.15.3
+    releaseName: metallb-main
+    namespace: metallb
+    valuesInline:
+      namespaceOverride: "metallb" 
+      crds:
+        enabled: false     # 아까 CRD 폴더에서 깔았으니까 여기선 꺼야죠!
+      controller:
+        enabled: true      # 자, 이제 진짜 대장(Controller) 출근!
+      speaker:
+        enabled: true      # 자, 이제 소문쟁이(Speaker)들도 출근!
+
+# CRD보다는 늦게 떠야 하니까 기본값(0) 혹은 명시적으로 0~1 정도로 둡니다.
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
