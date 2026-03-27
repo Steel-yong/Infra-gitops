@@ -7,7 +7,7 @@ spec:
   generators:
   - git:
       repoURL: 'https://github.com/Steel-yong/Infra-gitops'
-      revision: dev-test
+      revision: onprem-dev-test
       directories:
       - path: 'clusters/onprem/*'
   template:
@@ -17,7 +17,7 @@ spec:
       project: default
       source:
         repoURL: 'https://github.com/Steel-yong/Infra-gitops'
-        targetRevision: HEAD
+        targetRevision: onprem-dev-test
         path: '{{.path}}'
       destination:
         server: https://kubernetes.default.svc

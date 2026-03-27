@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/Steel-yong/Infra-gitops'
-    targetRevision: dev-test
+    targetRevision: onprem-dev-test
     path: 'applicationsets/onprem-dev'
   destination:
     server: 'https://kubernetes.default.svc'
