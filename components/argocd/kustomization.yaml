@@ -14,6 +14,9 @@ helmCharts:
       server:
         service:
           type: NodePort      # MetalLB 설치 전까지 임시 접속용
+          # [여기 추가] 서비스의 80번 포트가 Pod의 8080번을 바라보게 강제 지정
+          servicePortHttp: 80 
+          targetPortHttp: 8080
         extraArgs:
           - --insecure        # Cloudflare Tunnel 연동을 위한 내부 HTTP 허용
       
