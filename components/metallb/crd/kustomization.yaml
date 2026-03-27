@@ -1,8 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: metalLB
-
 helmCharts:
   - name: metallb
     repo: https://metallb.github.io/metallb
@@ -10,12 +8,13 @@ helmCharts:
     releaseName: metallb-crd
     namespace: metallb
     valuesInline:
-    crds:
-      enabled: true
-    controller:
-      enabled: false
-    controller:
-      enabled: false
+      namespaceOverride: "metallb" 
+      crds:
+        enabled: true
+      controller:
+        enabled: false
+      controller:
+        enabled: false
     
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
