@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: argocd
+
+helmCharts:
+  - name: argo-cd
+    repo: https://argoproj.github.io/argo-helm
+    version: 9.4.16
+    releaseName: argocd
+    namespace: argocd
+    valuesInline:
+      # [실용주의 설정]
+      server:
+        service:
+          type: NodePort      # MetalLB 설치 전까지 임시 접속용
+        extraArgs:
+          - --insecure        # Cloudflare Tunnel 연동을 위한 내부 HTTP 허용
+      
+      controller:
+        # [성능 최적화] 일꾼(Worker) 수 조정
+        # 단점: API 서버 부하 증가 가능성 있음 (나중에 앱 100개 넘으면 모니터링 필요)
+        statusProcessors: 30  # 기본값 20에서 약간 상향하여 반응성 확보
+        operationProcessors: 15 # 배포 프로세스 병렬화
+      
+      # Redis 메모리 제한 (가정용 서버 리소스 아끼기)
+      redis:
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi   
