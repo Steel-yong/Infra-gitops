@@ -11,6 +11,3 @@ helmCharts:
     releaseName: metallb-crd
     valuesInline:
       namespaceOverride: "metallb" 
-    
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "-5"

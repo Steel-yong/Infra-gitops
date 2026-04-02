@@ -9,10 +9,11 @@ spec:
       repoURL: 'https://github.com/Steel-yong/Infra-gitops'
       revision: onprem-dev-test
       directories:
-      - path: 'clusters/onprem-dev/*'
+      - path: 'clusters/onprem-dev/metallb'
   template:
     metadata:
       name: '{{path.basename}}'
+      argocd.argoproj.io/sync-wave: "0"
     spec:
       project: default
       source:
@@ -27,7 +28,7 @@ spec:
           selfHeal: true
         syncOptions:
           - ApplyOutOfSyncOnly=true
-        retry:                    ← 추가
+        retry:                    
           limit: 5
           backoff:
             duration: 30s
