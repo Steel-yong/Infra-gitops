@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: onprem-dev-apps
+  name: onprem-dev-network-appset
   namespace: argocd
 spec:
   generators:
