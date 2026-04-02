@@ -2,8 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../../components/metallb/crd
-  - ../../../components/metallb/main
+  - ../../../components/metallb
 
 namespace: metallb
 
@@ -12,7 +11,19 @@ patches:
       group: metallb.io
       version: v1beta1
       kind: IPAddressPool
-      name: main-pool
+      name: infra-pool
+    patch: |-
+      - op: replace
+        path: /spec/addresses
+        value:
+          - 172.20.0.100-172.20.0.120
+
+patches:
+  - target:
+      group: metallb.io
+      version: v1beta1
+      kind: IPAddressPool
+      name: dynamic-pool
     patch: |-
       - op: replace
         path: /spec/addresses

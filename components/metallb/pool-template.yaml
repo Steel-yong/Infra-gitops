@@ -1,0 +1,28 @@
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: main-ad
+  namespace: metallb
+spec:
+  ipAddressPools:
+  - infra-pool
+  - dynamic-pool
+
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: infra-pool
+  namespace: metallb
+spec:
+  addresses:
+  - 0.0.0.0/24
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: dynamic-pool
+  namespace: metallb
+spec:
+  addresses:
+  - 0.0.0.0/24
