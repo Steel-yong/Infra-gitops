@@ -3,6 +3,8 @@ kind: L2Advertisement
 metadata:
   name: main-ad
   namespace: metallb
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   ipAddressPools:
   - infra-pool
@@ -14,6 +16,8 @@ kind: IPAddressPool
 metadata:
   name: infra-pool
   namespace: metallb
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   addresses:
   - 0.0.0.0/24
@@ -23,6 +27,8 @@ kind: IPAddressPool
 metadata:
   name: dynamic-pool
   namespace: metallb
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   addresses:
   - 0.0.0.0/24
