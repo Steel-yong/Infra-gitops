@@ -27,3 +27,9 @@ spec:
           selfHeal: true
         syncOptions:
           - ApplyOutOfSyncOnly=true
+        retry:                    ← 추가
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
