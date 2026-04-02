@@ -13,7 +13,8 @@ spec:
   template:
     metadata:
       name: '{{path.basename}}'
-      argocd.argoproj.io/sync-wave: "0"
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
     spec:
       project: default
       source:
