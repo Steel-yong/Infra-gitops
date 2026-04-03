@@ -9,5 +9,7 @@ helmCharts:
     repo: https://metallb.github.io/metallb
     version: 0.15.3
     releaseName: metallb-crd
+    namespace: metallb
     valuesInline:
-      namespaceOverride: "metallb" 
+      crds:
+        enabled: true
