@@ -13,20 +13,20 @@ helmCharts:
       configs:
         cm:
           kustomize.buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
+      
       server:
         service:
           type: NodePort 
           targetPortHttp: 8080
         extraArgs:
-          - --insecure     
-      
+          - --insecure 
+
       controller:
-        
         statusProcessors: 30 
         operationProcessors: 15 
-    
+
       redis:
         resources:
           limits:
             cpu: 200m
-            memory: 128Mi   
+            memory: 128Mi
