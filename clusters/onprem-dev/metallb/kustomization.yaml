@@ -18,7 +18,6 @@ patches:
         value:
           - 172.20.0.100-172.20.0.120
 
-patches:
   - target:
       group: metallb.io
       version: v1beta1
@@ -29,3 +28,21 @@ patches:
         path: /spec/addresses
         value:
           - 172.20.0.200-172.20.0.220
+
+  - target:
+      kind: Deployment
+      name: metallb-controller
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints
+        value:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: metallb
+                app.kubernetes.io/component: controller

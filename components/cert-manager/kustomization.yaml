@@ -14,3 +14,42 @@ helmCharts:
     valuesInline: 
       crds:
         enabled: true
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
+      topologySpreadConstraints:
+        - maxSkew: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: cert-manager
+              app.kubernetes.io/component: controller
+      priorityClassName: system-cluster-critical
+      webhook:
+        podDisruptionBudget:
+          enabled: true
+          minAvailable: 1
+        topologySpreadConstraints:
+          - maxSkew: 2
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: cert-manager
+                app.kubernetes.io/component: webhook
+        priorityClassName: system-cluster-critical
+      cainjector:
+        podDisruptionBudget:
+          enabled: true
+          minAvailable: 1
+        topologySpreadConstraints:
+          - maxSkew: 2
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: cert-manager
+                app.kubernetes.io/component: cainjector
+        priorityClassName: system-cluster-critical
+

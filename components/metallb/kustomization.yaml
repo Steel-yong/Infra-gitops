@@ -13,3 +13,18 @@ helmCharts:
     valuesInline:
       crds:
         enabled: true
+      controller:
+        priorityClassName: system-cluster-critical
+      speaker:
+        priorityClassName: system-cluster-critical
+
+patches:
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/component=controller
+      namespace: metallb
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  
