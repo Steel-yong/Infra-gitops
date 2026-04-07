@@ -26,3 +26,12 @@ helmCharts:
         reclaimPolicy: Delete
         volumeBindingMode: Immediate
         disableRevisionCounter: "true"
+
+patches:
+  - patch: |-
+      - op: add
+        path: /metadata/annotations/helm.sh~1hook
+        value: ""
+    target:
+      kind: Job
+      name: longhorn-pre-upgrade
