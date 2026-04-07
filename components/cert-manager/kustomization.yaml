@@ -14,6 +14,8 @@ helmCharts:
     valuesInline: 
       crds:
         enabled: true
+      global:
+        priorityClassName: system-cluster-critical
       podDisruptionBudget:
         enabled: true
         minAvailable: 1
@@ -25,7 +27,6 @@ helmCharts:
             matchLabels:
               app.kubernetes.io/instance: cert-manager
               app.kubernetes.io/component: controller
-      priorityClassName: system-cluster-critical
       webhook:
         podDisruptionBudget:
           enabled: true
@@ -38,7 +39,6 @@ helmCharts:
               matchLabels:
                 app.kubernetes.io/instance: cert-manager
                 app.kubernetes.io/component: webhook
-        priorityClassName: system-cluster-critical
       cainjector:
         podDisruptionBudget:
           enabled: true
@@ -51,5 +51,4 @@ helmCharts:
               matchLabels:
                 app.kubernetes.io/instance: cert-manager
                 app.kubernetes.io/component: cainjector
-        priorityClassName: system-cluster-critical
 
