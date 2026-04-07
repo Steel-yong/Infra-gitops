@@ -6,58 +6,58 @@ resources:
 
 namespace: cert-manager
 
+# 이미 components에 적용했기때문에 진짜 나중에 환경별로 변경이 필요할떄 사용
+# patches:
+#   - target:
+#       kind: Deployment
+#       name: cert-manager
+#     patch: |-
+#       - op: replace
+#         path: /spec/replicas
+#         value: 2
+#       - op: add
+#         path: /spec/template/spec/topologySpreadConstraints
+#         value:
+#           - maxSkew: 1
+#             topologyKey: kubernetes.io/hostname
+#             whenUnsatisfiable: DoNotSchedule
+#             labelSelector:
+#               matchLabels:
+#                 app.kubernetes.io/instance: cert-manager
+#                 app.kubernetes.io/component: controller
 
-patches:
-  - target:
-      kind: Deployment
-      name: cert-manager
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 2
-      - op: add
-        path: /spec/template/spec/topologySpreadConstraints
-        value:
-          - maxSkew: 1
-            topologyKey: kubernetes.io/hostname
-            whenUnsatisfiable: DoNotSchedule
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/instance: cert-manager
-                app.kubernetes.io/component: controller
+#   - target:
+#       kind: Deployment
+#       name: cert-manager-webhook
+#     patch: |-
+#       - op: replace
+#         path: /spec/replicas
+#         value: 2
+#       - op: add
+#         path: /spec/template/spec/topologySpreadConstraints
+#         value:
+#           - maxSkew: 1
+#             topologyKey: kubernetes.io/hostname
+#             whenUnsatisfiable: DoNotSchedule
+#             labelSelector:
+#               matchLabels:
+#                 app.kubernetes.io/instance: cert-manager
+#                 app.kubernetes.io/component: webhook
 
-  - target:
-      kind: Deployment
-      name: cert-manager-webhook
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 2
-      - op: add
-        path: /spec/template/spec/topologySpreadConstraints
-        value:
-          - maxSkew: 1
-            topologyKey: kubernetes.io/hostname
-            whenUnsatisfiable: DoNotSchedule
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/instance: cert-manager
-                app.kubernetes.io/component: webhook
-
-  - target:
-      kind: Deployment
-      name: cert-manager-cainjector
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 2
-      - op: add
-        path: /spec/template/spec/topologySpreadConstraints
-        value:
-          - maxSkew: 1
-            topologyKey: kubernetes.io/hostname
-            whenUnsatisfiable: DoNotSchedule
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/instance: cert-manager
-                app.kubernetes.io/component: cainjector
+#   - target:
+#       kind: Deployment
+#       name: cert-manager-cainjector
+#     patch: |-
+#       - op: replace
+#         path: /spec/replicas
+#         value: 2
+#       - op: add
+#         path: /spec/template/spec/topologySpreadConstraints
+#         value:
+#           - maxSkew: 1
+#             topologyKey: kubernetes.io/hostname
+#             whenUnsatisfiable: DoNotSchedule
+#             labelSelector:
+#               matchLabels:
+#                 app.kubernetes.io/instance: cert-manager
+#                 app.kubernetes.io/component: cainjector
