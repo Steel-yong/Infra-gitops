@@ -14,6 +14,7 @@ helmCharts:
     valuesInline: 
       crds:
         enabled: true
+      replicaCount: 2
       global:
         priorityClassName: system-cluster-critical
       podDisruptionBudget:
@@ -28,6 +29,7 @@ helmCharts:
               app.kubernetes.io/instance: cert-manager
               app.kubernetes.io/component: controller
       webhook:
+        replicaCount: 2
         podDisruptionBudget:
           enabled: true
           minAvailable: 1
@@ -40,6 +42,7 @@ helmCharts:
                 app.kubernetes.io/instance: cert-manager
                 app.kubernetes.io/component: webhook
       cainjector:
+        replicaCount: 2
         podDisruptionBudget:
           enabled: true
           minAvailable: 1
