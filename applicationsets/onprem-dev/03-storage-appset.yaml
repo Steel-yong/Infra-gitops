@@ -29,6 +29,7 @@ spec:
           selfHeal: true
         syncOptions:
           - ApplyOutOfSyncOnly=true
+          - SkipDryRunOnMissingResource=true
         retry:                    
           limit: 5
           backoff:
