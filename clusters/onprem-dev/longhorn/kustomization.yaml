@@ -5,3 +5,15 @@ resources:
   - ../../../components/longhorn
 
 namespace: longhorn-system
+
+patches:
+  - patch: |
+      $patch: delete
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: longhorn-pre-upgrade
+        namespace: longhorn-system
+    target:
+      kind: Job
+      name: longhorn-pre-upgrade

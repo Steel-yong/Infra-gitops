@@ -17,7 +17,7 @@ helmCharts:
         nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
         autoSalvage: true
         replicaAutoBalance: least-effort
-        upgradeChecker: false
+        upgradeChecker: false 
       persistence:
         defaultClass: true
         defaultFsType: ext4
