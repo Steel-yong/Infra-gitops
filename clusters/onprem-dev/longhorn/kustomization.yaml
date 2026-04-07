@@ -4,4 +4,4 @@ kind: Kustomization
 resources:
   - ../../../components/longhorn
 
-namespace: longhorn
+namespace: longhorn-system
