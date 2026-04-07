@@ -8,6 +8,7 @@ helmCharts:
     releaseName: longhorn
     namespace: longhorn
     valuesInline:
+      namespaceOverride: "longhorn"
       crds:
         enabled: true
       defaultSettings:
