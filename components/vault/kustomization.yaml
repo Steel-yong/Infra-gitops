@@ -1,0 +1,67 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+helmCharts:
+  - name: vault
+    repo: https://helm.releases.hashicorp.com
+    version: 0.32.0
+    releaseName: vault
+    namespace: vault
+    valuesInline:
+      injector:
+        enabled: false
+      server: 
+        enabled: true
+        affinity: |
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 1
+                podAffinityTerm:
+                  labelSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: vault
+                      component: server
+                  topologyKey: kubernetes.io/hostname
+        topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: vault
+                app.kubernetes.io/component: server
+        priorityClassName: system-cluster-critical
+        dataStorage:
+          storageClass: longhorn
+        ha:
+          enabled: true
+          replicas: 3
+          disruptionBudget:
+            maxUnavailable: 1
+          raft:
+            enabled: true
+            setNodeId: true
+            config: |
+              ui = true
+              listener "tcp" {
+                tls_disable = 1
+                address = "[::]:8200"
+                cluster_address = "[::]:8201"
+              }
+              storage "raft" {
+                path = "/vault/data"
+                retry_join {
+                  leader_api_addr = "http://vault-0.vault-internal:8200"
+                }
+                retry_join {
+                  leader_api_addr = "http://vault-1.vault-internal:8200"
+                }
+                retry_join {
+                  leader_api_addr = "http://vault-2.vault-internal:8200"
+                }
+              }
+              service_registration "kubernetes" {}
+      ui:
+        enabled: true
+
+
