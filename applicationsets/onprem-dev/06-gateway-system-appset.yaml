@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: onprem-dev-eso-appset
+  name: onprem-dev-gateway-system-appset
   namespace: argocd
 spec:
   generators:
@@ -9,12 +9,12 @@ spec:
       repoURL: 'https://github.com/Steel-yong/Infra-gitops'
       revision: onprem-dev-test
       directories:
-      - path: 'clusters/onprem-dev/external-secrets'
+      - path: 'clusters/onprem-dev/envoy-gateway-system'
   template:
     metadata:
       name: '{{path.basename}}'
       annotations:
-        argocd.argoproj.io/sync-wave: "15"
+        argocd.argoproj.io/sync-wave: "17"
     spec:
       project: default
       source:
