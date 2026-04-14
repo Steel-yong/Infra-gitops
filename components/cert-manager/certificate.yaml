@@ -1,15 +1,15 @@
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: wildcard-yongun-shop
-  namespace: cert-manager
-  annotations:
-    argocd.argoproj.io/sync-wave: "5"
-spec:
-  secretName: wildcard-yongun-tls
-  issuerRef:
-    name: letsencrypt-dev
-    kind: ClusterIssuer
-  dnsNames:
-  - "yongun.shop"
-  - "*.yongun.shop"
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: wildcard-yongun-shop
+#   namespace: cert-manager
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "5"
+# spec:
+#   secretName: wildcard-yongun-tls
+#   issuerRef:
+#     name: letsencrypt-dev
+#     kind: ClusterIssuer
+#   dnsNames:
+#   - "yongun.shop"
+#   - "*.yongun.shop"
