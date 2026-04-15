@@ -6,10 +6,10 @@ metadata:
 spec:
   generators:
   - git:
-      repoURL: 'https://github.com/Steel-yong/Infra-gitops'
+      repoURL: https://github.com/Steel-yong/Infra-gitops
       revision: onprem-dev-test
       directories:
-      - path: 'clusters/onprem-dev/envoy-gateway-system'
+      - path: clusters/onprem-dev/envoy-gateway-system
   template:
     metadata:
       name: '{{path.basename}}'
@@ -17,12 +17,20 @@ spec:
         argocd.argoproj.io/sync-wave: "17"
     spec:
       project: default
-      source:
-        repoURL: 'https://github.com/Steel-yong/Infra-gitops'
-        targetRevision: onprem-dev-test
-        path: '{{path}}'
+      sources:
+        - repoURL: docker.io/envoyproxy
+          chart: gateway-helm
+          targetRevision: 1.7.1
+          helm:
+            valueFiles:
+              - $values/clusters/onprem-dev/envoy-gateway-system/values.yaml
+        - repoURL: https://github.com/Steel-yong/Infra-gitops
+          targetRevision: onprem-dev-test
+          path: clusters/onprem-dev/envoy-gateway-system
+          ref: values
       destination:
         server: https://kubernetes.default.svc
+        namespace: envoy-gateway-system
       syncPolicy:
         automated:
           prune: true
@@ -30,7 +38,7 @@ spec:
         syncOptions:
           - ApplyOutOfSyncOnly=true
           - ServerSideApply=true
-        retry:                    
+        retry:
           limit: 5
           backoff:
             duration: 30s
