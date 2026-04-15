@@ -10,7 +10,6 @@ spec:
       envoyDeployment:
         replicas: 2
         container:
-          image: envoyproxy/envoy:v1.26-latest
           resources:
             requests:
               cpu: 150m
