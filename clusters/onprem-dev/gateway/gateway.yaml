@@ -20,6 +20,8 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: gateway-tls-cert
+          - group: ''
+            kind: Secret
+            name: gateway-tls-cert
             namespace: gateway
             
