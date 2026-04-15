@@ -3,4 +3,3 @@ kind: Kustomization
 
 resources:
   - gatewayClass.yaml
-  - envoyproxy.yaml

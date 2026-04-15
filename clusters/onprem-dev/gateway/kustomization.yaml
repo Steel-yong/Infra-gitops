@@ -6,3 +6,4 @@ namespace: gateway
 resources:
   - certificate.yaml
   - gateway.yaml
+  - envoyproxy.yaml
