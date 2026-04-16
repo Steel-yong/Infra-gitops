@@ -3,5 +3,6 @@ kind: Kustomization
 
 resources:
   - ../../../components/envoy-gateway-system
+  - service.yaml
 
 namespace: envoy-gateway-system
