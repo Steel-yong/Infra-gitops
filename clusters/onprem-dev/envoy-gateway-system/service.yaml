@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: envoy-gateway-public
-  namespace: gateway
+  namespace: envoy-gateway-system
 spec:
   selector:
     app.kubernetes.io/component: proxy
