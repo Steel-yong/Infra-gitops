@@ -4,11 +4,11 @@ metadata:
   name: public-gateway
 spec:
   gatewayClassName: envoy-gateway
-  infrastructure:
-    parametersRef:
-      group: gateway.envoyproxy.io
-      kind: EnvoyProxy
-      name: envoy-proxy
+  # infrastructure:
+  #   parametersRef:
+  #     group: gateway.envoyproxy.io
+  #     kind: EnvoyProxy
+  #     name: envoy-proxy 나중에 여러 게이트웨이를 만들때 필요 
   listeners:
     - name: http
       protocol: HTTP
