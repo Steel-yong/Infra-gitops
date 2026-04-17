@@ -16,8 +16,7 @@ helmCharts:
       
       server:
         service:
-          type: NodePort 
-          targetPortHttp: 8080
+          type: ClusterIP
         extraArgs:
           - --insecure 
 
