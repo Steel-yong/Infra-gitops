@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: onprem-dev-cloudflared-appset
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      repoURL: 'https://github.com/Steel-yong/Infra-gitops'
+      revision: onprem-dev-test
+      directories:
+      - path: 'clusters/onprem-dev/cloudflared-ops'
+      - path: 'clusters/onprem-dev/cloudflared-svc'
+  template:
+    metadata:
+      name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "20"
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/Steel-yong/Infra-gitops'
+        targetRevision: onprem-dev-test
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: cloudflared
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
+        retry:                    
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
