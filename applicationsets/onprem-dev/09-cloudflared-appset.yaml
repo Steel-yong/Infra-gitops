@@ -9,7 +9,8 @@ spec:
       repoURL: 'https://github.com/Steel-yong/Infra-gitops'
       revision: onprem-dev-test
       directories:
-      - path: 'clusters/onprem-dev/cloudflared'
+      - path: 'clusters/onprem-dev/cloudflared-ops'
+      - path: 'clusters/onprem-dev/cloudflared-svc'
   template:
     metadata:
       name: '{{path.basename}}'
