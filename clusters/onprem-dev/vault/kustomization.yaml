@@ -3,5 +3,6 @@ kind: Kustomization
 
 resources:
   - ../../../components/vault
+  - httproute.yaml
 
 namespace: vault

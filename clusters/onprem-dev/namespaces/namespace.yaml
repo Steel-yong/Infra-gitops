@@ -12,11 +12,15 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: longhorn-system
+  labels:
+    gateway-access: "true"
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: vault
+  labels:
+    gateway-access: "true"
 ---
 apiVersion: v1
 kind: Namespace
@@ -37,4 +41,11 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: cloudflared
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    gateway-access: "true"
   
