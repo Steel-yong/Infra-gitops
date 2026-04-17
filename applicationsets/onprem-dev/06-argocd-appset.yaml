@@ -29,6 +29,7 @@ spec:
           selfHeal: true
         syncOptions:
           - ApplyOutOfSyncOnly=true
+          - Replace=true
         retry:                    
           limit: 5
           backoff:
