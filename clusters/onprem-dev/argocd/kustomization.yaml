@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - external-secret-dockerhub.yaml
   - httproute.yaml
+  - external-secret-webhook.yaml
 
 namespace: argocd
