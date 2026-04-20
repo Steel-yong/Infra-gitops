@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: onprem-dev-harbor-appset
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      repoURL: https://github.com/Steel-yong/Infra-gitops
+      revision: onprem-dev-test
+      directories:
+      - path: clusters/onprem-dev/harbor
+  template:
+    metadata:
+      name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "22"
+    spec:
+      project: default
+      sources:
+        - repoURL: https://helm.goharbor.io
+          chart: harbor
+          targetRevision: 1.18.3
+          helm:
+            valueFiles:
+              - $values/components/harbor/values.yaml
+              - $values/clusters/onprem-dev/harbor/values.yaml
+        - repoURL: https://github.com/Steel-yong/Infra-gitops
+          targetRevision: onprem-dev-test
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: harbor
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
