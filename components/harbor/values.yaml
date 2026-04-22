@@ -66,30 +66,30 @@ core:
           component: core
 
 jobservice:
-  replicas: 2
+  replicas: 1
   podDisruptionBudget:
-    enabled: true
+    enabled: false
     minAvailable: 1
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: kubernetes.io/hostname
-      whenUnsatisfiable: DoNotSchedule
-      labelSelector:
-        matchLabels:
-          component: jobservice
+  # topologySpreadConstraints:
+  #   - maxSkew: 1
+  #     topologyKey: kubernetes.io/hostname
+  #     whenUnsatisfiable: DoNotSchedule
+  #     labelSelector:
+  #       matchLabels:
+  #         component: jobservice
 
 registry:
-  replicas: 2
+  replicas: 1
   podDisruptionBudget:
-    enabled: true
+    enabled: false
     minAvailable: 1
-  topologySpreadConstraints:
-    - maxSkew: 1
-      topologyKey: kubernetes.io/hostname
-      whenUnsatisfiable: DoNotSchedule
-      labelSelector:
-        matchLabels:
-          component: registry
+  # topologySpreadConstraints:
+  #   - maxSkew: 1
+  #     topologyKey: kubernetes.io/hostname
+  #     whenUnsatisfiable: DoNotSchedule
+  #     labelSelector:
+  #       matchLabels:
+  #         component: registry
 
 trivy:
   replicas: 2
