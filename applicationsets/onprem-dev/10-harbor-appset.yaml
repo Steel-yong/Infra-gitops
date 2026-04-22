@@ -27,6 +27,7 @@ spec:
               - $values/clusters/onprem-dev/harbor/values.yaml
         - repoURL: https://github.com/Steel-yong/Infra-gitops
           targetRevision: onprem-dev-test
+          path: clusters/onprem-dev/harbor
           ref: values
       destination:
         server: https://kubernetes.default.svc

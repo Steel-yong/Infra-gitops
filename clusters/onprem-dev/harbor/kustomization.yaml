@@ -1,10 +1,9 @@
-apiVersion: kustmoize.config.k8s.io/v1beta1
+apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: harbor
 
 resources:
-  - values.yaml
   - external-secret-dockerhub.yaml
   - external-secret-admin.yaml
   - external-secret-encryption.yaml

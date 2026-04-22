@@ -29,6 +29,9 @@ existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
 
 existingSecretSecretKey: "harbor-encryption-secret"
 
+imagePullSecrets:
+  - name: dockerhub-pull-secret
+
 logLevel: warn
 
 metrics:
