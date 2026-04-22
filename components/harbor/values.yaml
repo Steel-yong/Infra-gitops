@@ -1,0 +1,108 @@
+expose:
+  type: clusterIP
+  tls:
+    enabled: false
+
+persistence:
+  enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      storageClass: "longhorn"
+      size: 10Gi
+    jobservice:
+      jobLog:
+        storageClass: "longhorn"
+        size: 1Gi
+    database:
+      storageClass: "longhorn"
+      size: 1Gi
+    redis:
+      storageClass: "longhorn"
+      size: 1Gi
+    trivy:
+      storageClass: "longhorn"
+      size: 5Gi
+
+existingSecretAdminPassword: "harbor-admin-secret"
+existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
+
+existingSecretSecretKey: "harbor-encryption-secret"
+
+logLevel: warn
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+
+portal:
+  replicas: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          component: portal
+
+core:
+  replicas: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          component: core
+
+jobservice:
+  replicas: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          component: jobservice
+
+registry:
+  replicas: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          component: registry
+
+trivy:
+  replicas: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          component: trivy
+
+exporter:
+  replicas: 1
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
