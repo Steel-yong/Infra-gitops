@@ -32,6 +32,9 @@ existingSecretSecretKey: "harbor-encryption-secret"
 imagePullSecrets:
   - name: dockerhub-pull-secret
 
+updateStrategy:
+  type: Recreate
+
 logLevel: warn
 
 metrics:
