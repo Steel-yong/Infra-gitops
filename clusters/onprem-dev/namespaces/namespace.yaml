@@ -48,4 +48,10 @@ metadata:
   name: argocd
   labels:
     gateway-access: "true"
-  
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harbor
+  labels:
+    gateway-access: "true"
