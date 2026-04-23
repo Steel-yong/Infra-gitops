@@ -7,3 +7,4 @@ resources:
   - external-secret-dockerhub.yaml
   - external-secret-admin.yaml
   - external-secret-encryption.yaml
+  - httproute.yaml
