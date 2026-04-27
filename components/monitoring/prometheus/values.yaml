@@ -1,0 +1,256 @@
+namespaceOverride: monitoring
+
+crds:
+  enabled: true
+
+defaultRules:
+  create: true
+  rules:
+    kubeProxy: false        
+    windows: false         
+
+prometheus-windows-exporter:
+  prometheus:
+    monitor:
+      enabled: false
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  config:
+    global:
+      resolve_timeout: 5m
+    inhibit_rules:
+      - source_matchers:
+          - 'severity = critical'
+        target_matchers:
+          - 'severity =~ warning|info'
+        equal:
+          - 'namespace'
+          - 'alertname'
+      - source_matchers:
+          - 'severity = warning'
+        target_matchers:
+          - 'severity = info'
+        equal:
+          - 'namespace'
+          - 'alertname'
+    route:
+      group_by: ['namespace', 'alertname']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'null'
+      routes:
+      - receiver: 'null'
+        matchers:
+          - alertname = "Watchdog"
+    receivers:
+    - name: 'null'
+
+
+grafana:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+  admin:
+    existingSecret: "grafana-admin-secret"
+    userKey: admin-user
+    passwordKey: admin-password
+  defaultDashboardsTimezone: browser
+  additionalDataSources: []
+  # 나중에 추가:
+  # - name: Loki
+  #   type: loki
+  #   url: http://loki-gateway.monitoring.svc.cluster.local
+  #   access: proxy
+  # - name: Tempo
+  #   type: tempo
+  #   url: http://tempo.monitoring.svc.cluster.local:3100
+  #   access: proxy
+
+  dashboards:
+    default:
+      node-exporter:
+        gnetId: 1860
+        revision: 45
+        datasource: Prometheus
+      kube-state-metrics:
+        gnetId: 13332
+        revision: 12
+        datasource: Prometheus
+      argocd:
+        gnetId: 19993
+        revision: 7
+        datasource: Prometheus
+
+
+# ============================================================
+# Prometheus
+# ============================================================
+prometheus:
+  enabled: true
+
+  serviceMonitor:
+    selfMonitor: true
+
+  prometheusSpec:
+    replicas: 1
+
+    # 데이터 보관
+    retention: 15d
+    retentionSize: "10GB"
+
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+
+    # 영구 저장소
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+    # ★★★ 핵심 설정 ★★★
+    # 모든 네임스페이스의 ServiceMonitor 감지
+    # false = 전체 네임스페이스 감지
+    # true = 같은 네임스페이스만 감지
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelector:
+      matchLabels: {}
+    probeSelectorNilUsesHelmValues: false
+
+    # 로그
+    logLevel: info
+    logFormat: logfmt
+
+    # 보안
+    securityContext:
+      runAsGroup: 2000
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 2000
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Pod 분산
+    podAntiAffinity: "soft"
+    podAntiAffinityTopologyKey: kubernetes.io/hostname
+
+  # Ingress 비활성화
+  # 외부 접근 필요없음
+  ingress:
+    enabled: false
+
+# ============================================================
+# Node Exporter
+# 각 노드에 DaemonSet으로 뜸
+# ============================================================
+nodeExporter:
+  enabled: true
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+  # 호스트 네트워크 사용 (노드 메트릭 수집용)
+  hostNetwork: true
+  hostPID: true
+
+  tolerations:
+    # master 노드에도 뜨게 설정
+    - operator: Exists
+
+# ============================================================
+# kube-state-metrics
+# k8s 오브젝트 상태 수집
+# ============================================================
+kubeStateMetrics:
+  enabled: true
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# ============================================================
+# RKE2 컴포넌트 엔드포인트 설정
+# master 노드 IP 직접 지정
+# ============================================================
+kubeControllerManager:
+  enabled: true
+  endpoints:
+    - 172.20.0.10  # k8s-master-1
+
+kubeEtcd:
+  enabled: true
+  endpoints:
+    - 172.20.0.10  # k8s-master-1
+  service:
+    enabled: true
+    port: 2381
+    targetPort: 2381
+
+kubeScheduler:
+  enabled: true
+  endpoints:
+    - 172.20.0.10  # k8s-master-1
+
+kubeProxy:
+  enabled: false  # RKE2는 kube-proxy 없음
+
+# ============================================================
+# kubelet 메트릭
+# ============================================================
+kubelet:
+  enabled: true
+  serviceMonitor:
+    metricRelabelings:
+      # 불필요한 메트릭 제거 (용량 절약)
+      - action: drop
+        regex: container_cpu_(cfs_throttled_seconds_total|load_average_10s|system_seconds_total|user_seconds_total)
+        sourceLabels:
+          - __name__
+      - action: drop
+        regex: container_fs_(io_current|reads_bytes_total|reads_total|sector_reads_total|sector_writes_total|writes_bytes_total|writes_total)
+        sourceLabels:
+          - __name__
+      - action: drop
+        regex: container_memory_(mapped_file|swap)
+        sourceLabels:
+          - __name__
+      - action: drop
+        regex: container_(file_descriptors|tasks_state|threads_max)
+        sourceLabels:
+          - __name__
