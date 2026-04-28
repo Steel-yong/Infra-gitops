@@ -211,21 +211,17 @@ kube-state-metrics:
 kubeControllerManager:
   enabled: true
   endpoints:
-    - 172.20.0.10  # k8s-master-1
+    - 172.20.0.10  
 
 kubeEtcd:
   enabled: true
   endpoints:
-    - 172.20.0.10  # k8s-master-1
-  service:
-    enabled: true
-    port: 2381
-    targetPort: 2381
+    - 172.20.0.10  
 
 kubeScheduler:
   enabled: true
   endpoints:
-    - 172.20.0.10  # k8s-master-1
+    - 172.20.0.10 
 
 kubeProxy:
   enabled: false  # RKE2는 kube-proxy 없음
