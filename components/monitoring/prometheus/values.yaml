@@ -95,22 +95,16 @@ grafana:
         gnetId: 19993
         revision: 7
         datasource: Prometheus
+      cluster:
+        gnetId: 15661
+        revision: 2
+        datasource: Prometheus
+      
 
-
-# ============================================================
-# Prometheus
-# ============================================================
 prometheus:
   enabled: true
-
-  serviceMonitor:
-    selfMonitor: true
-
   prometheusSpec:
-    replicas: 1
-
-    # 데이터 보관
-    retention: 15d
+    retention: 10d
     retentionSize: "10GB"
 
     resources:
@@ -121,7 +115,6 @@ prometheus:
         cpu: 1000m
         memory: 2Gi
 
-    # 영구 저장소
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -131,45 +124,14 @@ prometheus:
             requests:
               storage: 20Gi
 
-    # ★★★ 핵심 설정 ★★★
     # 모든 네임스페이스의 ServiceMonitor 감지
     # false = 전체 네임스페이스 감지
     # true = 같은 네임스페이스만 감지
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
-    ruleSelectorNilUsesHelmValues: false
-    probeSelector:
-      matchLabels: {}
     probeSelectorNilUsesHelmValues: false
-
-    # 로그
-    logLevel: info
-    logFormat: logfmt
-
-    # 보안
-    securityContext:
-      runAsGroup: 2000
-      runAsNonRoot: true
-      runAsUser: 1000
-      fsGroup: 2000
-      seccompProfile:
-        type: RuntimeDefault
-
-    # Pod 분산
-    podAntiAffinity: "soft"
-    podAntiAffinityTopologyKey: kubernetes.io/hostname
-
-  # Ingress 비활성화
-  # 외부 접근 필요없음
-  ingress:
-    enabled: false
-
-# ============================================================
-# Node Exporter
-# 각 노드에 DaemonSet으로 뜸
-# ============================================================
-nodeExporter:
-  enabled: true
+    ruleSelectorNilUsesHelmValues: false
+    scrapeConfigSelectorNilUsesHelmValues: false
 
 prometheus-node-exporter:
   resources:
@@ -180,20 +142,9 @@ prometheus-node-exporter:
       cpu: 200m
       memory: 128Mi
 
-  # 호스트 네트워크 사용 (노드 메트릭 수집용)
-  hostNetwork: true
-  hostPID: true
-
   tolerations:
     # master 노드에도 뜨게 설정
     - operator: Exists
-
-# ============================================================
-# kube-state-metrics
-# k8s 오브젝트 상태 수집
-# ============================================================
-kubeStateMetrics:
-  enabled: true
 
 kube-state-metrics:
   resources:
@@ -204,10 +155,6 @@ kube-state-metrics:
       cpu: 200m
       memory: 256Mi
 
-# ============================================================
-# RKE2 컴포넌트 엔드포인트 설정
-# master 노드 IP 직접 지정
-# ============================================================
 kubeControllerManager:
   enabled: true
   endpoints:
@@ -224,29 +171,4 @@ kubeScheduler:
     - 172.20.0.10 
 
 kubeProxy:
-  enabled: false  # RKE2는 kube-proxy 없음
-
-# ============================================================
-# kubelet 메트릭
-# ============================================================
-kubelet:
-  enabled: true
-  serviceMonitor:
-    metricRelabelings:
-      # 불필요한 메트릭 제거 (용량 절약)
-      - action: drop
-        regex: container_cpu_(cfs_throttled_seconds_total|load_average_10s|system_seconds_total|user_seconds_total)
-        sourceLabels:
-          - __name__
-      - action: drop
-        regex: container_fs_(io_current|reads_bytes_total|reads_total|sector_reads_total|sector_writes_total|writes_bytes_total|writes_total)
-        sourceLabels:
-          - __name__
-      - action: drop
-        regex: container_memory_(mapped_file|swap)
-        sourceLabels:
-          - __name__
-      - action: drop
-        regex: container_(file_descriptors|tasks_state|threads_max)
-        sourceLabels:
-          - __name__
+  enabled: false
