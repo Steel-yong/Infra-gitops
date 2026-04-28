@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: onprem-dev-monitoring-appset
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      repoURL: https://github.com/Steel-yong/Infra-gitops
+      revision: onprem-dev-test
+      directories:
+      - path: clusters/onprem-dev/monitoring/prometheus
+  template:
+    metadata:
+      name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "25"
+    spec:
+      project: default
+      sources:
+        - repoURL: https://prometheus-community.github.io/helm-charts
+          chart: kube-prometheus-stack
+          targetRevision: 84.2.0
+          helm:
+            valueFiles:
+              - $values/components/monitoring/prometheus/values.yaml
+              - $values/clusters/onprem-dev/monitoring/prometheus/values.yaml
+        - repoURL: https://github.com/Steel-yong/Infra-gitops
+          targetRevision: onprem-dev-test
+          path: clusters/onprem-dev/monitoring/prometheus
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: monitoring
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m

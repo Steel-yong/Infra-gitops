@@ -10,6 +10,7 @@ spec:
       revision: onprem-dev-test
       directories:
       - path: 'clusters/onprem-dev/metallb'
+      - path: clusters/onprem-dev/cilium
   template:
     metadata:
       name: '{{path.basename}}'
