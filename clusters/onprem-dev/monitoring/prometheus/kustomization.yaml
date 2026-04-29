@@ -16,18 +16,36 @@ configMapGenerator:
 - name: grafana-dashboard-node-exporter
   files:
   - dashboards/node-exporter.json
+  options:
+    annotations:
+      grafana_folder: "node-exporter"
 - name: grafana-dashboard-kube-state-metrics
   files:
   - dashboards/kube-state-metrics.json
+  options:
+    annotations:
+      grafana_folder: "kube-state-metrics"
 - name: grafana-dashboard-argocd
   files:
   - dashboards/argocd.json
+  options:
+    annotations:
+      grafana_folder: "argocd"
 - name: grafana-dashboard-k8s-cluster
   files:
   - dashboards/k8s-cluster.json
+  options:
+    annotations:
+      grafana_folder: "k8s-cluster"
 - name: grafana-dashboard-longhorn
   files:
   - dashboards/longhorn.json
+  options:
+    annotations:
+      grafana_folder: "longhorn"
 - name: grafana-dashboard-cert-manager
   files:
   - dashboards/cert-manager.json
+  options:
+    annotations:
+      grafana_folder: "cert-manager"
