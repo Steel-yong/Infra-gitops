@@ -54,10 +54,13 @@
 이슈 단위로 작업해라. 한 번에 여러 이슈 섞지 마라.
 
 ### 4단계: git worktree로 브랜치 작업
+모든 브랜치 작업은 반드시 git worktree로 한다.
 ```bash
-git worktree add ../feature-PUB-01 feature/PUB-01
-cd ../feature-PUB-01
+1. git worktree add ../feature-{이슈번호} feature/{이슈번호}
+2. cd ../feature-{이슈번호}
+3. 여기서 작업
 ```
+메인 폴더는 항상 clean 상태 유지
 브랜치마다 별도 폴더. 충돌 없이 병렬 작업 가능.
 브랜치 전환 없이 여러 이슈 동시에 진행 가능.
 

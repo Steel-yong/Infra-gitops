@@ -1,15 +1,17 @@
 ---
-title: "feat: PUBG Helper 전체 프로젝트 구현 계획 (Phase 0~3)"
+title: "feat: PUBG Helper 전체 프로젝트 구현 계획 (Phase 0~3 + CI/CD + 배포 + 모니터링 + AI)"
 type: feat
 status: active
 date: 2026-05-06
 ---
 
-# feat: PUBG Helper 전체 프로젝트 구현 계획 (Phase 0~3)
+# feat: PUBG Helper 전체 프로젝트 구현 계획 (Phase 0~3 + CI/CD + 배포 + 모니터링 + AI)
 
 ## Summary
 
-배틀그라운드 게임 보조 웹서비스를 처음부터 구현한다. 인프라(K8s/ArgoCD/Harbor/Vault)는 이미 구축되어 있으며, 이 계획은 앱 코드 전체가 비어있는 상태에서 시작한다. Phase 0(개발 환경 세팅) → Phase 1(화면 인식 엔진) → Phase 2(백엔드 API) → Phase 3(프론트엔드 UI) 순서로 진행하며, 각 Implementation Unit은 하루 이내 완료 가능한 Linear 이슈 단위로 쪼개져 있다.
+배틀그라운드 게임 보조 웹서비스를 처음부터 구현한다. 인프라(K8s/ArgoCD/Harbor/Vault)는 이미 구축되어 있으며, 이 계획은 앱 코드 전체가 비어있는 상태에서 시작한다.
+
+**진행 순서:** 로컬 개발 환경 세팅 → 핵심 기능 구현 및 테스트 → CI/CD 파이프라인 → K8s 배포 연결. 기능과 테스트가 완전히 검증된 후 배포 인프라를 붙인다. 기능이 돌아가지도 않는 상태에서 인프라를 연결하면 어디서 문제가 생기는지 알 수 없다.
 
 ---
 
@@ -35,15 +37,16 @@ date: 2026-05-06
 ## Scope Boundaries
 
 - Phase 4(K8s 배포 심화), Phase 5(모니터링), Phase 6(AI 위치 학습)는 이 계획의 범위 밖이다.
-- 맵은 에란겔/미라마/태이고/론도 4종만 지원한다. 커스텀 맵 추가는 범위 밖이다.
+- **v1 지원 맵: 에란겔 + 태이고 2종.** 비슷한 녹색 계열 맵을 정확히 구분할 수 있는지 검증 후 미라마/론도로 확장한다.
 - 프로 위치 DB 시드 데이터 수집/정제는 별도 작업이다. 이 계획은 스키마와 API만 구현한다.
 - 모바일 지원은 범위 밖이다.
 
 ### Deferred to Follow-Up Work
 
-- Phase 4 K8s Rollouts(카나리 배포): Phase 3 완료 후 별도 계획
-- Phase 5 OTel/Grafana/GA/Mixpanel 모니터링: 별도 계획
-- Phase 6 Python FastAPI AI 위치 학습: 별도 계획
+- Phase 5 OTel/Grafana/GA/Mixpanel 모니터링: Phase 4(배포) 완료 후 별도 계획
+- Phase 6 Python FastAPI AI 위치 학습 파이프라인: Phase 5(모니터링) 완료 후 별도 계획
+- Phase 4 K8s Rollouts(카나리 배포): Phase 6(AI) 이후 서비스 안정화 단계에서 별도 계획
+- 미라마/론도 맵 추가: 에란겔+태이고 v1 검증 후 별도 이슈
 - 프로 위치 시드 데이터 수집 스크립트: DB 스키마 확정 후 별도 이슈
 
 ---
@@ -55,9 +58,8 @@ date: 2026-05-06
 - ArgoCD AppSet 패턴: `applicationsets/onprem-dev/10-harbor-appset.yaml` (git generator, Sync-Wave, Helm values)
 - HTTPRoute 패턴: `clusters/onprem-dev/harbor/httproute.yaml` (Envoy Gateway, `*.yongun.shop`)
 - External Secret 패턴: `clusters/onprem-dev/harbor/external-secret-admin.yaml`
-- Kustomization 패턴: `clusters/onprem-dev/harbor/kustomization.yaml`
 - 도메인: `yongun.shop` / K8s GitHub repo: `https://github.com/Steel-yong/Infra-gitops`
-- ArgoCD target branch: `onprem-dev-test` (기존 AppSet 기준)
+- ArgoCD target branch: 기존 인프라는 `onprem-dev-test`, 앱용 새 AppSet은 `main` 브랜치 참조
 
 ### Institutional Learnings
 
@@ -66,23 +68,19 @@ date: 2026-05-06
 - ignoreDifferences 패턴: 체크섬 OOSync 방지용 (Harbor AppSet 참고)
 - ESO SecretStore는 이미 구성되어 있음 — ExternalSecret 리소스만 추가하면 된다.
 
-### External References
-
-- 없음 — 기존 코드베이스 패턴이 충분하다.
-
 ---
 
 ## Key Technical Decisions
 
-- **모노레포 워크스페이스 공유**: `packages/shared`에서 타입/DTO를 export하고, 각 서비스는 `@pubg-helper/shared`로 import한다. 빌드 시 tsconfig의 `paths`로 해결한다.
-- **Web Worker 분리**: 화면캡처(captureWorker)와 OCR(ocrWorker)를 별도 Web Worker로 분리해 메인 스레드 블락을 방지한다. Next.js 14 App Router에서 `new Worker(new URL(...))`로 등록한다.
-- **자기장 원 추출 방식**: Sharp(서버) + Canvas API(브라우저)를 조합한다. 프레임은 브라우저 Web Worker에서 Canvas로 캡처 후 base64로 capture-service에 전송하고, 서버에서 Sharp로 전처리 후 Hough Circle Transform을 적용한다.
-- **실시간 통신**: Socket.io (NestJS WebSocket Gateway) — 프레임 전송과 분석 결과 수신 모두 동일 소켓 커넥션으로 처리한다.
-- **Prisma DB**: capture/location/alert 서비스 중 location-service만 DB를 사용한다. Prisma schema는 `apps/services/location/prisma/`에 위치한다.
-- **CI 커버리지 게이트**: GitHub Actions에서 `pnpm test:coverage`를 실행하고 95% 미달 시 PR 블락.
-- **CD 흐름**: main 브랜치 push → Docker 빌드 → Harbor push → ArgoCD 자동 Sync (이미 구성된 자동화 활용).
-- **K8s 네임스페이스**: `pubg-helper` 네임스페이스를 신규 생성한다.
-- **Sync-Wave**: 앱 서비스는 `sync-wave: "50"` 사용 (인프라 레이어 이후).
+- **개발 우선, 인프라 나중**: 로컬에서 기능 구현 및 테스트 통과 → CI/CD → K8s 배포 순서. 기능 검증 전에 배포 파이프라인을 붙이면 문제 원인 파악이 어렵다.
+- **모노레포 패키지 공유**: `packages/shared`에서 타입/DTO를 export하고 각 서비스는 `@pubg-helper/shared`로 import한다.
+- **Web Worker 분리**: 화면캡처(captureWorker)와 OCR(ocrWorker)를 별도 Web Worker로 분리해 메인 스레드 블락 방지.
+- **자기장 원 추출**: 프레임은 브라우저 Web Worker에서 Canvas로 캡처 후 base64로 capture-service에 전송. 서버에서 Sharp 전처리 + Hough Circle Transform.
+- **실시간 통신**: Socket.io (NestJS WebSocket Gateway) — 프레임 전송과 분석 결과 수신 모두 동일 소켓 커넥션.
+- **DB**: location-service만 PostgreSQL + Prisma 사용.
+- **CI 커버리지 게이트**: 95% 미달 시 PR 블락. CI는 기능 구현이 완료된 후 추가.
+- **CD 흐름**: main 브랜치 push → Docker 빌드 → Harbor push → ArgoCD 자동 Sync.
+- **K8s 네임스페이스**: `pubg-helper` 신규 생성.
 
 ---
 
@@ -90,17 +88,17 @@ date: 2026-05-06
 
 ### Resolved During Planning
 
-- **K8s 브랜치**: 기존 AppSet은 `onprem-dev-test`를 참조하지만 현재 작업 브랜치는 `develop`이다. 앱용 새 AppSet은 `develop` 브랜치를 참조하도록 작성한다.
-- **DB 호스팅**: K8s 클러스터 내 PostgreSQL(Bitnami Helm chart)을 사용한다. Longhorn PVC로 데이터를 영속한다.
-- **이미지 레지스트리 경로**: `harbor.yongun.shop/pubg-helper/{service}` — 이미 CLAUDE.md에 명시됨.
-- **서비스 포트**: capture 3001, location 3002, alert 3003, frontend 3000 사용.
+- **개발 순서**: 기능 구현 → 테스트 통과 → CI/CD → K8s 배포. 인프라 연결은 맨 마지막.
+- **DB 호스팅**: K8s 클러스터 내 PostgreSQL (Bitnami Helm chart) + Longhorn PVC.
+- **서비스 포트**: capture 3001, location 3002, alert 3003, frontend 3000.
+- **로컬 DB**: 개발 중에는 Docker Compose로 PostgreSQL 로컬 실행.
 
 ### Deferred to Implementation
 
-- **Hough Circle Transform 라이브러리**: Node.js에서 OpenCV.js vs 직접 구현 결정은 capture-service 구현 시 프로토타입 후 결정.
-- **프로 위치 좌표 정규화 방식**: 맵별 픽셀-좌표 매핑 테이블은 실제 게임 화면 캡처 후 보정.
-- **빨간 느낌표 픽셀 임계값**: alert-service 구현 시 실제 게임 화면으로 캘리브레이션.
-- **Tesseract.js 언어 모델 선택**: 숫자+콜론 whitelist로 충분한지, 또는 별도 훈련 데이터 필요한지는 구현 후 판단.
+- **Hough Circle Transform 라이브러리**: OpenCV.js vs 직접 구현 — 프로토타입 후 결정.
+- **프로 위치 좌표 정규화**: 맵별 픽셀-좌표 매핑 테이블은 실제 게임 화면 캡처 후 보정.
+- **빨간 느낌표 픽셀 임계값**: 실제 게임 화면으로 캘리브레이션.
+- **Tesseract.js 언어 모델**: 숫자+콜론 whitelist로 충분한지 구현 후 판단.
 
 ---
 
@@ -114,78 +112,46 @@ apps/
 │   ├── next.config.js
 │   └── src/
 │       ├── app/
-│       │   ├── layout.tsx
-│       │   └── page.tsx
 │       ├── components/
-│       ├── workers/
-│       │   ├── captureWorker.ts
-│       │   └── ocrWorker.ts
-│       └── lib/
+│       ├── hooks/
+│       └── workers/
+│           ├── captureWorker.ts
+│           └── ocrWorker.ts
 ├── services/
 │   ├── capture/
 │   │   ├── package.json
-│   │   ├── tsconfig.json
 │   │   └── src/
-│   │       ├── main.ts
-│   │       ├── app.module.ts
 │   │       └── capture/
-│   │           ├── capture.gateway.ts
-│   │           ├── circle.service.ts
-│   │           └── map-detection.service.ts
 │   ├── location/
 │   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── prisma/
-│   │   │   └── schema.prisma
+│   │   ├── prisma/schema.prisma
 │   │   └── src/
-│   │       ├── main.ts
-│   │       ├── app.module.ts
 │   │       └── location/
-│   │           ├── location.module.ts
-│   │           ├── location.controller.ts
-│   │           └── location.service.ts
 │   └── alert/
 │       ├── package.json
-│       ├── tsconfig.json
 │       └── src/
-│           ├── main.ts
-│           ├── app.module.ts
 │           └── alert/
-│               ├── alert.gateway.ts
-│               ├── timer.service.ts
-│               └── exclamation.service.ts
 packages/
 └── shared/
-    ├── package.json
-    ├── tsconfig.json
-    └── src/
-        ├── index.ts
-        └── types/
-            ├── circle.ts
-            ├── map.ts
-            ├── location.ts
-            ├── timer.ts
-            └── socket-events.ts
-clusters/
-└── onprem-dev/
-    ├── namespaces/  (pubg-helper 네임스페이스 추가)
-    └── pubg-helper/
-        ├── postgresql/
-        ├── capture/
-        ├── location/
-        ├── alert/
-        └── frontend/
+    └── src/types/
+docker-compose.yml          ← 로컬 개발용 PostgreSQL
 .github/
 └── workflows/
-    ├── ci.yml
+    ├── ci.yml              ← 기능 구현 완료 후 추가
     └── cd.yml
+clusters/
+└── onprem-dev/
+    └── pubg-helper/        ← CI/CD 완성 후 추가
+applicationsets/
+└── onprem-dev/
+    └── 11-pubg-helper-appset.yaml
 ```
 
 ---
 
 ## High-Level Technical Design
 
-> *이 다이어그램은 의도한 접근 방식을 설명하는 방향성 가이드이며, 구현 사양이 아니다. 구현 에이전트는 컨텍스트로 참고하되 그대로 복제하지 않아야 한다.*
+> *이 다이어그램은 의도한 접근 방식을 설명하는 방향성 가이드이며, 구현 사양이 아니다.*
 
 ```
 브라우저 (Next.js)
@@ -205,19 +171,24 @@ capture-service (NestJS WebSocket)
 
 location-service (NestJS REST)
   ├── POST /locations/recommend { circle: CircleData, mapType }
-  ├── PostgreSQL: 원 안의 위치 필터링
-  ├── 자기장 중심 거리순 정렬
-  └── S/A/B 등급별 LocationData[] 반환
+  ├── PostgreSQL: 원 안의 위치 필터링 + 거리순 정렬
+  └── LocationData[] 반환
 
 브라우저 Leaflet.js
   ├── 자기장 원 오버레이 (CircleData → L.Circle)
-  ├── 프로 위치 마커 (LocationData[] → L.Marker with 등급 색상)
-  └── 알림 설정 체크박스 → Web Notifications API
+  ├── 프로 위치 마커 (LocationData → L.Marker)
+  └── 알림 설정 → Web Notifications API
+
+개발 완료 후 CI/CD:
+  GitHub Actions → Docker Build → Harbor Push
+  ArgoCD → K8s Deployment (자동 Sync)
 ```
 
 ---
 
 ## Implementation Units
+
+---
 
 ### U1. pnpm 모노레포 루트 설정
 
@@ -233,25 +204,22 @@ location-service (NestJS REST)
 - Create: `.eslintrc.js`
 - Create: `.prettierrc`
 - Create: `.nvmrc`
-- Create: `.gitignore` (업데이트)
+- Create: `docker-compose.yml` (로컬 개발용 PostgreSQL)
 
 **Approach:**
 - root package.json: `private: true`, `scripts: { lint, test, build }`, devDependencies에 eslint/prettier/typescript
-- tsconfig.base.json: `strict: true`, `noImplicitAny: true`, `paths` 매핑으로 `@pubg-helper/shared` 등록
+- tsconfig.base.json: `strict: true`, `noImplicitAny: true`, `paths`에 `@pubg-helper/shared` 등록
 - ESLint: `@typescript-eslint/no-explicit-any` error, `no-console` warn
-- Node 버전은 LTS (v20)
-
-**Patterns to follow:**
-- `pnpm-workspace.yaml` 기존 설정 유지
+- docker-compose.yml: PostgreSQL 15 + 포트 5432, 로컬 개발 시 `docker compose up -d`로 DB 실행
 
 **Test scenarios:**
-- Happy path: `pnpm install` 후 각 워크스페이스가 올바르게 링크되는지 확인
+- Happy path: `pnpm install` 후 각 워크스페이스가 올바르게 링크됨
 - Happy path: `pnpm lint` 실행 시 any 타입 사용 코드에서 에러 발생
-- Edge case: 워크스페이스 간 패키지 참조 시 `@pubg-helper/shared` import가 해결됨
+- Edge case: `@pubg-helper/shared` import가 타입 에러 없이 해결됨
 
 **Verification:**
 - `pnpm install`이 에러 없이 완료된다.
-- `pnpm lint`가 루트에서 모든 워크스페이스를 검사한다.
+- `docker compose up -d`로 PostgreSQL이 localhost:5432에서 접근 가능하다.
 
 ---
 
@@ -276,19 +244,18 @@ location-service (NestJS REST)
 
 **Approach:**
 - `CircleData`: `{ x: number; y: number; r: number }` — 0~1 정규화 좌표
-- `MapType`: `'erangel' | 'miramar' | 'taego' | 'rondo'` union type
+- `MapType`: `'erangel' | 'taego'  // v1: 2종, 이후 'miramar' | 'rondo' 확장` union type
 - `LocationData`: `{ id: string; coordX: number; coordY: number; tier: 'S' | 'A' | 'B'; proTeamNames: string[]; usageCount: number; mapType: MapType }`
-- `TimerState`: `{ remainingSeconds: number; isShinking: boolean; phase: number }`
-- `SocketEvents`: 소켓 이벤트 이름을 const enum으로 정의 (`FRAME_UPLOAD`, `CIRCLE_RESULT`, `TIMER_UPDATE`)
-- package.json: `name: "@pubg-helper/shared"`, `main: "src/index.ts"` (ts-node 사용 시) 또는 빌드 후 `dist/`
+- `TimerState`: `{ remainingSeconds: number; isShrinking: boolean; phase: number }`
+- `SocketEvents`: `const enum` — `FRAME_UPLOAD`, `CIRCLE_RESULT`, `NO_MAP`, `TIMER_UPDATE`
 
 **Test scenarios:**
-- Happy path: `CircleData` 객체 생성 시 x/y/r이 모두 number 타입임을 타입 검사로 확인
+- Happy path: `CircleData` 객체 생성 시 x/y/r이 모두 number 타입으로 추론됨
 - Edge case: `MapType`에 정의되지 않은 문자열 할당 시 TypeScript 컴파일 에러 발생
 - Happy path: `index.ts`에서 모든 타입이 re-export되어 `@pubg-helper/shared`로 import 가능
 
 **Verification:**
-- 다른 워크스페이스에서 `import { CircleData } from '@pubg-helper/shared'` 가 TypeScript 에러 없이 동작한다.
+- 다른 워크스페이스에서 `import { CircleData } from '@pubg-helper/shared'`가 에러 없이 동작.
 - 단위 테스트 통과.
 
 ---
@@ -308,26 +275,25 @@ location-service (NestJS REST)
 - Create: `apps/services/capture/src/app.module.ts`
 - Create: `apps/services/capture/src/capture/capture.module.ts`
 - Create: `apps/services/capture/vitest.config.ts`
-- Create: `apps/services/capture/src/__tests__/app.spec.ts`
+- Create: `apps/services/capture/src/__tests__/health.spec.ts`
 
 **Approach:**
-- NestJS 10.x, `@nestjs/platform-express`, `@nestjs/websockets`, `@nestjs/platform-socket.io`
-- 포트: 3001
-- CORS 설정: 개발 시 `*`, 운영 시 환경변수로 제한
+- NestJS 10.x, `@nestjs/platform-express`, `@nestjs/websockets`, `@nestjs/platform-socket.io`, `sharp`
+- 포트: 3001 (환경변수 `PORT`로 오버라이드 가능)
+- `/health` 엔드포인트: `{ status: 'ok' }` 반환
 - Vitest: `@vitest/coverage-v8`, 임계값 95%
-- 환경변수: `.env.example`에 `PORT=3001` 포함
 
 **Test scenarios:**
 - Happy path: NestJS 앱이 3001 포트에서 정상 시작됨
-- Happy path: `/health` GET 요청에 `{ status: 'ok' }` 응답
+- Happy path: `GET /health` → `{ status: 'ok' }` 응답
 
 **Verification:**
-- `pnpm --filter capture dev` 실행 시 포트 3001에서 서버 시작.
-- `pnpm --filter capture test:coverage` 실행 시 커버리지 95% 달성.
+- `pnpm --filter capture dev` 실행 시 3001 포트 서버 시작.
+- `pnpm --filter capture test:coverage` 커버리지 95% 달성.
 
 ---
 
-### U4. location-service NestJS 스캐폴드
+### U4. location-service NestJS 스캐폴드 + Prisma 초기 연결
 
 **Goal:** location-service의 NestJS 기본 구조 + Prisma 클라이언트 초기 연결 설정
 
@@ -340,27 +306,26 @@ location-service (NestJS REST)
 - Create: `apps/services/location/tsconfig.json`
 - Create: `apps/services/location/src/main.ts`
 - Create: `apps/services/location/src/app.module.ts`
-- Create: `apps/services/location/prisma/schema.prisma`
+- Create: `apps/services/location/prisma/schema.prisma` (빈 스키마)
 - Create: `apps/services/location/src/prisma/prisma.service.ts`
 - Create: `apps/services/location/src/prisma/prisma.module.ts`
 - Create: `apps/services/location/vitest.config.ts`
-- Create: `apps/services/location/src/__tests__/app.spec.ts`
+- Create: `apps/services/location/src/__tests__/health.spec.ts`
 
 **Approach:**
 - 포트: 3002
-- Prisma: `@prisma/client`, `prisma` devDependency
-- `schema.prisma`에 `DATABASE_URL` env 참조
-- `PrismaService`는 `OnModuleInit`을 구현해 `$connect()` 호출
-- `/health` 엔드포인트에서 Prisma 연결 상태도 확인
+- `PrismaService`: `OnModuleInit` 구현 → `$connect()` 호출
+- `.env.local` 파일에 `DATABASE_URL=postgresql://postgres:password@localhost:5432/pubghelper`
+- `/health` 엔드포인트: DB 연결 상태 포함
 
 **Test scenarios:**
 - Happy path: Prisma mock으로 `PrismaService.$connect()` 호출 시 에러 없음
-- Happy path: `/health` 응답에 `{ status: 'ok', db: 'connected' }` 반환
+- Happy path: `GET /health` → `{ status: 'ok', db: 'connected' }` 반환
 - Error path: DB 연결 실패 시 `/health`가 503 반환
 
 **Verification:**
-- `pnpm --filter location dev` 실행 시 포트 3002에서 서버 시작.
-- Prisma migrate 명령어가 동작한다.
+- `docker compose up -d` 후 `pnpm --filter location dev` 실행 시 3002 포트 서버 시작.
+- DB 연결 성공 로그 출력.
 
 ---
 
@@ -379,19 +344,19 @@ location-service (NestJS REST)
 - Create: `apps/services/alert/src/app.module.ts`
 - Create: `apps/services/alert/src/alert/alert.module.ts`
 - Create: `apps/services/alert/vitest.config.ts`
-- Create: `apps/services/alert/src/__tests__/app.spec.ts`
+- Create: `apps/services/alert/src/__tests__/health.spec.ts`
 
 **Approach:**
 - 포트: 3003
-- NestJS WebSocket Gateway 추가 예정 (Phase 1에서)
-- 구조는 capture-service와 동일 패턴
+- `/health` 엔드포인트: `{ status: 'ok' }` 반환
+- capture-service와 동일 구조 패턴
 
 **Test scenarios:**
 - Happy path: 앱이 3003 포트에서 정상 시작됨
-- Happy path: `/health`에 `{ status: 'ok' }` 응답
+- Happy path: `GET /health` → `{ status: 'ok' }` 반환
 
 **Verification:**
-- `pnpm --filter alert dev` 실행 시 포트 3003에서 서버 시작.
+- `pnpm --filter alert dev` 실행 시 3003 포트 서버 시작.
 
 ---
 
@@ -415,155 +380,20 @@ location-service (NestJS REST)
 
 **Approach:**
 - Next.js 14, App Router, TypeScript strict
-- `next.config.js`에 `@pubg-helper/shared` 트랜스파일 설정 (`transpilePackages`)
-- 메인 페이지는 placeholder "PUBG Helper" 텍스트만 표시
-- Vitest + `@testing-library/react`로 컴포넌트 테스트
+- `next.config.js`에 `transpilePackages: ['@pubg-helper/shared']`
+- 메인 페이지: placeholder "PUBG Helper" 텍스트만 표시
+- Vitest + `@testing-library/react`
 
 **Test scenarios:**
-- Happy path: 홈 페이지 렌더링 시 "PUBG Helper" 텍스트가 노출됨
+- Happy path: 홈 페이지 렌더링 시 "PUBG Helper" 텍스트 노출
 - Happy path: `next build`가 TypeScript 에러 없이 완료됨
 
 **Verification:**
 - `pnpm --filter frontend dev` 실행 시 localhost:3000에서 페이지 로딩.
-- `pnpm --filter frontend build` 성공.
 
 ---
 
-### U7. GitHub Actions CI 파이프라인
-
-**Goal:** PR마다 lint, 타입체크, 단위테스트, 커버리지 95% 게이트를 자동 실행하는 CI 파이프라인
-
-**Requirements:** R2
-
-**Dependencies:** U3, U4, U5, U6
-
-**Files:**
-- Create: `.github/workflows/ci.yml`
-
-**Approach:**
-- trigger: `pull_request` to `main`, `develop`
-- jobs: `lint` → `typecheck` → `test` (parallel per service) → `coverage-gate`
-- pnpm 캐시 활용 (`~/.pnpm-store`)
-- `pnpm test:coverage --reporter=json` 결과를 파싱해 95% 미달 시 step fail
-- Node 20, ubuntu-latest
-
-**Test scenarios:**
-- Test expectation: none -- CI 설정 파일은 행위 테스트 불가. GitHub Actions 실행으로 검증.
-
-**Verification:**
-- PR 오픈 시 CI가 자동 트리거된다.
-- any 타입 사용 코드가 포함된 PR은 lint job에서 실패한다.
-- 커버리지 95% 미달 PR은 coverage-gate job에서 실패한다.
-
----
-
-### U8. Docker 빌드 + GitHub Actions CD 파이프라인
-
-**Goal:** main 브랜치 push 시 각 서비스의 Docker 이미지를 빌드하여 Harbor에 push하는 CD 파이프라인
-
-**Requirements:** R7
-
-**Dependencies:** U3, U4, U5, U6, U7
-
-**Files:**
-- Create: `.github/workflows/cd.yml`
-- Create: `apps/services/capture/Dockerfile`
-- Create: `apps/services/location/Dockerfile`
-- Create: `apps/services/alert/Dockerfile`
-- Create: `apps/frontend/Dockerfile`
-
-**Approach:**
-- trigger: `push` to `main`
-- Docker multi-stage build: `builder` → `runner`
-- 이미지 태그: `harbor.yongun.shop/pubg-helper/{service}:${GITHUB_SHA::8}`
-- GitHub Secret: `HARBOR_USERNAME`, `HARBOR_PASSWORD`
-- 빌드 완료 후 ArgoCD는 자동 sync (이미 설정됨)
-- NestJS Dockerfile: `node:20-alpine`, `pnpm install --frozen-lockfile`, `pnpm build`
-- Next.js Dockerfile: `standalone` 출력 모드 사용
-
-**Test scenarios:**
-- Test expectation: none -- Dockerfile 빌드 성공 여부는 CD 실행으로 검증.
-
-**Verification:**
-- main 브랜치 push 시 Harbor에 4개 서비스 이미지가 push된다.
-- `harbor.yongun.shop/pubg-helper/capture:latest` 이미지가 Harbor UI에서 확인된다.
-
----
-
-### U9. K8s 매니페스트 + ArgoCD AppSet (pubg-helper 앱 배포)
-
-**Goal:** pubg-helper 네임스페이스 + 4개 서비스의 K8s Deployment/Service/HTTPRoute + PostgreSQL + ArgoCD AppSet 생성
-
-**Requirements:** R7, R8
-
-**Dependencies:** U8
-
-**Files:**
-- Modify: `clusters/onprem-dev/namespaces/namespace.yaml` (pubg-helper 네임스페이스 추가)
-- Create: `clusters/onprem-dev/pubg-helper/postgresql/deployment.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/postgresql/service.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/postgresql/pvc.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/postgresql/kustomization.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/capture/deployment.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/capture/service.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/capture/kustomization.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/location/deployment.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/location/service.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/location/kustomization.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/alert/deployment.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/alert/service.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/alert/kustomization.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/frontend/deployment.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/frontend/service.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/frontend/httproute.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/frontend/kustomization.yaml`
-- Create: `applicationsets/onprem-dev/11-pubg-helper-appset.yaml`
-
-**Approach:**
-- 네임스페이스: `pubg-helper`
-- PostgreSQL: Bitnami 공식 이미지, Longhorn PVC 사용
-- 각 서비스 Deployment: `imagePullPolicy: Always`, Harbor 이미지 참조
-- HTTPRoute: `app.yongun.shop` → frontend:3000
-- AppSet: `sync-wave: "50"`, `develop` 브랜치 참조
-- 환경변수는 ExternalSecret을 통해 K8s Secret으로 주입 (U10 의존)
-
-**Test scenarios:**
-- Test expectation: none -- K8s 리소스 배포 성공은 kubectl/ArgoCD로 검증.
-
-**Verification:**
-- ArgoCD UI에서 pubg-helper 앱이 Synced/Healthy 상태.
-- `https://app.yongun.shop`에서 프론트엔드 접근 가능.
-
----
-
-### U10. Vault 시크릿 + ESO ExternalSecret 설정
-
-**Goal:** DB 패스워드, Harbor 인증 정보를 Vault에 저장하고 ESO ExternalSecret으로 K8s Secret에 주입
-
-**Requirements:** R8
-
-**Dependencies:** U9
-
-**Files:**
-- Create: `clusters/onprem-dev/pubg-helper/location/external-secret-db.yaml`
-- Create: `clusters/onprem-dev/pubg-helper/postgresql/external-secret-postgres.yaml`
-
-**Approach:**
-- ESO SecretStore는 이미 `external-secrets` 네임스페이스에 구성되어 있다.
-- `ExternalSecret` 리소스에서 Vault path `secret/pubg-helper/db` 참조
-- K8s Secret으로 `DATABASE_URL`, `POSTGRES_PASSWORD` 주입
-- 기존 `clusters/onprem-dev/harbor/external-secret-admin.yaml` 패턴 그대로 따름
-
-**Test scenarios:**
-- Test expectation: none -- ExternalSecret 동기화는 kubectl describe 로 검증.
-
-**Verification:**
-- `kubectl get secret -n pubg-helper` 에서 DB 시크릿이 생성되어 있다.
-- location-service 파드가 `DATABASE_URL`을 읽어 Prisma 연결에 성공한다.
-
----
-
-### U11. Screen Capture Web Worker (프레임 캡처)
+### U7. Screen Capture Web Worker (프레임 캡처)
 
 **Goal:** 브라우저에서 `getDisplayMedia`로 화면을 공유하고 Web Worker 내에서 주기적으로 프레임을 Canvas에 그려 base64 이미지로 추출
 
@@ -575,28 +405,29 @@ location-service (NestJS REST)
 - Create: `apps/frontend/src/workers/captureWorker.ts`
 - Create: `apps/frontend/src/hooks/useScreenCapture.ts`
 - Create: `apps/frontend/src/__tests__/captureWorker.test.ts`
+- Create: `apps/frontend/src/__tests__/useScreenCapture.test.ts`
 
 **Approach:**
-- `captureWorker.ts`: `OffscreenCanvas`로 프레임 렌더링 후 `toDataURL('image/jpeg', 0.7)` — 품질과 전송 크기 균형
-- 캡처 주기: 500ms (분당 120프레임 기준)
+- `captureWorker.ts`: `OffscreenCanvas`로 프레임 렌더링 → `toDataURL('image/jpeg', 0.7)`
+- 캡처 주기: 500ms
 - `useScreenCapture` hook: `getDisplayMedia` 호출, 워커 시작/중지 관리, 에러 상태 노출
-- 사용자가 화면공유를 거부하면 에러 상태 `'permission-denied'` 반환
+- 권한 거부 시 `{ error: 'permission-denied' }` 반환
 
 **Test scenarios:**
-- Happy path: `getDisplayMedia` 성공 → 500ms 간격으로 base64 프레임이 워커에서 emit됨
-- Error path: 사용자가 화면공유 거부 시 hook이 `{ error: 'permission-denied' }` 반환
-- Edge case: 화면공유 스트림이 끊길 경우 (탭 변경 등) 워커가 자동 중지됨
-- Edge case: 워커 중지 후 다시 시작 시 새 스트림으로 재연결됨
+- Happy path: `getDisplayMedia` 성공 → 500ms 간격으로 base64 프레임 emit
+- Error path: 사용자 화면공유 거부 시 `{ error: 'permission-denied' }` 반환
+- Edge case: 화면공유 스트림 종료 시 워커 자동 중지
+- Edge case: 워커 중지 후 재시작 시 새 스트림으로 재연결
 
 **Verification:**
-- `useScreenCapture` hook을 사용한 컴포넌트에서 프레임 emit이 주기적으로 발생한다.
+- `useScreenCapture`를 사용한 컴포넌트에서 프레임 emit이 주기적으로 발생한다.
 - 커버리지 95% 달성.
 
 ---
 
-### U12. capture-service WebSocket Gateway
+### U8. capture-service WebSocket Gateway
 
-**Goal:** 프론트에서 프레임을 수신하고 처리 결과(CircleData)를 다시 전송하는 WebSocket Gateway 구현
+**Goal:** 프론트에서 프레임을 수신하고 분석 결과(CircleData)를 다시 전송하는 WebSocket Gateway 구현
 
 **Requirements:** R3
 
@@ -610,17 +441,16 @@ location-service (NestJS REST)
 
 **Approach:**
 - `@WebSocketGateway({ cors: true })` 데코레이터
-- `@SubscribeMessage('frame')` 핸들러: base64 이미지 수신 → `CaptureService.analyzeFrame()` 호출 → `CircleData` 반환
-- `CaptureService`는 `analyzeFrame(base64: string): Promise<CircleData | null>` 인터페이스만 정의 (실제 로직은 U13, U14에서 구현)
-- 전체맵 미감지 시 `null` 반환하고 클라이언트에 'no-map' 이벤트 전송
-- 에러 발생 시 클라이언트에 'error' 이벤트 전송
+- `@SubscribeMessage('frame')` 핸들러: base64 수신 → `CaptureService.analyzeFrame()` 호출
+- `CaptureService.analyzeFrame(base64: string): Promise<CircleData | null>` 인터페이스 정의 (로직은 U9, U10에서)
+- null 반환 시 'no-map' 이벤트, 에러 시 'error' 이벤트 전송
 
 **Test scenarios:**
-- Happy path: 유효한 base64 프레임 수신 시 `CaptureService.analyzeFrame()` 호출됨 (mock)
-- Happy path: `CircleData` 반환 시 클라이언트에 'circle' 이벤트로 emit됨
-- Happy path: null 반환 시 클라이언트에 'no-map' 이벤트 emit됨
-- Error path: `analyzeFrame()` throw 시 클라이언트에 'error' 이벤트 emit됨
-- Integration: 소켓 클라이언트가 연결되고 'frame' 이벤트를 전송하면 응답 이벤트를 수신함
+- Happy path: 유효한 base64 프레임 수신 시 `analyzeFrame()` 호출됨 (mock)
+- Happy path: `CircleData` 반환 시 'circle' 이벤트 emit
+- Happy path: null 반환 시 'no-map' 이벤트 emit
+- Error path: `analyzeFrame()` throw 시 'error' 이벤트 emit
+- Integration: 소켓 클라이언트가 'frame' 이벤트 전송 후 응답 이벤트 수신
 
 **Verification:**
 - WebSocket 클라이언트로 'frame' 이벤트 전송 시 응답 이벤트를 수신한다.
@@ -628,13 +458,13 @@ location-service (NestJS REST)
 
 ---
 
-### U13. 전체맵 열림 감지 로직
+### U9. 전체맵 열림 감지 로직
 
-**Goal:** 캡처 프레임에서 화면 중앙 파란색 픽셀 비율이 30% 초과 시 전체맵이 열린 것으로 판단하는 로직 구현
+**Goal:** 캡처 프레임 중앙 파란색 픽셀 비율이 30% 초과 시 전체맵이 열린 것으로 판단
 
 **Requirements:** R3
 
-**Dependencies:** U12
+**Dependencies:** U8
 
 **Files:**
 - Create: `apps/services/capture/src/capture/map-detection.service.ts`
@@ -642,17 +472,16 @@ location-service (NestJS REST)
 
 **Approach:**
 - Sharp로 base64 디코딩 → 중앙 30% 영역 크롭 → 픽셀 RGB 분석
-- 파란색 기준: `b > 150 && b > r * 1.5 && b > g * 1.5` (게임 전체맵 하늘색)
-- 파란색 픽셀 비율 = 파란색 픽셀 수 / 전체 픽셀 수
-- 임계값 30% 초과 시 `true` 반환
+- 파란색 기준: `b > 150 && b > r * 1.5 && b > g * 1.5`
+- 임계값 30% 초과 시 `true`, 이하 시 `false`
 - `isMapOpen(base64: string): Promise<boolean>` 인터페이스
 
 **Test scenarios:**
 - Happy path: 파란색 비율 35% 이미지 → `true` 반환
 - Happy path: 파란색 비율 20% 이미지 → `false` 반환
-- Edge case: 정확히 30% 파란색 → `false` 반환 (경계값 미포함)
-- Edge case: 빈 이미지(0x0) 입력 → 에러 throw 또는 `false` 반환
-- Error path: 유효하지 않은 base64 문자열 → Sharp 에러 throw
+- Edge case: 정확히 30% → `false` (초과 조건, 경계 미포함)
+- Edge case: 빈 이미지 입력 → `false` 또는 에러 throw
+- Error path: 유효하지 않은 base64 → Sharp 에러 throw
 
 **Verification:**
 - 실제 게임 전체맵 스크린샷으로 `isMapOpen` 호출 시 `true` 반환.
@@ -660,32 +489,30 @@ location-service (NestJS REST)
 
 ---
 
-### U14. 자기장 원 추출 (Hough Circle Transform)
+### U10. 자기장 원 추출 (Hough Circle Transform)
 
-**Goal:** 전체맵 프레임에서 흰색 테두리 픽셀을 마스킹하고 Hough Circle Transform으로 자기장 원의 중심(x,y) + 반경(r)을 추출해 0~1로 정규화
+**Goal:** 전체맵 프레임에서 흰색 테두리 픽셀 마스킹 + Hough Circle Transform으로 자기장 원의 중심(x,y) + 반경(r)을 추출해 0~1 정규화
 
 **Requirements:** R3
 
-**Dependencies:** U13, U2
+**Dependencies:** U9, U2
 
 **Files:**
 - Create: `apps/services/capture/src/capture/circle.service.ts`
 - Create: `apps/services/capture/src/capture/circle.service.spec.ts`
 
 **Approach:**
-- Sharp로 이미지를 흑백 변환 → 흰색 픽셀 임계값 마스킹
-- Hough Circle Transform: 직접 구현 또는 경량 라이브러리 사용 (구현 시 결정)
+- Sharp로 흑백 변환 → 흰색 픽셀 임계값 마스킹
+- Hough Circle Transform: 직접 구현 또는 경량 라이브러리 (구현 시 결정)
 - 결과 픽셀 좌표를 이미지 width/height로 나눠 0~1 정규화
 - `extractCircle(base64: string): Promise<CircleData | null>` 인터페이스
-- 원이 감지되지 않으면 `null` 반환
 
-**Execution note:** Hough Circle 라이브러리 선택은 프로토타입 후 결정 (구현 시 deferred). 직접 구현과 라이브러리 성능을 비교한다.
+**Execution note:** Hough Circle 라이브러리 선택은 프로토타입 후 결정. OpenCV.js와 직접 구현 성능 비교.
 
 **Test scenarios:**
 - Happy path: 명확한 원이 있는 테스트 이미지 → `CircleData` 반환, x/y/r이 0~1 범위
 - Happy path: 원이 없는 이미지 → `null` 반환
 - Edge case: 매우 작은 원(r < 0.05) → `null` 반환 (노이즈 필터)
-- Edge case: 원이 이미지 경계에 걸친 경우 → 부분 원도 감지됨 또는 무시됨 (구현 시 결정)
 - Error path: 깨진 이미지 데이터 → 에러 throw
 
 **Verification:**
@@ -694,9 +521,9 @@ location-service (NestJS REST)
 
 ---
 
-### U15. OCR Web Worker (타이머 인식 + 알림 트리거)
+### U11. OCR Web Worker (타이머 인식 + 알림 트리거)
 
-**Goal:** 미니맵 위 타이머 영역을 크롭하여 Tesseract.js OCR로 잔여 시간을 파싱하고, 빨간 느낌표 픽셀 감지로 자기장 상태를 구분해 30/20/10초 알림을 트리거
+**Goal:** 미니맵 위 타이머 영역을 크롭하여 Tesseract.js OCR로 잔여 시간을 파싱하고, 빨간 느낌표 픽셀 감지로 자기장 상태를 구분해 30/20/10초 알림 트리거
 
 **Requirements:** R5
 
@@ -709,7 +536,7 @@ location-service (NestJS REST)
 - Create: `apps/frontend/src/__tests__/useAlertTimer.test.ts`
 
 **Approach:**
-- `ocrWorker.ts`: 캡처 프레임에서 해상도별 타이머 영역 크롭
+- `ocrWorker.ts`: 해상도별 타이머 영역 크롭
   ```
   TIMER_REGIONS = {
     '1920x1080': { x: 1680, y: 820, w: 180, h: 35 },
@@ -717,64 +544,64 @@ location-service (NestJS REST)
     '3840x2160': { x: 3360, y: 1640, w: 360, h: 70 },
   }
   ```
-- Tesseract.js: `whitelist: '0123456789:'` 설정, `"1:38"` → 98초 변환
-- 빨간 느낌표 감지: 타이머 좌측 영역에서 `r > 200 && g < 80 && b < 80` 픽셀 비율
-- `useAlertTimer` hook: TimerState 관리, 30/20/10초 임계값 도달 시 `'alert'` 이벤트 emit
-- 이미 알림을 발송한 초 단위는 재발송하지 않음 (상태 관리)
+- Tesseract.js: `whitelist: '0123456789:'`, `"1:38"` → 98초 변환
+- 빨간 느낌표 감지: 타이머 좌측 영역 `r > 200 && g < 80 && b < 80` 픽셀 비율
+- `useAlertTimer` hook: 설정된 임계값 도달 시 `'alert'` 이벤트 emit, 중복 발송 방지
 
 **Test scenarios:**
-- Happy path: `"1:38"` 문자열 파싱 → 98초 반환
-- Happy path: `"0:10"` 파싱 → 10초, 느낌표 있음 → 10초 알림 트리거
-- Edge case: `"2:00"` 파싱 → 120초 반환
-- Edge case: 동일 초에 여러 프레임 처리 시 알림이 한 번만 발송됨
-- Error path: OCR 결과가 `"1:3X"` 같이 파싱 불가 → `null` 반환, 알림 발송 안 함
+- Happy path: `"1:38"` 파싱 → 98초 반환
+- Happy path: `"0:10"` + 느낌표 있음 → 10초 알림 트리거
+- Edge case: `"2:00"` → 120초 반환
+- Edge case: 동일 초에 여러 프레임 처리 시 알림 1회만 발송
+- Error path: OCR 결과 파싱 불가(`"1:3X"`) → `null` 반환, 알림 발송 안 함
 - Happy path: 느낌표 없음 → 타이머 표시만, 알림 없음
 
 **Verification:**
-- 타이머 "0:30" + 느낌표 있는 테스트 이미지로 30초 알림이 정확히 1회 트리거된다.
+- 타이머 "0:30" + 느낌표 있는 테스트 이미지로 30초 알림이 정확히 1회 트리거.
 - 커버리지 95% 달성.
 
 ---
 
-### U16. Prisma DB 스키마 + 마이그레이션
+### U12. Prisma DB 스키마 + 마이그레이션
 
 **Goal:** maps, locations, circle_phases, sessions 테이블 스키마 정의 및 초기 마이그레이션 생성
 
 **Requirements:** R4
 
-**Dependencies:** U4, U10
+**Dependencies:** U4, U1
 
 **Files:**
 - Modify: `apps/services/location/prisma/schema.prisma`
 - Create: `apps/services/location/prisma/migrations/` (자동 생성)
-- Create: `apps/services/location/prisma/seed.ts` (예시 데이터)
+- Create: `apps/services/location/prisma/seed.ts`
 - Create: `apps/services/location/src/prisma/prisma.service.spec.ts`
 
 **Approach:**
-- `maps` 테이블: `id`, `type (MapType enum)`, `name`, `createdAt`
-- `locations` 테이블: `id`, `mapId (FK)`, `coordX (Float)`, `coordY (Float)`, `tier (S/A/B enum)`, `proTeamNames (String[])`, `usageCount (Int)`
-- `circle_phases` 테이블: `id`, `mapId (FK)`, `phaseNumber (Int)`, `waitSeconds (Int)`, `shrinkSeconds (Int)`
-- `sessions` 테이블: `id`, `mapType`, `startedAt`, `endedAt`
-- `prisma migrate dev` 로 마이그레이션 파일 생성
+- `maps`: `id`, `type (MapType enum)`, `name`, `createdAt`
+- `locations`: `id`, `mapId (FK)`, `coordX`, `coordY`, `tier (S/A/B enum)`, `proTeamNames (String[])`, `usageCount`
+- `circle_phases`: `id`, `mapId (FK)`, `phaseNumber`, `waitSeconds`, `shrinkSeconds`
+- `sessions`: `id`, `mapType`, `startedAt`, `endedAt`
+- `seed.ts`: 에란겔 + 태이고 2개 맵 기본 데이터 삽입 (v1)
+- 로컬 DB: `docker compose up -d` 후 `prisma migrate dev`
 
 **Test scenarios:**
-- Happy path: `prisma migrate dev` 실행 시 에러 없이 마이그레이션 완료
-- Happy path: `prisma db seed` 실행 시 4개 맵 데이터가 삽입됨
-- Edge case: locations.coordX/Y가 0.0~1.0 범위를 벗어나는 데이터 삽입 시 — 제약 조건 없음, 서비스 레이어에서 검증 (구현 시 결정)
+- Happy path: `prisma migrate dev` 에러 없이 완료
+- Happy path: `prisma db seed` 후 maps 테이블에 2개 행(에란겔, 태이고) 존재
+- Happy path: Prisma 클라이언트로 `findMany` 호출 시 타입 안전 쿼리 동작
 
 **Verification:**
-- `psql`로 직접 접속 시 모든 테이블이 생성되어 있다.
-- seed 실행 후 `maps` 테이블에 4개 행 존재.
+- `psql`로 직접 접속 시 모든 테이블 생성 확인.
+- seed 후 `SELECT * FROM maps;` 에서 2개 행 확인.
 
 ---
 
-### U17. location-service 프로 위치 조회 API
+### U13. location-service 프로 위치 조회 API
 
-**Goal:** 자기장 원(CircleData) + 맵 타입을 받아 원 안의 프로 위치를 필터링하고 자기장 중심 거리순으로 정렬해 반환하는 REST API 구현
+**Goal:** 자기장 원(CircleData) + 맵 타입을 받아 원 안의 프로 위치를 필터링하고 자기장 중심 거리순으로 정렬해 반환하는 REST API
 
 **Requirements:** R4
 
-**Dependencies:** U16, U2
+**Dependencies:** U12, U2
 
 **Files:**
 - Create: `apps/services/location/src/location/location.module.ts`
@@ -786,31 +613,31 @@ location-service (NestJS REST)
 
 **Approach:**
 - `POST /locations/recommend` — Body: `{ circle: CircleData, mapType: MapType }`
-- 서비스 로직: DB에서 해당 맵의 모든 위치 조회 → 원 내부 필터링 (유클리드 거리 <= r) → 자기장 중심(circle.x, circle.y)에서의 거리 오름차순 정렬
-- 응답: `LocationData[]` (최대 20개)
-- 입력 검증: `class-validator` DTO 사용
+- 원 내부 필터링: 유클리드 거리 `sqrt((x-cx)² + (y-cy)²) <= r`
+- 자기장 중심 거리 오름차순 정렬, 최대 20개 반환
+- `class-validator` DTO 입력 검증
 
 **Test scenarios:**
 - Happy path: 원 내부 3개 위치 → 거리순 정렬된 3개 LocationData 반환
 - Happy path: 원 내부 위치 없음 → 빈 배열 반환
-- Edge case: 원 경계선 위의 위치 (거리 정확히 r) → 포함됨
-- Edge case: mapType 없이 요청 시 400 Bad Request
+- Edge case: 원 경계선 위의 위치(거리 정확히 r) → 포함됨
+- Edge case: mapType 누락 시 400 Bad Request
 - Error path: DB 연결 실패 시 500 Internal Server Error
 - Integration: 실제 Prisma로 조회 시 올바른 맵의 위치만 필터링됨
 
 **Verification:**
-- Postman/curl로 유효한 circle + mapType 전송 시 거리순 정렬된 위치 목록 반환.
+- curl로 유효한 circle + mapType 전송 시 거리순 위치 목록 반환.
 - 커버리지 95% 달성.
 
 ---
 
-### U18. alert-service 타이머 파싱 + K8s 배포 준비
+### U14. alert-service WebSocket Gateway
 
-**Goal:** alert-service가 프론트에서 타이머 데이터를 수신하는 WebSocket Gateway 구현 (OCR은 프론트 Web Worker에서 처리 후 타이머 상태만 전송)
+**Goal:** 프론트에서 타이머 상태를 수신하고 알림 임계값 도달 시 이벤트 emit하는 WebSocket Gateway
 
 **Requirements:** R5
 
-**Dependencies:** U5, U2, U15
+**Dependencies:** U5, U2, U11
 
 **Files:**
 - Create: `apps/services/alert/src/alert/alert.gateway.ts`
@@ -819,15 +646,15 @@ location-service (NestJS REST)
 - Create: `apps/services/alert/src/alert/timer-state.service.spec.ts`
 
 **Approach:**
-- alert-service WebSocket Gateway: `@SubscribeMessage('timer-state')` — `TimerState` 수신
-- `TimerStateService`: 세션별 타이머 상태 추적, 알림 임계값(30/20/10초) 도달 시 클라이언트에 'alert' 이벤트 emit
-- 프론트의 `useAlertTimer` hook이 `TimerState`를 서버에 전송, 서버는 상태 집계/로깅만 담당
-- 실제 알림 발송은 브라우저 Web Notifications API (U22에서)
+- `@SubscribeMessage('timer-state')`: `TimerState` 수신
+- `TimerStateService`: 30/20/10초 임계값 도달 시 'alert' 이벤트 emit
+- 실제 브라우저 알림은 프론트(U18)에서 처리, 서버는 상태 집계/로깅 담당
+- 중복 알림 방지: 세션별 `alreadyNotified` 세트 관리
 
 **Test scenarios:**
-- Happy path: TimerState `{ remainingSeconds: 30, isShinking: true }` 수신 시 'alert-30' 이벤트 emit
-- Happy path: 느낌표 없는 TimerState 수신 시 알림 이벤트 없음
-- Edge case: 동일 세션에서 30초 알림 후 다시 TimerState가 30초로 들어오면 재발송 안 함
+- Happy path: `{ remainingSeconds: 30, isShrinking: true }` 수신 시 'alert-30' 이벤트 emit
+- Happy path: `isShrinking: false` 수신 시 알림 이벤트 없음
+- Edge case: 같은 세션에서 30초 도달 후 재진입 시 재발송 없음
 - Error path: 유효하지 않은 TimerState 형식 수신 시 에러 이벤트
 
 **Verification:**
@@ -835,9 +662,9 @@ location-service (NestJS REST)
 
 ---
 
-### U19. 맵 선택 UI + Leaflet.js 기본 렌더링
+### U15. 맵 선택 UI + Leaflet.js 기본 렌더링
 
-**Goal:** 4개 맵(에란겔/미라마/태이고/론도) 선택 UI와 선택된 맵 이미지를 Leaflet.js로 렌더링하는 컴포넌트 구현
+**Goal:** 4개 맵 선택 UI와 선택된 맵 이미지를 Leaflet.js로 렌더링하는 컴포넌트
 
 **Requirements:** R6
 
@@ -849,34 +676,35 @@ location-service (NestJS REST)
 - Create: `apps/frontend/src/components/MapCanvas.module.css`
 - Create: `apps/frontend/src/__tests__/MapSelector.test.tsx`
 - Create: `apps/frontend/src/__tests__/MapCanvas.test.tsx`
-- Create: `apps/frontend/public/maps/` (에란겔/미라마/태이고/론도 이미지)
+- Create: `apps/frontend/public/maps/` (에란겔/미라마/태이고/론도 이미지 placeholder)
 
 **Approach:**
-- `MapSelector`: 4개 버튼, 선택된 맵 강조 표시
-- `MapCanvas`: `react-leaflet` (또는 leaflet 직접), CRS.Simple로 이미지 좌표계 사용
-- 맵 이미지는 `public/maps/{mapType}.jpg`로 정적 제공
-- 휠로 확대/축소, 드래그로 이동
-- 컴포넌트는 `'use client'` 디렉티브
+- `MapSelector`: 에란겔/태이고 2개 버튼, 선택된 맵 강조 (v1)
+- `MapCanvas`: `react-leaflet` + `CRS.Simple` (이미지 좌표계)
+- Leaflet SSR 이슈: `dynamic(() => import('react-leaflet'), { ssr: false })`
+- 기본 맵: 에란겔
+- **좌표 일관성**: CRS.Simple + 0~1 정규화 좌표계로 마우스 휠 줌/드래그에 무관하게 위치 고정
 
 **Test scenarios:**
 - Happy path: 에란겔 버튼 클릭 시 `MapCanvas`에 에란겔 이미지 로딩
-- Happy path: 4개 맵 모두 선택 가능
-- Edge case: 페이지 최초 진입 시 기본 맵(에란겔) 선택됨
-- Edge case: SSR 환경에서 Leaflet import 에러 없음 (`dynamic import` 처리)
+- Happy path: 태이고 버튼 클릭 시 태이고 이미지로 전환, 기존 마커 초기화
+- Edge case: 첫 진입 시 에란겔 기본 선택됨
+- Edge case: SSR 환경에서 Leaflet import 에러 없음
+- Edge case: 줌 레벨 변경 시 CircleOverlay와 LocationMarker 위치가 고정된 좌표 기준으로 유지됨
 
 **Verification:**
-- 브라우저에서 맵 선택 버튼 클릭 시 해당 맵 이미지가 Leaflet 캔버스에 렌더링된다.
+- 브라우저에서 맵 선택 시 해당 맵 이미지가 Leaflet 캔버스에 렌더링됨.
 - 커버리지 95% 달성.
 
 ---
 
-### U20. 자기장 원 오버레이
+### U16. 자기장 원 오버레이
 
 **Goal:** WebSocket으로 수신한 CircleData를 Leaflet 지도 위에 실시간 원으로 오버레이 렌더링
 
 **Requirements:** R6, R3
 
-**Dependencies:** U19, U12, U2
+**Dependencies:** U15, U8, U2
 
 **Files:**
 - Create: `apps/frontend/src/components/CircleOverlay.tsx`
@@ -885,30 +713,30 @@ location-service (NestJS REST)
 - Create: `apps/frontend/src/__tests__/useCaptureSocket.test.ts`
 
 **Approach:**
-- `useCaptureSocket` hook: capture-service WebSocket 연결 관리, `CircleData` 상태 관리
-- `CircleOverlay`: `react-leaflet`의 `Circle` 컴포넌트 (또는 `L.Circle`), 반투명 파란색
-- CircleData의 정규화 좌표(0~1)를 Leaflet CRS.Simple 픽셀 좌표로 변환 (맵 이미지 크기 기준)
-- 이전 원은 새 원 수신 시 교체 (누적 안 됨)
+- `useCaptureSocket` hook: capture-service 소켓 연결 관리, `CircleData` 상태 관리
+- `CircleOverlay`: `react-leaflet`의 `Circle` 컴포넌트, 반투명 파란색
+- CircleData 0~1 좌표 → Leaflet CRS.Simple 픽셀 좌표 변환
+- 새 원 수신 시 이전 원 교체
 
 **Test scenarios:**
-- Happy path: `CircleData { x: 0.5, y: 0.5, r: 0.2 }` 수신 시 맵 중앙에 원이 렌더링됨
-- Happy path: 새 CircleData 수신 시 기존 원이 교체됨
-- Edge case: WebSocket 연결 끊김 시 마지막 원이 유지됨
-- Edge case: capture-service에서 'no-map' 이벤트 수신 시 원이 숨겨짐
+- Happy path: `CircleData { x: 0.5, y: 0.5, r: 0.2 }` 수신 시 맵 중앙에 원 렌더링
+- Happy path: 새 CircleData 수신 시 기존 원 교체됨
+- Edge case: WebSocket 연결 끊김 시 마지막 원 유지
+- Edge case: 'no-map' 이벤트 수신 시 원 숨김
 
 **Verification:**
-- 브라우저에서 화면공유 시작 후 전체맵 열면 Leaflet 지도 위에 자기장 원이 표시된다.
+- 로컬에서 화면공유 시작 후 전체맵 열면 Leaflet 지도 위에 자기장 원 표시됨.
 - 커버리지 95% 달성.
 
 ---
 
-### U21. 프로 위치 마커 + 등급별 표시 + 랭킹
+### U17. 프로 위치 마커 + 등급별 표시 + 랭킹
 
-**Goal:** 자기장 원 감지 시 location-service에서 프로 추천 위치를 조회하고 S/A/B 등급별 색상 마커와 거리순 사이드패널로 표시
+**Goal:** 자기장 원 감지 시 location-service에서 프로 추천 위치를 조회하고 S/A/B 등급별 색상 마커와 사이드패널로 표시
 
 **Requirements:** R6, R4
 
-**Dependencies:** U20, U17
+**Dependencies:** U16, U13
 
 **Files:**
 - Create: `apps/frontend/src/components/LocationMarkers.tsx`
@@ -922,28 +750,27 @@ location-service (NestJS REST)
 - `useLocations` hook: CircleData + mapType 변경 시 `POST /locations/recommend` 호출
 - 마커 색상: S=금색, A=은색, B=동색
 - `LocationPanel`: 오른쪽 사이드바, 거리순 리스트, 팀명/등급/거리 표시
-- 자기장 원 없을 때는 마커/패널 숨김
 
 **Test scenarios:**
-- Happy path: CircleData 수신 시 `useLocations`가 API 호출, 마커 렌더링
-- Happy path: S등급 마커는 금색, A는 은색, B는 동색으로 표시됨
-- Happy path: 사이드패널에 거리 오름차순으로 위치 목록 표시
-- Edge case: API 응답 빈 배열 → 마커 없음, 패널에 "추천 위치 없음" 표시
+- Happy path: CircleData 수신 시 API 호출 → 마커 렌더링
+- Happy path: S=금색, A=은색, B=동색 마커 표시
+- Happy path: 사이드패널 거리 오름차순 위치 목록
+- Edge case: API 빈 배열 응답 → 마커 없음, "추천 위치 없음" 표시
 - Error path: API 호출 실패 → 에러 토스트 표시
 
 **Verification:**
-- 전체맵 자기장 원 감지 후 2초 이내 마커가 지도에 표시된다.
+- 전체맵 자기장 원 감지 후 2초 이내 마커가 지도에 표시됨.
 - 커버리지 95% 달성.
 
 ---
 
-### U22. 알림 설정 UI + Web Notifications API
+### U18. 알림 설정 UI + Web Notifications API
 
-**Goal:** 30/20/10초 알림 체크박스 설정 UI와 Web Notifications API를 통한 브라우저 알림 발송 구현
+**Goal:** 30/20/10초 알림 체크박스 설정 UI와 Web Notifications API를 통한 브라우저 알림 발송
 
 **Requirements:** R5
 
-**Dependencies:** U15, U6
+**Dependencies:** U11, U6
 
 **Files:**
 - Create: `apps/frontend/src/components/AlertSettings.tsx`
@@ -952,31 +779,30 @@ location-service (NestJS REST)
 - Create: `apps/frontend/src/__tests__/useWebNotifications.test.ts`
 
 **Approach:**
-- `AlertSettings`: 30초/20초/10초 체크박스 3개 (독립 선택)
-- `useWebNotifications` hook: `Notification.requestPermission()` 처리, 설정된 임계값 도달 시 `new Notification(...)` 발송
-- 알림 권한 거부 시 UI 경고 배너 표시
-- `ocrWorker`의 타이머 이벤트를 구독해 알림 트리거
+- `AlertSettings`: 30/20/10초 체크박스 3개 (독립 선택)
+- `useWebNotifications` hook: `Notification.requestPermission()` 처리, 임계값 도달 시 `new Notification(...)` 발송
+- 권한 거부 시 UI 경고 배너
 
 **Test scenarios:**
 - Happy path: 30초 체크박스 활성화 + 타이머 30초 도달 시 Notification 발송
 - Happy path: 10초 체크박스만 활성화 시 10초에만 알림
-- Edge case: Notification 권한 거부 시 알림 발송 안 하고 경고 표시
-- Edge case: 동일 타이밍 30초에 2프레임 도달해도 알림 1회만 발송
-- Edge case: 체크박스 비활성화 후에는 해당 초에 알림 없음
+- Edge case: 권한 거부 시 알림 발송 안 하고 경고 표시
+- Edge case: 동일 타이밍에 2프레임 도달해도 알림 1회만 발송
+- Edge case: 체크박스 비활성화 후 해당 초 알림 없음
 
 **Verification:**
-- 실제 브라우저에서 30초 체크박스 활성화 + 타이머 30초 도달 시 OS 알림이 표시된다.
+- 브라우저에서 30초 체크박스 활성화 + 타이머 30초 도달 시 OS 알림 표시.
 - 커버리지 95% 달성.
 
 ---
 
-### U23. WebSocket 클라이언트 통합 + 메인 페이지 조립
+### U19. 전체 통합 — 메인 페이지 조립
 
-**Goal:** 모든 컴포넌트(MapSelector, MapCanvas, CircleOverlay, LocationMarkers, AlertSettings, 화면공유 버튼)를 메인 페이지에 통합하고 데이터 흐름을 연결
+**Goal:** 모든 컴포넌트를 메인 페이지에 통합하고 데이터 흐름을 연결. 로컬에서 전체 플로우가 동작함을 확인.
 
 **Requirements:** R3, R4, R5, R6
 
-**Dependencies:** U11, U15, U19, U20, U21, U22
+**Dependencies:** U7, U11, U15, U16, U17, U18
 
 **Files:**
 - Modify: `apps/frontend/src/app/page.tsx`
@@ -985,35 +811,146 @@ location-service (NestJS REST)
 - Create: `apps/frontend/src/__tests__/MainLayout.test.tsx`
 
 **Approach:**
-- `ScreenShareButton`: "화면공유 시작/중지" 버튼, `useScreenCapture` hook 연결
+- `ScreenShareButton`: 화면공유 시작/중지, `useScreenCapture` hook 연결
 - `MainLayout`: 좌측 지도 + 우측 패널 레이아웃
-- 메인 페이지 데이터 흐름:
-  1. ScreenShareButton → captureWorker 시작
-  2. captureWorker → capture-service 소켓 → CircleData
-  3. CircleData → CircleOverlay, useLocations → LocationMarkers
-  4. ocrWorker → useAlertTimer → AlertSettings → Notification
 - 전역 상태: `mapType`, `circleData`, `timerState` — React Context 또는 Zustand
+- 데이터 흐름: captureWorker → 소켓 → CircleData → CircleOverlay + useLocations → LocationMarkers
 
 **Test scenarios:**
 - Happy path: 화면공유 시작 버튼 클릭 시 `getDisplayMedia` 호출됨
-- Happy path: 맵 선택 → 화면공유 시작 → 전체맵 열기 순서로 자기장 원이 표시됨
-- Integration: capture-service mock으로 CircleData emit 시 지도에 원과 마커가 동시에 표시됨
-- Edge case: 화면공유 중단 시 모든 오버레이가 초기화됨
+- Integration: capture-service mock으로 CircleData emit 시 원과 마커가 동시 표시됨
+- Edge case: 화면공유 중단 시 모든 오버레이 초기화
 
 **Verification:**
-- 실제 브라우저에서 전체 플로우(화면공유 → 전체맵 → 원 표시 → 위치 마커 → 알림)가 동작한다.
-- 커버리지 95% 달성.
+- 로컬에서 전체 플로우(화면공유 → 전체맵 → 원 표시 → 위치 마커 → 알림)가 동작.
+- `pnpm test:coverage` 전 서비스 95% 달성.
+
+---
+
+### U20. GitHub Actions CI 파이프라인
+
+**Goal:** PR마다 lint, 타입체크, 단위테스트, 커버리지 95% 게이트를 자동 실행. 기능 구현 완료 후 추가.
+
+**Requirements:** R2
+
+**Dependencies:** U19 (전체 기능 구현 완료 후)
+
+**Files:**
+- Create: `.github/workflows/ci.yml`
+
+**Approach:**
+- trigger: `pull_request` to `main`, `develop`
+- jobs: `lint` → `typecheck` → `test` (워크스페이스별 병렬) → `coverage-gate`
+- pnpm 캐시 활용
+- 커버리지 95% 미달 시 step fail
+- Node 20, ubuntu-latest
+
+**Test scenarios:**
+- Test expectation: none — GitHub Actions 실행으로 검증.
+
+**Verification:**
+- PR 오픈 시 CI 자동 트리거.
+- any 타입 코드 포함 PR → lint job 실패.
+- 커버리지 95% 미달 PR → coverage-gate job 실패.
+
+---
+
+### U21. Docker 빌드 + GitHub Actions CD (Harbor push)
+
+**Goal:** main 브랜치 push 시 각 서비스 Docker 이미지를 빌드하여 Harbor에 push
+
+**Requirements:** R7
+
+**Dependencies:** U20
+
+**Files:**
+- Create: `.github/workflows/cd.yml`
+- Create: `apps/services/capture/Dockerfile`
+- Create: `apps/services/location/Dockerfile`
+- Create: `apps/services/alert/Dockerfile`
+- Create: `apps/frontend/Dockerfile`
+
+**Approach:**
+- trigger: `push` to `main`
+- Docker multi-stage: `builder` → `runner`
+- 이미지 태그: `harbor.yongun.shop/pubg-helper/{service}:${GITHUB_SHA::8}`
+- GitHub Secret: `HARBOR_USERNAME`, `HARBOR_PASSWORD`
+- Next.js Dockerfile: `standalone` 출력 모드
+
+**Test scenarios:**
+- Test expectation: none — CD 실행 결과로 검증.
+
+**Verification:**
+- main push 시 Harbor에 4개 서비스 이미지 push됨.
+- Harbor UI에서 `harbor.yongun.shop/pubg-helper/capture:latest` 확인.
+
+---
+
+### U22. K8s 매니페스트 + ArgoCD AppSet (pubg-helper 앱 배포)
+
+**Goal:** pubg-helper 네임스페이스 + 4개 서비스 K8s Deployment/Service/HTTPRoute + PostgreSQL + ArgoCD AppSet 생성
+
+**Requirements:** R7, R8
+
+**Dependencies:** U21
+
+**Files:**
+- Modify: `clusters/onprem-dev/namespaces/namespace.yaml` (pubg-helper 추가)
+- Create: `clusters/onprem-dev/pubg-helper/postgresql/` (deployment, service, pvc, kustomization)
+- Create: `clusters/onprem-dev/pubg-helper/capture/` (deployment, service, kustomization)
+- Create: `clusters/onprem-dev/pubg-helper/location/` (deployment, service, kustomization)
+- Create: `clusters/onprem-dev/pubg-helper/alert/` (deployment, service, kustomization)
+- Create: `clusters/onprem-dev/pubg-helper/frontend/` (deployment, service, httproute, kustomization)
+- Create: `applicationsets/onprem-dev/11-pubg-helper-appset.yaml`
+
+**Approach:**
+- 네임스페이스: `pubg-helper`
+- PostgreSQL: Bitnami 이미지 + Longhorn PVC
+- HTTPRoute: `app.yongun.shop` → frontend:3000
+- AppSet: `sync-wave: "50"`, `main` 브랜치 참조
+- 환경변수: ExternalSecret(U23)으로 주입
+
+**Test scenarios:**
+- Test expectation: none — ArgoCD/kubectl로 검증.
+
+**Verification:**
+- ArgoCD UI에서 pubg-helper 앱 Synced/Healthy 상태.
+- `https://app.yongun.shop`에서 프론트엔드 접근 가능.
+
+---
+
+### U23. Vault 시크릿 + ESO ExternalSecret 설정
+
+**Goal:** DB 패스워드를 Vault에 저장하고 ESO ExternalSecret으로 K8s Secret에 주입
+
+**Requirements:** R8
+
+**Dependencies:** U22
+
+**Files:**
+- Create: `clusters/onprem-dev/pubg-helper/location/external-secret-db.yaml`
+- Create: `clusters/onprem-dev/pubg-helper/postgresql/external-secret-postgres.yaml`
+
+**Approach:**
+- 기존 `clusters/onprem-dev/harbor/external-secret-admin.yaml` 패턴 그대로 따름
+- Vault path: `secret/pubg-helper/db`
+- K8s Secret으로 `DATABASE_URL`, `POSTGRES_PASSWORD` 주입
+
+**Test scenarios:**
+- Test expectation: none — kubectl describe ExternalSecret으로 검증.
+
+**Verification:**
+- `kubectl get secret -n pubg-helper`에서 DB 시크릿 생성 확인.
+- location-service 파드가 DB 연결에 성공한다.
 
 ---
 
 ## System-Wide Impact
 
-- **Interaction graph:** captureWorker → capture-service 소켓 → CircleData → location-service REST API → LocationData → Leaflet 마커. ocrWorker → useAlertTimer → alert-service 소켓 + Web Notifications.
-- **Error propagation:** 각 서비스 장애는 해당 기능만 중단시킨다. capture-service 장애 시 원/마커 표시 불가, alert-service 장애 시 서버 알림 로그만 유실 (브라우저 알림은 프론트에서 직접 발송). location-service 장애 시 마커 표시 불가.
-- **State lifecycle risks:** WebSocket 재연결 시 마지막 CircleData 상태 복구 필요. 타이머 알림 중복 발송 방지를 위한 `alreadyNotified` 세트 관리.
-- **API surface parity:** `@pubg-helper/shared`의 `SocketEvents` enum이 프론트/백엔드 소켓 이벤트 이름 일치를 강제한다.
-- **Integration coverage:** captureWorker → capture-service 소켓 연결 + CircleData 수신 경로는 단위 테스트로 충분히 커버되지 않으므로 E2E(Playwright) 테스트 필요.
-- **Unchanged invariants:** 기존 K8s 인프라(ArgoCD, Harbor, Vault, Envoy Gateway)는 이 계획에서 수정하지 않는다. 새 AppSet만 추가된다.
+- **Interaction graph:** captureWorker → capture-service 소켓 → CircleData → location-service REST → LocationData → Leaflet 마커. ocrWorker → useAlertTimer → Web Notifications.
+- **Error propagation:** 각 서비스 장애는 해당 기능만 중단. capture 장애 시 원/마커 불가, location 장애 시 마커 불가, 브라우저 알림은 독립적으로 동작.
+- **State lifecycle risks:** WebSocket 재연결 시 마지막 CircleData 복구 필요. 타이머 알림 중복 방지 `alreadyNotified` 세트 관리.
+- **Unchanged invariants:** 기존 K8s 인프라(ArgoCD, Harbor, Vault, Envoy Gateway)는 수정하지 않는다. 새 AppSet만 추가된다.
 
 ---
 
@@ -1021,46 +958,68 @@ location-service (NestJS REST)
 
 | Risk | Mitigation |
 |------|------------|
-| Hough Circle Transform Node.js 구현 복잡도 | 프로토타입에서 OpenCV.js, jimp, 직접 구현 3가지를 비교하고 가장 단순한 방법 선택 |
-| 게임 화면 해상도 다양성 (1080p/1440p/4K) | TIMER_REGIONS는 3종 하드코딩, 나머지 해상도는 가장 가까운 값으로 fallback |
-| Tesseract.js OCR 인식률 | whitelist 숫자+콜론으로 제한, 전처리(대비 강화) 추가로 보완 |
+| Hough Circle Transform Node.js 구현 복잡도 | 프로토타입에서 OpenCV.js, 직접 구현 비교 후 가장 단순한 방법 선택 |
+| 게임 화면 해상도 다양성 | TIMER_REGIONS 3종 하드코딩, 나머지는 가장 가까운 값으로 fallback |
+| Tesseract.js OCR 인식률 | whitelist 숫자+콜론 제한 + 전처리(대비 강화) |
 | Web Worker Next.js 14 App Router 호환 | `dynamic import + { ssr: false }` 패턴, 빌드 시 검증 |
-| PostgreSQL 시드 데이터 미확보 | 스키마/API 구현 후 별도 이슈로 시드 데이터 수집 진행 |
-| K8s 배포 브랜치 불일치 (develop vs onprem-dev-test) | 새 AppSet을 `develop` 브랜치로 작성, 기존 인프라 AppSet은 건드리지 않음 |
+| PostgreSQL 시드 데이터 미확보 | 스키마/API 구현 후 별도 이슈로 수집 진행 (v1은 에란겔+태이고 2개 맵) |
+| 에란겔↔태이고 맵 구분 오분류 | 색상/지형 특징값 임계값 튜닝으로 보완, 오분류율 측정 후 판단 |
+| Harbor 프로젝트 미생성 | CD 연결 전에 Harbor UI에서 `pubg-helper` 프로젝트 수동 생성 필요 |
 
 ---
 
 ## Phased Delivery
 
-### Phase 0 (U1~U10): 개발 환경 + 배포 인프라
-- 모노레포 툴링, 공유 타입, 4개 서비스 스캐폴드, CI/CD, K8s 배포
-- **완료 기준:** `https://app.yongun.shop`에서 placeholder 페이지 접근 가능, CI가 PR마다 실행됨
+### Phase 0: 로컬 개발 환경 세팅 (U1~U6)
+pnpm 모노레포, 공유 타입 (에란겔+태이고), 4개 서비스 스캐폴드  
+**완료 기준:** `pnpm install` 성공, 각 서비스 로컬 실행 가능, `/health` 응답 정상
 
-### Phase 1 (U11~U15): 화면 인식 엔진
-- 화면캡처 Web Worker, WebSocket Gateway, 전체맵 감지, 자기장 원 추출, OCR 타이머
-- **완료 기준:** 실제 게임 화면에서 CircleData가 소켓으로 수신됨, OCR 타이머 파싱 동작
+### Phase 1: 화면 인식 엔진 (U7~U11)
+captureWorker, WebSocket Gateway, 전체맵 감지, 자기장 원 추출, OCR 타이머  
+**완료 기준:** 실제 게임 화면에서 CircleData가 소켓으로 수신됨, OCR 타이머 파싱 동작
 
-### Phase 2 (U16~U18): 백엔드 API
-- DB 스키마, 위치 조회 API, 알림 서비스 Gateway
-- **완료 기준:** `/locations/recommend` API가 Postman에서 정상 응답
+### Phase 2: 백엔드 API (U12~U14)
+DB 스키마 (에란겔+태이고 2개 맵), 위치 조회 API, alert-service Gateway  
+**완료 기준:** `/locations/recommend` API가 curl에서 정상 응답
 
-### Phase 3 (U19~U23): 프론트엔드 UI
-- Leaflet 지도, 자기장 원 오버레이, 위치 마커, 알림 설정, 전체 통합
-- **완료 기준:** 실제 브라우저에서 전체 플로우 동작 확인
+### Phase 3: 프론트엔드 UI + 전체 통합 (U15~U19)
+Leaflet 지도 (에란겔+태이고 선택), 자기장 원, 위치 마커, 알림 설정, 전체 조립  
+**완료 기준:** 로컬 브라우저에서 전체 플로우 동작, 에란겔↔태이고 맵 전환 정확, 모든 서비스 커버리지 95% 달성
+
+### Phase 4: CI/CD 파이프라인 (U20~U21)
+GitHub Actions lint/test/coverage + Docker CD + Harbor push  
+**완료 기준:** main 브랜치 push 시 Harbor에 이미지 자동 push됨
+
+### Phase 5: K8s 배포 (U22~U23)
+K8s 매니페스트, ArgoCD AppSet, Vault 시크릿  
+**완료 기준:** ArgoCD UI Synced/Healthy, `https://app.yongun.shop` 접근 가능
+
+### Phase 6: 모니터링 (별도 계획)
+OTel, Grafana, GA, Mixpanel — Phase 5 완료 후 별도 계획서 작성
+
+### Phase 7: AI 위치 학습 파이프라인 (별도 계획)
+프로 영상 분석 파이프라인 (Python FastAPI):  
+- 대회 방송 줌인 맵뷰 분석 — 자기장이 줄수록 방송이 줌인되는 그 맵뷰에서 격자(A4, B3...) + 지역명("Pochinki" 등) 기준점으로 좌표 역산  
+- Phase 2~6 수축 구간 자동 추출 (30초 간격, 경기당 약 600프레임)  
+- 자기장 원 중심 + 팀 포지션 → DB 저장 → 통계 기반 추천 위치 계산  
+Phase 6(모니터링) 완료 후 별도 계획서 작성
+
+### Phase 8: 카나리 배포 (별도 계획)
+K8s Rollouts + Argo Rollouts — Phase 7(AI) 이후 서비스 안정화 완료 후 별도 계획서 작성
 
 ---
 
 ## Documentation / Operational Notes
 
-- 프로 위치 시드 데이터 없이는 Phase 3의 마커 표시가 의미 없다. Phase 2 완료 후 즉시 시드 데이터 수집 이슈를 생성해야 한다.
-- Vault에 사전 등록 필요한 시크릿: `secret/pubg-helper/db` (POSTGRES_PASSWORD, DATABASE_URL)
-- Harbor 프로젝트 `pubg-helper`가 사전에 생성되어 있어야 CD 파이프라인이 동작한다.
+- 프로 위치 시드 데이터 없이는 Phase 3 마커 표시가 의미 없다. Phase 2 완료 후 즉시 시드 데이터 수집 이슈를 생성해야 한다.
+- Harbor 프로젝트 `pubg-helper`는 CD 파이프라인 연결 전에 수동 생성 필요.
+- Vault 시크릿 `secret/pubg-helper/db` 사전 등록 필요 (U23 시작 전).
 
 ---
 
 ## Sources & References
 
-- CLAUDE.md: 프로젝트 전체 스펙 및 기술 스택 결정
-- `applicationsets/onprem-dev/10-harbor-appset.yaml`: AppSet 패턴 참조
-- `clusters/onprem-dev/harbor/httproute.yaml`: HTTPRoute 패턴 참조
-- `clusters/onprem-dev/harbor/external-secret-admin.yaml`: ExternalSecret 패턴 참조
+- CLAUDE.md: 프로젝트 전체 스펙 및 기술 스택
+- `applicationsets/onprem-dev/10-harbor-appset.yaml`: AppSet 패턴
+- `clusters/onprem-dev/harbor/httproute.yaml`: HTTPRoute 패턴
+- `clusters/onprem-dev/harbor/external-secret-admin.yaml`: ExternalSecret 패턴

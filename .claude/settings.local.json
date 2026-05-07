@@ -40,7 +40,18 @@
       "Bash(command -v jq)",
       "Bash(jq --version)",
       "Bash(claude mcp *)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); mcps=d.get\\('mcpServers',{}\\); print\\(json.dumps\\({k: {kk:vv for kk,vv in v.items\\(\\) if kk!='env'} for k,v in mcps.items\\(\\)}, indent=2\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); mcps=d.get\\('mcpServers',{}\\); print\\(json.dumps\\({k: {kk:vv for kk,vv in v.items\\(\\) if kk!='env'} for k,v in mcps.items\\(\\)}, indent=2\\)\\)\")",
+      "mcp__claude_ai_Linear__list_teams",
+      "mcp__claude_ai_Linear__list_projects",
+      "mcp__claude_ai_Linear__list_issue_statuses",
+      "mcp__claude_ai_Linear__save_issue",
+      "Bash(git worktree *)",
+      "Read(//mnt/d/infra project/feature-PUB-5/**)",
+      "Bash(git -C \"/mnt/d/infra project/feature-PUB-5\" branch --show-current)",
+      "Bash(pnpm install *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(pnpm --filter @pubg-helper/shared test)"
     ]
   }
 }
