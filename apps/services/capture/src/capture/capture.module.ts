@@ -1,5 +1,9 @@
-// 화면 캡처 및 자기장 원 추출 모듈 (U8에서 구현)
+// 화면 캡처 및 자기장 원 추출 모듈
 import { Module } from '@nestjs/common';
+import { CaptureGateway } from './capture.gateway';
+import { CaptureService } from './capture.service';
 
-@Module({})
+@Module({
+  providers: [CaptureGateway, CaptureService],
+})
 export class CaptureModule {}
