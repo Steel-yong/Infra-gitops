@@ -1,3 +1,26 @@
 
 # Compound Engineering local config
 .compound-engineering/*.local.yaml
+
+# Node
+node_modules/
+dist/
+.next/
+build/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# pnpm
+.pnpm-store/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
