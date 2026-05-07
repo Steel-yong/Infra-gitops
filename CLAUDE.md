@@ -54,10 +54,13 @@
 이슈 단위로 작업해라. 한 번에 여러 이슈 섞지 마라.
 
 ### 4단계: git worktree로 브랜치 작업
+모든 브랜치 작업은 반드시 git worktree로 한다.
 ```bash
-git worktree add ../feature-PUB-01 feature/PUB-01
-cd ../feature-PUB-01
+1. git worktree add ../feature-{이슈번호} feature/{이슈번호}
+2. cd ../feature-{이슈번호}
+3. 여기서 작업
 ```
+메인 폴더는 항상 clean 상태 유지
 브랜치마다 별도 폴더. 충돌 없이 병렬 작업 가능.
 브랜치 전환 없이 여러 이슈 동시에 진행 가능.
 
@@ -138,6 +141,15 @@ PR 오픈 → CI 통과 (커버리지 95% 미달 시 블락) → ArgoCD 자동 �
 콜론은 코드, 키-값 쌍, 라벨 안에서만 사용.
 모든 한국어 문장 종결부는 ., ?, ! 여야 한다.
 
+## 작업 완료 후 플로우
+
+커밋 완료 후:
+1. "PR 생성할까요?" 물어보기
+2. Yes → push → GitHub PR 생성
+3. PR URL 보여주기
+4. "PR 머지 후 worktree 삭제할까요?" 물어보기
+5. Yes → git worktree remove ../feature-{번호}
+6. "다음 이슈 {번호} 시작할까요?" 물어보기
 ---
 
 ## 테스트 원칙
