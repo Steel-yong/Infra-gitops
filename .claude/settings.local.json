@@ -51,7 +51,8 @@
       "Bash(pnpm install *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(pnpm --filter @pubg-helper/shared test)"
+      "Bash(pnpm --filter @pubg-helper/shared test)",
+      "Bash(pnpm --filter @pubg-helper/capture test:coverage)"
     ]
   }
 }
