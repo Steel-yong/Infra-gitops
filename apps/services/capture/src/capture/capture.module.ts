@@ -2,8 +2,10 @@
 import { Module } from '@nestjs/common';
 import { CaptureGateway } from './capture.gateway';
 import { CaptureService } from './capture.service';
+import { MapDetectionService } from './map-detection.service';
+import { CircleService } from './circle.service';
 
 @Module({
-  providers: [CaptureGateway, CaptureService],
+  providers: [CaptureGateway, CaptureService, MapDetectionService, CircleService],
 })
 export class CaptureModule {}
