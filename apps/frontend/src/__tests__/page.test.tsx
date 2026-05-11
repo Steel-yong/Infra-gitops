@@ -1,12 +1,16 @@
 // 메인 페이지 통합 렌더링 테스트 — 외부 의존성 전체 mock
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { useScreenCapture } from '../hooks/useScreenCapture';
+import { useWebNotifications } from '../hooks/useWebNotifications';
 
 vi.mock('next/dynamic', () => ({
-  default: (_loader: unknown) =>
-    function MockDynamic() {
+  default: (loader: () => Promise<unknown>) => {
+    loader().catch(() => {});
+    return function MockDynamic() {
       return <div data-testid="map-canvas" />;
-    },
+    };
+  },
 }));
 
 vi.mock('socket.io-client', () => ({ io: vi.fn(() => ({ on: vi.fn(), emit: vi.fn(), disconnect: vi.fn() })) }));
@@ -70,5 +74,56 @@ describe('Page', () => {
     render(<Page />);
     expect(screen.getByRole('complementary')).toBeInTheDocument();
     expect(screen.getByTestId('map-canvas')).toBeInTheDocument();
+  });
+
+  it('태이고 버튼 클릭 시 aria-pressed가 true로 변경된다', () => {
+    render(<Page />);
+    const taegoBtn = screen.getByRole('button', { name: '태이고' });
+    fireEvent.click(taegoBtn);
+    expect(taegoBtn).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('30초 알림 체크박스 클릭 시 체크가 해제되고 재클릭 시 다시 체크된다', () => {
+    render(<Page />);
+    const checkbox = screen.getByLabelText('30초 알림') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    fireEvent.click(checkbox);
+    expect(checkbox.checked).toBe(false);
+    fireEvent.click(checkbox);
+    expect(checkbox.checked).toBe(true);
+  });
+
+  it('permission denied 시 알림 권한 거부 메시지가 렌더링된다', () => {
+    vi.mocked(useWebNotifications).mockReturnValueOnce({
+      permission: 'denied',
+      requestPermission: vi.fn(),
+      trigger: vi.fn(),
+    });
+    render(<Page />);
+    expect(screen.getByText(/브라우저 알림 권한이 거부되었습니다/)).toBeInTheDocument();
+  });
+
+  it('isCapturing=true 일 때 "공유 종료" 버튼과 미리보기 비디오가 표시된다', () => {
+    vi.mocked(useScreenCapture).mockReturnValueOnce({
+      isCapturing: true,
+      stream: {} as MediaStream,
+      start: vi.fn(),
+      stop: vi.fn(),
+    });
+    render(<Page />);
+    expect(screen.getByRole('button', { name: '공유 종료' })).toBeInTheDocument();
+  });
+
+  it('captureError 발생 시 에러 메시지가 렌더링된다', () => {
+    let capturedOnError: ((msg: string) => void) | undefined;
+    vi.mocked(useScreenCapture).mockImplementationOnce(({ onError }) => {
+      capturedOnError = onError;
+      return { isCapturing: false, stream: null, start: vi.fn(), stop: vi.fn() };
+    });
+    render(<Page />);
+    act(() => {
+      capturedOnError?.('화면공유 실패');
+    });
+    expect(screen.getByText('화면공유 실패')).toBeInTheDocument();
   });
 });

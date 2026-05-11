@@ -23,6 +23,13 @@ class MockWorker {
 
 let mockWorkerInstance: MockWorker | null = null;
 
+class MockImageCapture {
+  constructor(_track: MediaStreamTrack) {}
+  async grabFrame(): Promise<ImageBitmap> {
+    return { width: 100, height: 100, close: vi.fn() } as unknown as ImageBitmap;
+  }
+}
+
 vi.mock('../workers/captureWorker', () => ({}));
 
 beforeEach(() => {
@@ -33,11 +40,19 @@ beforeEach(() => {
       return mockWorkerInstance;
     }),
   );
+  vi.stubGlobal('ImageCapture', MockImageCapture);
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+    { drawImage: vi.fn() } as unknown as CanvasRenderingContext2D,
+  );
+  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+    'data:image/jpeg;base64,dGVzdA==',
+  );
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 function makeMockStream(): MediaStream {
@@ -122,7 +137,8 @@ describe('useScreenCapture', () => {
     expect(result.current.isCapturing).toBe(false);
   });
 
-  it('워커에서 FRAME 메시지 수신 시 onFrame이 호출된다', async () => {
+  it('500ms 인터벌 후 grabFrame 결과가 onFrame으로 전달된다', async () => {
+    vi.useFakeTimers();
     const mockStream = makeMockStream();
     vi.stubGlobal('navigator', {
       mediaDevices: {
@@ -139,11 +155,45 @@ describe('useScreenCapture', () => {
       await result.current.start();
     });
 
-    act(() => {
-      mockWorkerInstance?.simulateMessage({ type: 'FRAME', data: 'base64data' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
     });
+    await Promise.resolve();
+    await Promise.resolve();
 
-    expect(onFrame).toHaveBeenCalledWith('base64data');
+    expect(onFrame).toHaveBeenCalledWith('dGVzdA==');
+  });
+
+  it('navigator.mediaDevices가 없으면 HTTPS 안내 메시지로 onError가 호출된다', async () => {
+    vi.stubGlobal('navigator', { mediaDevices: null });
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useScreenCapture({ onFrame: vi.fn(), onError }),
+    );
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(onError).toHaveBeenCalledWith('화면공유는 localhost 또는 HTTPS 환경에서만 사용 가능합니다.');
+  });
+
+  it('비디오 트랙 없는 스트림이면 "비디오 트랙 없음"으로 onError가 호출된다', async () => {
+    const emptyStream = {
+      getVideoTracks: () => [] as unknown as MediaStreamTrack[],
+      getTracks: () => [],
+    } as unknown as MediaStream;
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getDisplayMedia: vi.fn().mockResolvedValue(emptyStream),
+      },
+    });
+    const onError = vi.fn();
+    const { result } = renderHook(() =>
+      useScreenCapture({ onFrame: vi.fn(), onError }),
+    );
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(onError).toHaveBeenCalledWith('비디오 트랙 없음');
   });
 
   it('getDisplayMedia가 Error가 아닌 값을 throw하면 기본 메시지로 onError가 호출된다', async () => {
@@ -165,7 +215,47 @@ describe('useScreenCapture', () => {
     expect(onError).toHaveBeenCalledWith('화면공유 권한 거부');
   });
 
-  it('워커에서 ERROR 메시지 수신 시 onError가 호출된다', async () => {
+  it('canvas getContext가 null이면 onFrame이 호출되지 않는다', async () => {
+    vi.useFakeTimers();
+    // Override beforeEach getContext mock to return null for first call
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValueOnce(null as unknown as RenderingContext);
+
+    const mockStream = makeMockStream();
+    vi.stubGlobal('navigator', {
+      mediaDevices: {
+        getDisplayMedia: vi.fn().mockResolvedValue(mockStream),
+      },
+    });
+
+    const onFrame = vi.fn();
+    const { result } = renderHook(() =>
+      useScreenCapture({ onFrame }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(onFrame).not.toHaveBeenCalled();
+  });
+
+  it('grabFrame 실패 시 onError가 호출된다', async () => {
+    vi.useFakeTimers();
+
+    class FailingImageCapture {
+      constructor(_track: MediaStreamTrack) {}
+      async grabFrame(): Promise<never> {
+        throw new Error('캡처 실패');
+      }
+    }
+    vi.stubGlobal('ImageCapture', FailingImageCapture);
+
     const mockStream = makeMockStream();
     vi.stubGlobal('navigator', {
       mediaDevices: {
@@ -182,9 +272,11 @@ describe('useScreenCapture', () => {
       await result.current.start();
     });
 
-    act(() => {
-      mockWorkerInstance?.simulateMessage({ type: 'ERROR', message: '캡처 실패' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
     });
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(onError).toHaveBeenCalledWith('캡처 실패');
   });
