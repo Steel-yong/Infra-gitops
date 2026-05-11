@@ -1,5 +1,5 @@
 // Web Notifications API 권한 관리 및 알림 발송 훅
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface UseWebNotificationsReturn {
   permission: NotificationPermission;
@@ -13,9 +13,13 @@ export interface UseWebNotificationsReturn {
  * 타이머가 최대 임계값을 초과하면 (새 자기장 라운드) 발송 기록을 초기화한다.
  */
 export function useWebNotifications(): UseWebNotificationsReturn {
-  const [permission, setPermission] = useState<NotificationPermission>(
-    typeof Notification !== 'undefined' ? Notification.permission : 'default',
-  );
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') {
+      setPermission(Notification.permission);
+    }
+  }, []);
   const lastFiredRef = useRef<number | null>(null);
 
   const requestPermission = useCallback(async () => {

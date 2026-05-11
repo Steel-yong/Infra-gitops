@@ -1,7 +1,6 @@
-// 화면공유 시작/중지 및 캡처 워커 생명주기를 관리하는 훅
+// 화면공유 시작/중지 및 프레임 캡처를 관리하는 훅
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CaptureWorkerResponse } from '../workers/captureWorker';
 
 export interface UseScreenCaptureOptions {
   onFrame: (base64: string) => void;
@@ -10,67 +9,90 @@ export interface UseScreenCaptureOptions {
 
 export interface UseScreenCaptureReturn {
   isCapturing: boolean;
+  stream: MediaStream | null;
   start: () => Promise<void>;
   stop: () => void;
 }
 
 export function useScreenCapture({ onFrame, onError }: UseScreenCaptureOptions): UseScreenCaptureReturn {
   const [isCapturing, setIsCapturing] = useState(false);
-  const workerRef = useRef<Worker | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const stop = useCallback(() => {
-    if (workerRef.current) {
-      workerRef.current.postMessage({ type: 'STOP' });
-      workerRef.current.terminate();
-      workerRef.current = null;
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
+    setStream(null);
     setIsCapturing(false);
   }, []);
 
   const start = useCallback(async () => {
     stop();
 
-    let stream: MediaStream;
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      onError?.('화면공유는 localhost 또는 HTTPS 환경에서만 사용 가능합니다.');
+      return;
+    }
+
+    let capturedStream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      capturedStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
     } catch (err) {
       const msg = err instanceof Error ? err.message : '화면공유 권한 거부';
       onError?.(msg);
       return;
     }
 
-    streamRef.current = stream;
+    streamRef.current = capturedStream;
+    setStream(capturedStream);
 
-    // 사용자가 브라우저 UI로 화면공유를 중지할 때 정리
-    stream.getVideoTracks()[0]?.addEventListener('ended', () => stop());
+    // 사용자가 브라우저 UI로 공유 중지할 때 정리
+    capturedStream.getVideoTracks()[0]?.addEventListener('ended', () => stop());
 
-    const worker = new Worker(new URL('../workers/captureWorker.ts', import.meta.url), { type: 'module' });
-    workerRef.current = worker;
+    const track = capturedStream.getVideoTracks()[0];
+    if (!track) {
+      onError?.('비디오 트랙 없음');
+      return;
+    }
 
-    worker.onmessage = (event: MessageEvent<CaptureWorkerResponse>) => {
-      const msg = event.data;
-      if (msg.type === 'FRAME') {
-        onFrame(msg.data);
-      } else if (msg.type === 'ERROR') {
-        onError?.(msg.message);
+    const imageCapture = new ImageCapture(track);
+    if (!canvasRef.current) {
+      canvasRef.current = document.createElement('canvas');
+    }
+    const canvas = canvasRef.current;
+
+    intervalRef.current = setInterval(async () => {
+      try {
+        const bitmap = await imageCapture.grabFrame();
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(bitmap, 0, 0);
+        bitmap.close();
+        const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+        onFrame(base64);
+      } catch (err) {
+        onError?.(err instanceof Error ? err.message : '프레임 캡처 실패');
       }
-    };
+    }, 500);
 
-    worker.postMessage({ type: 'START', stream }, [stream as unknown as Transferable]);
     setIsCapturing(true);
   }, [stop, onFrame, onError]);
 
-  // 언마운트 시 정리
   useEffect(() => {
     return () => {
       stop();
     };
   }, [stop]);
 
-  return { isCapturing, start, stop };
+  return { isCapturing, stream, start, stop };
 }
