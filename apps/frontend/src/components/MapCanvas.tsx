@@ -25,13 +25,15 @@ function MapUpdater({ mapType }: { mapType: MapType }) {
 
 interface MapCanvasProps {
   mapType: MapType;
+  children?: React.ReactNode;
 }
 
 /**
  * 선택된 맵 이미지를 Leaflet 위에 렌더링한다.
+ * children은 MapContainer 안에서 렌더링된다 (CircleOverlay 등 Leaflet 컨텍스트 필요 컴포넌트용).
  * SSR 비활성화 필요: next/dynamic으로 import할 것.
  */
-export default function MapCanvas({ mapType }: MapCanvasProps) {
+export default function MapCanvas({ mapType, children }: MapCanvasProps) {
   return (
     <div className={styles.container}>
       <MapContainer
@@ -43,6 +45,7 @@ export default function MapCanvas({ mapType }: MapCanvasProps) {
       >
         <ImageOverlay url={`/maps/${mapType}.jpg`} bounds={BOUNDS} />
         <MapUpdater mapType={mapType} />
+        {children}
       </MapContainer>
     </div>
   );

@@ -53,4 +53,13 @@ describe('MapCanvas', () => {
     });
     expect(mockFitBounds).toHaveBeenCalledWith([[0, 0], [1, 1]]);
   });
+
+  it('children이 MapContainer 안에 렌더링된다', () => {
+    render(
+      <MapCanvas mapType="erangel">
+        <div data-testid="child-component" />
+      </MapCanvas>,
+    );
+    expect(screen.getByTestId('child-component')).toBeInTheDocument();
+  });
 });
