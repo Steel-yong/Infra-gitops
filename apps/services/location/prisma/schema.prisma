@@ -6,3 +6,50 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+enum MapType {
+  erangel
+  taego
+}
+
+enum LocationTier {
+  S
+  A
+  B
+}
+
+model Map {
+  id           String        @id @default(cuid())
+  type         MapType       @unique
+  name         String
+  createdAt    DateTime      @default(now())
+  locations    Location[]
+  circlePhases CirclePhase[]
+}
+
+model Location {
+  id           String       @id @default(cuid())
+  mapId        String
+  map          Map          @relation(fields: [mapId], references: [id])
+  coordX       Float
+  coordY       Float
+  tier         LocationTier
+  proTeamNames String[]
+  usageCount   Int          @default(0)
+}
+
+model CirclePhase {
+  id            String @id @default(cuid())
+  mapId         String
+  map           Map    @relation(fields: [mapId], references: [id])
+  phaseNumber   Int
+  waitSeconds   Int
+  shrinkSeconds Int
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  mapType   MapType
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+}
