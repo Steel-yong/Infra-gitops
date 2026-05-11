@@ -145,6 +145,9 @@ importers:
       sharp:
         specifier: ^0.33.5
         version: 0.33.5
+      socket.io:
+        specifier: ^4.7.5
+        version: 4.8.1
     devDependencies:
       '@nestjs/testing':
         specifier: ^10.4.0
