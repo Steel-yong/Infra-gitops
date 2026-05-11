@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: location
+  namespace: pubg-helper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: location
+  template:
+    metadata:
+      labels:
+        app: location
+    spec:
+      containers:
+        - name: location
+          image: harbor.yongun.shop/pubg-helper/location:latest
+          ports:
+            - containerPort: 3002
+          env:
+            - name: PORT
+              value: "3002"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pubg-helper-db-secret
+                  key: DATABASE_URL
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 5

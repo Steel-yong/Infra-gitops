@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+  namespace: pubg-helper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: bitnami/postgresql:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRESQL_DATABASE
+              value: pubg_helper
+            - name: POSTGRESQL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: pubg-helper-db-secret
+                  key: POSTGRES_USER
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pubg-helper-db-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgresql-data
+              mountPath: /bitnami/postgresql
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - pubg_helper
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: postgresql-pvc

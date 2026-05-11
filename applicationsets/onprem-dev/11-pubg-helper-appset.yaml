@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: onprem-dev-pubg-helper-appset
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/Steel-yong/Infra-gitops
+        revision: main
+        directories:
+          - path: clusters/onprem-dev/pubg-helper/*
+  template:
+    metadata:
+      name: 'pubg-helper-{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "50"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Steel-yong/Infra-gitops
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: pubg-helper
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m

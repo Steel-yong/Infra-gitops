@@ -55,3 +55,10 @@ metadata:
   name: harbor
   labels:
     gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pubg-helper
+  labels:
+    gateway-access: "true"
