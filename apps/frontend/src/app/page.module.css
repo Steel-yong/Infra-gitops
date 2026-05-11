@@ -1,0 +1,244 @@
+/* 메인 페이지 전체 레이아웃 — 다크 사이드바 + 화면공유 섹션 + Leaflet 맵 영역 */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0d0d14;
+  color: #e2e8f0;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+
+/* ── 헤더 ── */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
+  height: 48px;
+  background: #13131f;
+  border-bottom: 1px solid #1e1e30;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f59e0b;
+}
+
+.logoDot {
+  color: #e2e8f0;
+  opacity: 0.4;
+  margin: 0 0.25rem;
+}
+
+/* ── 바디 ── */
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── 왼쪽 사이드바 (고정 폭) ── */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #13131f;
+  border-right: 1px solid #1e1e30;
+  overflow-y: auto;
+}
+
+.sideSection {
+  padding: 1rem 1.125rem;
+  border-bottom: 1px solid #1e1e30;
+}
+
+.sideSectionLabel {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 0.625rem;
+}
+
+/* 맵 선택 버튼 */
+.mapButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mapBtn {
+  flex: 1;
+  padding: 0.45rem 0;
+  border-radius: 6px;
+  border: 1px solid #2a2a3e;
+  background: #1c1c2e;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.mapBtn:hover {
+  background: #22223a;
+  color: #e2e8f0;
+}
+
+.mapBtn[data-active='true'] {
+  background: #1d3a5e;
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+/* 알림 체크박스 */
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alertItem {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+}
+
+.alertCheckbox {
+  width: 15px;
+  height: 15px;
+  accent-color: #f59e0b;
+  cursor: pointer;
+}
+
+.alertLabel {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.permissionDenied {
+  font-size: 0.72rem;
+  color: #f87171;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+.permissionBtn {
+  width: 100%;
+  padding: 0.4rem 0;
+  margin-top: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #1c1c2e;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.permissionBtn:hover {
+  background: #22223a;
+  color: #e2e8f0;
+}
+
+/* ── 가운데: 화면공유 섹션 (flex 3.5) ── */
+.captureSection {
+  flex: 3.5;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f1a;
+  border-right: 1px solid #1e1e30;
+  overflow: hidden;
+  align-self: flex-start;
+  max-height: calc(100vh - 48px);
+  height: 55vh;
+}
+
+.captureSectionHeader {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #1e1e30;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.captureBtn {
+  width: 100%;
+  padding: 0.6rem 0;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.captureBtn:active {
+  transform: scale(0.97);
+}
+
+.captureBtnStart {
+  background: #16a34a;
+  color: #fff;
+}
+
+.captureBtnStart:hover {
+  background: #15803d;
+}
+
+.captureBtnStop {
+  background: #dc2626;
+  color: #fff;
+}
+
+.captureBtnStop:hover {
+  background: #b91c1c;
+}
+
+.captureError {
+  font-size: 0.72rem;
+  color: #f87171;
+  line-height: 1.4;
+}
+
+/* 화면공유 미리보기 */
+.previewWrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #08080f;
+  min-height: 0;
+}
+
+.previewVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.previewPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: #374151;
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* ── 오른쪽: 맵 영역 (flex 6.5) ── */
+.mapArea {
+  flex: 6.5;
+  position: relative;
+  overflow: hidden;
+  background: #0d0d14;
+}

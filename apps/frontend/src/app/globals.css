@@ -4,8 +4,21 @@
   padding: 0;
 }
 
+fieldset {
+  border: none;
+}
+
+legend {
+  display: none;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #0a0a0a;
   color: #ededed;
+}
+
+/* Leaflet 기본 회색 배경을 다크 테마로 덮어씀 — !important로 Leaflet CSS 로드 순서 무관하게 적용 */
+.leaflet-container {
+  background: #1a1a2e !important;
 }

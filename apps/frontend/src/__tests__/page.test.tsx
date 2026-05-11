@@ -16,7 +16,7 @@ vi.mock('../hooks/useCaptureSocket', () => ({
 }));
 
 vi.mock('../hooks/useScreenCapture', () => ({
-  useScreenCapture: vi.fn(() => ({ isCapturing: false, start: vi.fn(), stop: vi.fn() })),
+  useScreenCapture: vi.fn(() => ({ isCapturing: false, stream: null, start: vi.fn(), stop: vi.fn() })),
 }));
 
 vi.mock('../hooks/useLocations', () => ({
@@ -40,14 +40,14 @@ vi.mock('react-leaflet', () => ({
 import Page from '../app/page';
 
 describe('Page', () => {
-  it('"PUBG Helper" 텍스트가 렌더링된다', () => {
+  it('"PUBG·Helper" 텍스트가 헤더에 렌더링된다', () => {
     render(<Page />);
-    expect(screen.getByText('PUBG Helper')).toBeInTheDocument();
+    expect(screen.getByText(/PUBG/)).toBeInTheDocument();
   });
 
-  it('화면공유 시작 버튼이 렌더링된다', () => {
+  it('공유 시작 버튼이 렌더링된다', () => {
     render(<Page />);
-    expect(screen.getByRole('button', { name: '화면공유 시작' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '공유 시작' })).toBeInTheDocument();
   });
 
   it('에란겔/태이고 맵 선택 버튼이 렌더링된다', () => {
@@ -66,8 +66,9 @@ describe('Page', () => {
     expect(screen.getByRole('button', { name: '알림 권한 허용' })).toBeInTheDocument();
   });
 
-  it('MainLayout이 렌더링된다', () => {
+  it('사이드바와 맵 영역이 렌더링된다', () => {
     render(<Page />);
-    expect(screen.getByTestId('main-layout')).toBeInTheDocument();
+    expect(screen.getByRole('complementary')).toBeInTheDocument();
+    expect(screen.getByTestId('map-canvas')).toBeInTheDocument();
   });
 });
