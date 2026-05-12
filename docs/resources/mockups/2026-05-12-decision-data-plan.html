@@ -190,21 +190,21 @@
     <div class="grid3">
       <div class="panel2">
         <h3>맵 이미지</h3>
-        <div style="font-size: 28px; font-weight: 800; color: var(--red); margin: 8px 0;">334B</div>
-        <div style="font-size: 12px; color: var(--muted);">erangel.jpg / taego.jpg<br>빈 플레이스홀더 파일.<br>Leaflet에 아무것도 안 보임.</div>
-        <div style="margin-top: 10px;"><span class="tag tag-red">미완</span></div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--green); margin: 8px 0;">✓ 완료</div>
+        <div style="font-size: 12px; color: var(--muted);">erangel.jpg 206KB / taego.jpg 245KB<br>공식 pubg/api-assets No_Text 이미지<br>1024×1024 JPEG (2026-05-12)</div>
+        <div style="margin-top: 10px;"><span class="tag tag-green">완료</span></div>
       </div>
       <div class="panel2">
         <h3>CirclePhase 테이블</h3>
-        <div style="font-size: 28px; font-weight: 800; color: var(--red); margin: 8px 0;">0건</div>
-        <div style="font-size: 12px; color: var(--muted);">에란겔 9 + 태이고 9<br>= 18건 필요.<br>타이머 알림 작동 불가.</div>
-        <div style="margin-top: 10px;"><span class="tag tag-red">미완</span></div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--yellow); margin: 8px 0;">코드↑</div>
+        <div style="font-size: 12px; color: var(--muted);">seed.ts 완성 (18건 준비)<br>DB 실행은 Docker 기동 후<br>태이고 Phase 1: 90s 추정 (wiki 미기재)</div>
+        <div style="margin-top: 10px;"><span class="tag tag-yellow">시드대기</span></div>
       </div>
       <div class="panel2">
         <h3>Location 테이블</h3>
-        <div style="font-size: 28px; font-weight: 800; color: var(--red); margin: 8px 0;">0건</div>
-        <div style="font-size: 12px; color: var(--muted);">에란겔 30 + 태이고 30<br>= 60개 필요.<br>/locations/recommend 결과 없음.</div>
-        <div style="margin-top: 10px;"><span class="tag tag-red">미완</span></div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--muted); margin: 8px 0;">보류</div>
+        <div style="font-size: 12px; color: var(--muted);">D3 deferred — ML 학습 먼저<br>좌표 수동 입력 방식 대신<br>Telemetry API 클러스터링으로 대체 예정</div>
+        <div style="margin-top: 10px;"><span class="tag" style="background:rgba(120,120,120,.1);color:var(--muted);border-color:rgba(120,120,120,.2);">보류</span></div>
       </div>
     </div>
   </div>
@@ -841,34 +841,34 @@
 
 <!-- SUMMARY -->
 <div class="panel" style="border-color: rgba(62,207,142,.3); background: rgba(62,207,142,.05);">
-  <h2>지금 해야 할 것 — 순서대로</h2>
+  <h2>현재 진행 상황</h2>
   <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px;">
     <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
-      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">1</div>
+      <div style="background: rgba(62,207,142,.3); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">✓</div>
       <div>
-        <div style="font-weight: 600; font-size: 13px;">D1 — 공식 맵 이미지 확보</div>
-        <div style="font-size: 11px; color: var(--muted);">pubg.com 또는 pubg.wiki.gg에서 1024px+ 다운로드</div>
+        <div style="font-weight: 600; font-size: 13px; color: var(--green);">D1 — 맵 이미지 완료</div>
+        <div style="font-size: 11px; color: var(--muted);">pubg/api-assets 공식 No_Text Low_Res<br>에란겔 206KB + 태이고 245KB (1024×1024)</div>
       </div>
     </div>
     <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
-      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">2</div>
+      <div style="background: rgba(245,216,66,.2); color: var(--yellow); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">▶</div>
       <div>
-        <div style="font-weight: 600; font-size: 13px;">D2 — CirclePhase 18건 시드</div>
-        <div style="font-size: 11px; color: var(--muted);">태이고 Phase 1 wiki 직접 확인 후 분기 처리</div>
+        <div style="font-weight: 600; font-size: 13px; color: var(--yellow);">D2 — 시드 코드 완성, DB 실행 대기</div>
+        <div style="font-size: 11px; color: var(--muted);">seed.ts 18건 준비. Docker 기동 후<br><code>pnpm --filter @pubg-helper/location exec prisma db seed</code></div>
       </div>
     </div>
     <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
-      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">3</div>
+      <div style="background: rgba(120,120,120,.15); color: var(--muted); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">⏸</div>
       <div>
-        <div style="font-weight: 600; font-size: 13px;">D3 — pubgmap.io 기반 60개 포지션 시드</div>
-        <div style="font-size: 11px; color: var(--muted);">능선·컴파운드·고지 단위, 그리드 변환표로 0-1 정규화</div>
+        <div style="font-weight: 600; font-size: 13px; color: var(--muted);">D3 — 위치 시드 보류</div>
+        <div style="font-size: 11px; color: var(--muted);">ML 학습 접근으로 변경 (Telemetry API 클러스터링)<br>수동 좌표 입력 방식 폐기</div>
       </div>
     </div>
     <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
-      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">4</div>
+      <div style="background: rgba(79,142,247,.15); color: var(--accent); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">4</div>
       <div>
-        <div style="font-weight: 600; font-size: 13px;">D4 — 로컬 전체 플로우 검증</div>
-        <div style="font-size: 11px; color: var(--muted);">5항목 전부 통과 후 PUB-24~27 CI/CD 진행</div>
+        <div style="font-weight: 600; font-size: 13px;">D4 — D2 완료 후 전체 플로우 검증</div>
+        <div style="font-size: 11px; color: var(--muted);">맵 렌더링·자기장 오버레이·OCR 타이머 5항목<br>전부 통과 후 PUB-24~27 CI/CD 진행</div>
       </div>
     </div>
   </div>
