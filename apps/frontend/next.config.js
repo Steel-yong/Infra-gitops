@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   transpilePackages: ['@pubg-helper/shared'],
   allowedDevOrigins: ['172.20.0.2'],
   webpack: (config) => {
