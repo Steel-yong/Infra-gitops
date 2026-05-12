@@ -86,4 +86,15 @@ describe('useWebNotifications', () => {
     act(() => result.current.trigger(30, []));
     expect(mockNotification).not.toHaveBeenCalled();
   });
+
+  it('Notification API가 없는 환경에서 requestPermission은 아무것도 하지 않는다', async () => {
+    // @ts-expect-error intentionally removing Notification
+    delete global.Notification;
+    const { result } = renderHook(() => useWebNotifications());
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+    expect(mockRequestPermission).not.toHaveBeenCalled();
+    setupNotification('default');
+  });
 });

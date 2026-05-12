@@ -109,6 +109,16 @@ describe('useLocations', () => {
     });
   });
 
+  it('Error가 아닌 예외 발생 시 "위치 조회 실패"로 error 상태가 설정된다', async () => {
+    vi.spyOn(global, 'fetch').mockRejectedValue('string error');
+
+    const { result } = renderHook(() => useLocations(mockCircle, 'erangel'));
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('위치 조회 실패');
+    });
+  });
+
   it('circleData가 null로 바뀌면 locations가 초기화된다', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
