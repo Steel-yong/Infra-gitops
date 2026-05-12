@@ -13,8 +13,10 @@ export default defineConfig({
         'src/**/*.module.ts',
         'src/**/*.spec.ts',
         'src/**/*.test.ts',
-        // PrismaService: onModuleInit/$queryRaw는 실제 DB 없이 커버 불가 — U11 통합테스트에서 검증
+        // PrismaService: onModuleInit/$queryRaw는 실제 DB 없이 커버 불가 — 통합테스트에서 검증
         'src/prisma/prisma.service.ts',
+        // DTO: class-validator 데코레이터 선언만 있는 설정 파일 — 통합테스트에서 검증
+        'src/**/*.dto.ts',
       ],
       thresholds: {
         lines: 95,
