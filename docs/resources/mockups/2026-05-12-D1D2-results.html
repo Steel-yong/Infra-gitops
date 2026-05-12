@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D1+D2 작업 결과 — 맵 이미지 + CirclePhase 시드</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #6c63ff;
+    --accent2: #00d2ff;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --muted: #64748b;
+    --text: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 24px;
+  }
+  .badge { display: inline-block; background: var(--green); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 12px; }
+  header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  header p { color: var(--muted); font-size: 13px; }
+  .meta { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+  .meta-item { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+  .meta-item strong { color: var(--text); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  section { margin-bottom: 36px; }
+  h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card.green { border-color: rgba(34,197,94,.3); background: rgba(34,197,94,.04); }
+  .card.yellow { border-color: rgba(245,158,11,.3); background: rgba(245,158,11,.04); }
+  .card.muted { border-color: rgba(100,116,139,.25); background: rgba(100,116,139,.04); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-green { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+  .tag-yellow { background: rgba(245,158,11,.15); color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
+  .tag-muted { background: rgba(100,116,139,.12); color: var(--muted); border: 1px solid rgba(100,116,139,.2); }
+  .tag-blue { background: rgba(108,99,255,.15); color: #a5b4fc; border: 1px solid rgba(108,99,255,.3); }
+
+  /* 상태 카드 */
+  .stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 800; margin: 8px 0 4px; }
+  .stat-num.green { color: var(--green); }
+  .stat-num.yellow { color: var(--yellow); }
+  .stat-num.muted { color: var(--muted); }
+  .stat-label { font-size: 11px; color: var(--muted); }
+
+  /* 타임라인 */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item { display: flex; gap: 16px; }
+  .tl-left { display: flex; flex-direction: column; align-items: center; width: 32px; flex-shrink: 0; }
+  .tl-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .tl-dot.green { background: var(--green); }
+  .tl-dot.yellow { background: var(--yellow); box-shadow: 0 0 8px rgba(245,158,11,.4); }
+  .tl-dot.muted { background: var(--muted); }
+  .tl-line { width: 2px; background: var(--border); flex: 1; margin-top: 4px; }
+  .tl-content { padding-bottom: 24px; flex: 1; }
+  .tl-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .tl-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .tl-item:last-child .tl-line { display: none; }
+
+  /* 코드 블록 */
+  .code-block { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.7; overflow-x: auto; }
+  .code-block .c { color: #6b7280; }
+  .code-block .k { color: #a5b4fc; }
+  .code-block .s { color: #86efac; }
+  .code-block .n { color: #fbbf24; }
+
+  /* 좌표 표 */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: var(--surface2); padding: 8px 12px; text-align: left; color: var(--muted); font-weight: 600; font-size: 11px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid rgba(46,51,80,.5); }
+  tr:last-child td { border-bottom: none; }
+  .td-val { font-family: monospace; color: var(--accent2); font-weight: 600; }
+
+  /* 경고 박스 */
+  .warn-box { background: rgba(245,158,11,.06); border: 1px solid rgba(245,158,11,.25); border-left: 3px solid var(--yellow); border-radius: 8px; padding: 12px 16px; font-size: 12px; }
+  .warn-box strong { color: var(--yellow); }
+
+  /* 완료 배너 */
+  .done-banner { background: rgba(34,197,94,.06); border: 1px solid rgba(34,197,94,.25); border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+  .done-icon { font-size: 32px; }
+  .done-title { font-size: 15px; font-weight: 700; color: var(--green); }
+  .done-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* 다음 단계 */
+  .next-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); }
+  .next-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .next-num.active { background: rgba(245,158,11,.2); color: var(--yellow); }
+  .next-num.wait { background: rgba(100,116,139,.15); color: var(--muted); }
+
+  /* 위상 바 */
+  .phase-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .phase-label { width: 60px; font-size: 11px; color: var(--muted); flex-shrink: 0; text-align: right; }
+  .phase-bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 18px; position: relative; overflow: hidden; }
+  .phase-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 700; color: #fff; white-space: nowrap; }
+  .phase-bar.erangel { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
+  .phase-bar.taego { background: linear-gradient(90deg, #f59e0b, #b45309); }
+  .phase-val { font-size: 11px; color: var(--muted); width: 40px; text-align: right; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">작업 완료 보고</div>
+  <h1>D1 + D2 — 맵 이미지 확보 & CirclePhase 시드</h1>
+  <p>자기장 타이밍 + 맵 좌표계 정확화 세션 결과물</p>
+  <div class="meta">
+    <div class="meta-item"><span style="color:var(--green)">●</span> <strong>날짜</strong> 2026-05-12</div>
+    <div class="meta-item"><span style="color:var(--green)">●</span> <strong>브랜치</strong> develop</div>
+    <div class="meta-item"><span style="color:var(--green)">●</span> <strong>커밋</strong> 416aad3, 4e6cb2a</div>
+    <div class="meta-item"><span style="color:var(--muted)">●</span> <strong>다음</strong> Docker 기동 → seed 실행 → D4 검증</div>
+  </div>
+</header>
+
+<main>
+
+<!-- 요약 카드 -->
+<section>
+  <div class="grid4">
+    <div class="stat-card">
+      <div class="stat-label">맵 이미지</div>
+      <div class="stat-num green">2개</div>
+      <div class="stat-label">에란겔 + 태이고<br>1024×1024 JPEG</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">CirclePhase 준비</div>
+      <div class="stat-num yellow">18건</div>
+      <div class="stat-label">9페이즈 × 2맵<br>DB 실행 대기</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">좌표계 기준</div>
+      <div class="stat-num green" style="font-size:22px;">816,000</div>
+      <div class="stat-label">PUBG API 공식 확인<br>(이전: 819,200 오류)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">위치 시드</div>
+      <div class="stat-num muted">보류</div>
+      <div class="stat-label">ML 학습 우선<br>수동 입력 폐기</div>
+    </div>
+  </div>
+</section>
+
+<!-- D1 맵 이미지 -->
+<section>
+  <h2><span class="icon">🗺️</span> D1 — 맵 이미지 결과</h2>
+  <div class="grid2">
+    <div class="card green">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="font-size:15px; font-weight:700;">에란겔</div>
+        <span class="tag tag-green">✓ 완료</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; color:var(--muted);">
+        <div>
+          <div style="color:var(--text); font-weight:600; margin-bottom:2px;">파일 크기</div>
+          <div style="color:var(--green); font-size:18px; font-weight:800;">206 KB</div>
+        </div>
+        <div>
+          <div style="color:var(--text); font-weight:600; margin-bottom:2px;">해상도</div>
+          <div style="color:var(--green); font-size:18px; font-weight:800;">1024×1024</div>
+        </div>
+        <div style="grid-column:1/-1;">
+          <div style="color:var(--text); font-weight:600; margin-bottom:2px;">소스</div>
+          <div>pubg/api-assets (GitHub 공식)<br>Erangel_Main_No_Text_Low_Res.png → JPEG 변환</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px solid rgba(34,197,94,.15);">
+        No_Text 버전 = 지명 텍스트 없음 → Leaflet 마커 오버레이에 최적
+      </div>
+    </div>
+    <div class="card green">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="font-size:15px; font-weight:700;">태이고</div>
+        <span class="tag tag-green">✓ 완료</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; color:var(--muted);">
+        <div>
+          <div style="color:var(--text); font-weight:600; margin-bottom:2px;">파일 크기</div>
+          <div style="color:var(--green); font-size:18px; font-weight:800;">245 KB</div>
+        </div>
+        <div>
+          <div style="color:var(--text); font-weight:600; margin-bottom:2px;">해상도</div>
+          <div style="color:var(--green); font-size:18px; font-weight:800;">1024×1024</div>
+        </div>
+        <div style="grid-column:1/-1;">
+          <div style="color:var(--text); font-weight:600; margin-bottom:2px;">소스</div>
+          <div>pubg/api-assets (GitHub 공식)<br>Taego_Main_No_Text_Low_Res.png → JPEG 변환</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:var(--muted); padding-top:10px; border-top:1px solid rgba(34,197,94,.15);">
+        wiki.gg에 태이고 타일 없음 → 공식 API Assets 레포 발견 후 해결
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:12px;" class="warn-box">
+    <strong>좌표 정합성 참고:</strong> 공식 API 좌표 범위 0~816,000 / 이미지 819×819 원본 → 최외곽 픽셀에서 약 0.4% 오차 존재. 실사용 자기장 반경(r≥0.05) 수준에서는 무시 가능.
+  </div>
+</section>
+
+<!-- D2 CirclePhase -->
+<section>
+  <h2><span class="icon">⏱️</span> D2 — CirclePhase 시드 결과</h2>
+  <div class="grid2">
+    <div class="card">
+      <div style="font-size:13px; font-weight:700; margin-bottom:14px; color:var(--accent2);">에란겔 9페이즈 (pubg.wiki.gg 공식)</div>
+      <div style="max-height:260px; overflow-y:auto;">
+        <!-- 페이즈 바 차트 -->
+        <div class="phase-row">
+          <div class="phase-label">Phase 1</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:100%">wait:120s / shrink:270s</div>
+          </div>
+          <div class="phase-val">270s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 2</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:66%">180s</div>
+          </div>
+          <div class="phase-val">180s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 3</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:48%">130s</div>
+          </div>
+          <div class="phase-val">130s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 4</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:44%">120s</div>
+          </div>
+          <div class="phase-val">120s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 5</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:37%">100s</div>
+          </div>
+          <div class="phase-val">100s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 6</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:33%">90s</div>
+          </div>
+          <div class="phase-val">90s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 7</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:26%">70s</div>
+          </div>
+          <div class="phase-val">70s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 8</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:22%">60s</div>
+          </div>
+          <div class="phase-val">60s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-label">Phase 9</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-bar erangel" style="width:11%">wait:30</div>
+          </div>
+          <div class="phase-val">30s</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:var(--muted);">Normal = Ranked (Patch 23.1 이후 동일). waitSeconds = 대기, shrinkSeconds = 수축 카운트다운.</div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:13px; font-weight:700; margin-bottom:14px; color:var(--yellow);">태이고 9페이즈 <span style="font-weight:400; font-size:11px; color:var(--muted);">(Phase 1 추정)</span></div>
+      <div class="phase-row">
+        <div class="phase-label" style="color:var(--yellow);">Phase 1 ⚠</div>
+        <div class="phase-bar-wrap">
+          <div class="phase-bar taego" style="width:33%">wait:120s / shrink:90s (추정)</div>
+        </div>
+        <div class="phase-val">90s</div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-label">Phase 2</div>
+        <div class="phase-bar-wrap">
+          <div class="phase-bar taego" style="width:66%">180s</div>
+        </div>
+        <div class="phase-val">180s</div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-label">Phase 3</div>
+        <div class="phase-bar-wrap">
+          <div class="phase-bar taego" style="width:48%">130s</div>
+        </div>
+        <div class="phase-val">130s</div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-label">Phase 4</div>
+        <div class="phase-bar-wrap">
+          <div class="phase-bar taego" style="width:44%">120s</div>
+        </div>
+        <div class="phase-val">120s</div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-label">Phase 5~9</div>
+        <div class="phase-bar-wrap" style="background:rgba(245,158,11,.08);">
+          <div style="padding:0 8px; font-size:11px; color:var(--muted); line-height:18px;">에란겔과 동일 (100/90/70/60/30s)</div>
+        </div>
+        <div class="phase-val"></div>
+      </div>
+
+      <div style="margin-top:16px;" class="warn-box">
+        <strong>Phase 1 수치 미확인:</strong> wiki.gg에 공식 수치 미기재. "first phase was too long → reduced" 확인. 90s는 추정값. 인게임 확인 후 seed.ts 수정 필요.
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;" class="card yellow">
+    <div style="font-size:13px; font-weight:700; margin-bottom:12px; color:var(--yellow);">DB 반영 방법 — Docker 기동 후 실행</div>
+    <div class="code-block">
+<span class="c"># 1. DB 마이그레이션 (이미 완료된 경우 skip)</span>
+pnpm --filter @pubg-helper/location exec prisma migrate dev
+
+<span class="c"># 2. 시드 실행 → circle_phases 18건 삽입</span>
+pnpm --filter @pubg-helper/location exec prisma db seed
+
+<span class="c"># 3. 확인</span>
+<span class="k">SELECT</span> map_id, phase_number, wait_seconds, shrink_seconds
+<span class="k">FROM</span> circle_phases
+<span class="k">ORDER BY</span> map_id, phase_number;
+<span class="c">-- 결과: 18건 예상</span>
+    </div>
+  </div>
+</section>
+
+<!-- 좌표계 수정 -->
+<section>
+  <h2><span class="icon">📐</span> 좌표계 정확화</h2>
+  <div class="grid2">
+    <div class="card">
+      <div style="font-size:13px; font-weight:700; margin-bottom:14px; color:var(--accent2);">수정 전 vs 후</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border-radius:8px; overflow:hidden;">
+        <div style="background:rgba(239,68,68,.05); padding:14px;">
+          <div style="font-size:11px; color:var(--red); font-weight:700; margin-bottom:8px;">이전 (오류)</div>
+          <div class="code-block" style="font-size:11px; background:transparent; border:none; padding:0;">coordX = X / <span style="color:var(--red);">819200</span>
+그리드 A = <span style="color:var(--red);">0.061</span>
+그리드 B = <span style="color:var(--red);">0.183</span>
+...</div>
+        </div>
+        <div style="background:rgba(34,197,94,.05); padding:14px;">
+          <div style="font-size:11px; color:var(--green); font-weight:700; margin-bottom:8px;">현재 (정확)</div>
+          <div class="code-block" style="font-size:11px; background:transparent; border:none; padding:0;">coordX = X / <span style="color:var(--green);">816000</span>
+그리드 A = <span style="color:var(--green);">0.0625</span>
+그리드 B = <span style="color:var(--green);">0.1875</span>
+...</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:11px; color:var(--muted);">출처: documentation.pubg.com 공식 API 좌표 범위 0~816,000 확인.</div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px; font-weight:700; margin-bottom:14px; color:var(--accent2);">그리드 좌표 변환표</div>
+      <table>
+        <thead><tr><th>열/행</th><th>중심 coord</th><th>공식</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A / 1</strong></td><td class="td-val">0.0625</td><td style="color:var(--muted); font-size:11px;">1/16</td></tr>
+          <tr><td><strong>B / 2</strong></td><td class="td-val">0.1875</td><td style="color:var(--muted); font-size:11px;">3/16</td></tr>
+          <tr><td><strong>C / 3</strong></td><td class="td-val">0.3125</td><td style="color:var(--muted); font-size:11px;">5/16</td></tr>
+          <tr><td><strong>D / 4</strong></td><td class="td-val">0.4375</td><td style="color:var(--muted); font-size:11px;">7/16</td></tr>
+          <tr><td><strong>E / 5</strong></td><td class="td-val">0.5625</td><td style="color:var(--muted); font-size:11px;">9/16</td></tr>
+          <tr><td><strong>F / 6</strong></td><td class="td-val">0.6875</td><td style="color:var(--muted); font-size:11px;">11/16</td></tr>
+          <tr><td><strong>G / 7</strong></td><td class="td-val">0.8125</td><td style="color:var(--muted); font-size:11px;">13/16</td></tr>
+          <tr><td><strong>H / 8</strong></td><td class="td-val">0.9375</td><td style="color:var(--muted); font-size:11px;">15/16</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:8px; font-size:11px; color:var(--muted);">공식: n번째 열 중심 = (2n-1)/16 (A=1, B=2, ... H=8)</div>
+    </div>
+  </div>
+</section>
+
+<!-- 작업 흐름 -->
+<section>
+  <h2><span class="icon">🔄</span> 이번 세션 작업 흐름</h2>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">wiki.gg Erangel 타일 조합 시도 → 성공</div>
+        <div class="tl-desc">64개 타일(128×128px) 다운로드 + sharp 조합 → 1024×1024 JPEG. Rate limit(429) 우회: 요청 간 1200ms 딜레이.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Taego wiki 타일 탐색 → 실패</div>
+        <div class="tl-desc">wiki.gg에 태이고 타일 없음 확인. `AA_(Taego).jpg`, `AA_(Taego_Remastered).jpg` 등 모든 패턴 404.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">pubg/api-assets 공식 GitHub 레포 발견</div>
+        <div class="tl-desc">Erangel_Main_No_Text_Low_Res.png + Taego_Main_No_Text_Low_Res.png (819×819, 비-LFS). 두 맵 모두 공식 소스로 통일.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">CirclePhase seed.ts 완성</div>
+        <div class="tl-desc">에란겔 9페이즈 pubg.wiki.gg 공식 수치. 태이고 Phase 2-9는 동일, Phase 1은 90s 추정. 결정적 ID로 upsert 구현.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">좌표계 수정 + 문서 업데이트</div>
+        <div class="tl-desc">819,200 → 816,000 (PUBG API 공식 확인). 그리드 중심값 재계산. 플랜 문서 + HTML 시각화 업데이트.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-left"><div class="tl-dot green"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">커밋 완료</div>
+        <div class="tl-desc">16개 파일 변경. 브랜치: develop. 커밋: 416aad3 (D1+D2 코드), 4e6cb2a (HTML 상태 업데이트).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 다음 단계 -->
+<section>
+  <h2><span class="icon">➡️</span> 다음 단계</h2>
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div class="next-item">
+      <div class="next-num active">1</div>
+      <div>
+        <div style="font-weight:700; font-size:13px; color:var(--yellow);">D2 DB 반영 — Docker 기동 후 seed 실행</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px;"><code style="background:var(--surface2); padding:1px 6px; border-radius:3px;">pnpm --filter @pubg-helper/location exec prisma db seed</code> → circle_phases 18건 확인</div>
+      </div>
+    </div>
+    <div class="next-item">
+      <div class="next-num active">2</div>
+      <div>
+        <div style="font-weight:700; font-size:13px; color:var(--yellow);">태이고 Phase 1 인게임 확인 (선택)</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px;">태이고 매치에서 Phase 1 카운트다운 직접 측정 후 seed.ts shrinkSeconds 수정. 현재 90s 추정.</div>
+      </div>
+    </div>
+    <div class="next-item">
+      <div class="next-num wait">3</div>
+      <div>
+        <div style="font-weight:700; font-size:13px;">D4 — 로컬 전체 플로우 검증</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px;">맵 렌더링 / 자기장 오버레이 / OCR 타이머 / 30·20·10초 알림 / 맵 전환 — 5항목 체크</div>
+      </div>
+    </div>
+    <div class="next-item">
+      <div class="next-num wait">4</div>
+      <div>
+        <div style="font-weight:700; font-size:13px;">PUB-24~27 CI/CD (D4 완료 후)</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px;">GitHub Actions → Harbor 이미지 빌드 → ArgoCD 배포 → Vault ESO 시크릿 관리</div>
+      </div>
+    </div>
+    <div class="next-item" style="border-color:rgba(100,116,139,.2);">
+      <div class="next-num wait">⏸</div>
+      <div>
+        <div style="font-weight:700; font-size:13px; color:var(--muted);">D3 위치 시드 — 보류</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px;">ML 학습 (Telemetry API 클러스터링) 완료 후 자동으로 채움. 수동 좌표 입력 불필요.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>
