@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PUBG Helper — 실데이터 확보 계획 v2</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #1a1d27;
+    --panel2: #212435;
+    --border: #2e3347;
+    --text: #e2e8f0;
+    --muted: #8892a4;
+    --accent: #4f8ef7;
+    --gold: #f5a623;
+    --silver: #9db8d0;
+    --bronze: #c48a4a;
+    --green: #3ecf8e;
+    --red: #f66;
+    --yellow: #f5d842;
+    --orange: #f5a000;
+    --purple: #9d6fff;
+    --teal: #2dd4bf;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; padding: 32px; max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  h3 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .panel2 { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  .section { margin-bottom: 28px; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tag-green { background: rgba(62,207,142,.15); color: var(--green); border: 1px solid rgba(62,207,142,.3); }
+  .tag-red { background: rgba(255,102,102,.15); color: var(--red); border: 1px solid rgba(255,102,102,.3); }
+  .tag-yellow { background: rgba(245,216,66,.15); color: var(--yellow); border: 1px solid rgba(245,216,66,.3); }
+  .tag-blue { background: rgba(79,142,247,.15); color: var(--accent); border: 1px solid rgba(79,142,247,.3); }
+  .tag-purple { background: rgba(157,111,255,.15); color: var(--purple); border: 1px solid rgba(157,111,255,.3); }
+  .tag-orange { background: rgba(245,166,0,.15); color: var(--orange); border: 1px solid rgba(245,166,0,.3); }
+
+  /* TIMELINE */
+  .timeline { display: flex; align-items: center; gap: 0; margin-bottom: 28px; overflow-x: auto; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
+  .tl-step { display: flex; align-items: center; flex-shrink: 0; }
+  .tl-node { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .tl-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .tl-circle.data { background: rgba(62,207,142,.2); border: 2px solid var(--green); color: var(--green); }
+  .tl-circle.ci { background: rgba(79,142,247,.2); border: 2px solid var(--accent); color: var(--accent); }
+  .tl-circle.muted { background: var(--panel2); border: 2px solid var(--border); color: var(--muted); }
+  .tl-label { font-size: 11px; color: var(--muted); text-align: center; max-width: 60px; }
+  .tl-label strong { display: block; color: var(--text); font-size: 12px; }
+  .tl-arrow { width: 40px; height: 2px; background: var(--border); flex-shrink: 0; position: relative; }
+  .tl-arrow::after { content: '▶'; position: absolute; right: -8px; top: -9px; color: var(--border); font-size: 12px; }
+  .tl-arrow.active { background: var(--green); }
+  .tl-arrow.active::after { color: var(--green); }
+
+  /* CONCLUSION */
+  .conclusion { background: rgba(62,207,142,.08); border: 1px solid rgba(62,207,142,.3); border-left: 4px solid var(--green); border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+  .conclusion.pending { background: rgba(245,216,66,.06); border-color: rgba(245,216,66,.3); border-left-color: var(--yellow); }
+  .conclusion .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .conclusion .label.green { color: var(--green); }
+  .conclusion .label.yellow { color: var(--yellow); }
+
+  /* PHASE CHART */
+  .phase-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .phase-num { width: 24px; font-size: 12px; font-weight: 700; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .phase-bar-wrap { flex: 1; display: flex; gap: 2px; height: 28px; }
+  .phase-wait { background: rgba(79,142,247,.3); border: 1px solid rgba(79,142,247,.5); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent); font-weight: 600; min-width: 20px; }
+  .phase-shrink { border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; }
+  .phase-meta { width: 80px; font-size: 11px; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .bar-legend { display: flex; gap: 16px; margin-bottom: 12px; }
+  .bar-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .bar-legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* METHOD CARDS */
+  .method-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; }
+  .method-card.recommended { border-color: var(--green); }
+  .method-card.future { border-color: var(--purple); opacity: .8; }
+  .method-badge { position: absolute; top: 12px; right: 12px; }
+  .method-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .method-card.recommended .method-title { color: var(--green); }
+  .method-card.future .method-title { color: var(--purple); }
+  .method-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .method-key { color: var(--muted); font-size: 12px; }
+  .method-val { font-size: 12px; font-weight: 600; }
+
+  /* CATEGORY LIST */
+  .cat-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .cat-item { display: flex; gap: 10px; align-items: flex-start; }
+  .cat-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .cat-icon.land { background: rgba(79,142,247,.2); }
+  .cat-icon.ridge { background: rgba(62,207,142,.2); }
+  .cat-icon.comp { background: rgba(245,166,0,.2); }
+  .cat-icon.water { background: rgba(45,212,191,.2); }
+  .cat-text strong { display: block; font-size: 12px; font-weight: 600; margin-bottom: 1px; }
+  .cat-text span { font-size: 11px; color: var(--muted); }
+
+  /* STATUS ITEMS */
+  .status-list { display: flex; flex-direction: column; gap: 10px; }
+  .status-item { display: flex; align-items: flex-start; gap: 10px; }
+  .status-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+  .status-icon.done { background: rgba(62,207,142,.2); color: var(--green); }
+  .status-icon.warn { background: rgba(245,216,66,.2); color: var(--yellow); }
+  .status-icon.todo { background: rgba(255,102,102,.2); color: var(--red); }
+  .status-icon.info { background: rgba(79,142,247,.2); color: var(--accent); }
+  .status-text strong { display: block; font-size: 12px; }
+  .status-text span { font-size: 11px; color: var(--muted); }
+
+  .code { font-family: 'Cascadia Code', 'Fira Code', monospace; background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 12px; color: var(--teal); }
+  .formula-box { background: rgba(0,0,0,.4); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+  .formula { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 15px; color: var(--teal); }
+  .formula-sub { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .pill { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; }
+  .pill-S { background: rgba(245,166,35,.25); color: var(--gold); }
+  .pill-A { background: rgba(157,184,208,.2); color: var(--silver); }
+  .pill-B { background: rgba(196,138,74,.2); color: var(--bronze); }
+</style>
+</head>
+<body>
+
+<h1>PUBG Helper — 실데이터 확보 계획 v2</h1>
+<p class="subtitle">2026-05-12 · 구현 완료(U1-U19) → 이제 진짜 데이터가 필요하다</p>
+
+<!-- TIMELINE -->
+<div class="timeline">
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle data">D1</div>
+      <div class="tl-label"><strong>맵 이미지</strong>실제 PUBG<br>맵 파일</div>
+    </div>
+  </div>
+  <div class="tl-arrow active"></div>
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle data">D2</div>
+      <div class="tl-label"><strong>자기장 타이밍</strong>CirclePhase<br>시드 18건</div>
+    </div>
+  </div>
+  <div class="tl-arrow active"></div>
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle data">D3</div>
+      <div class="tl-label"><strong>위치 좌표</strong>프로 포지션<br>60개 시드</div>
+    </div>
+  </div>
+  <div class="tl-arrow active"></div>
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle data">D4</div>
+      <div class="tl-label"><strong>전체 검증</strong>로컬 플로우<br>체크리스트</div>
+    </div>
+  </div>
+  <div class="tl-arrow"></div>
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle ci">24</div>
+      <div class="tl-label"><strong>PUB-24</strong>CI 파이프<br>라인</div>
+    </div>
+  </div>
+  <div class="tl-arrow"></div>
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle muted">25</div>
+      <div class="tl-label"><strong>PUB-25</strong>Docker<br>CD</div>
+    </div>
+  </div>
+  <div class="tl-arrow"></div>
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle muted">26</div>
+      <div class="tl-label"><strong>PUB-26</strong>K8s<br>ArgoCD</div>
+    </div>
+  </div>
+  <div class="tl-arrow"></div>
+  <div class="tl-step">
+    <div class="tl-node">
+      <div class="tl-circle muted">27</div>
+      <div class="tl-label"><strong>PUB-27</strong>Vault<br>ESO</div>
+    </div>
+  </div>
+</div>
+
+<!-- CURRENT STATE -->
+<div class="section">
+  <div class="panel">
+    <h2>현재 상태 — 무엇이 비어 있나</h2>
+    <div class="grid3">
+      <div class="panel2">
+        <h3>맵 이미지</h3>
+        <div style="font-size: 28px; font-weight: 800; color: var(--red); margin: 8px 0;">334B</div>
+        <div style="font-size: 12px; color: var(--muted);">erangel.jpg / taego.jpg<br>빈 플레이스홀더 파일.<br>Leaflet에 아무것도 안 보임.</div>
+        <div style="margin-top: 10px;"><span class="tag tag-red">미완</span></div>
+      </div>
+      <div class="panel2">
+        <h3>CirclePhase 테이블</h3>
+        <div style="font-size: 28px; font-weight: 800; color: var(--red); margin: 8px 0;">0건</div>
+        <div style="font-size: 12px; color: var(--muted);">에란겔 9 + 태이고 9<br>= 18건 필요.<br>타이머 알림 작동 불가.</div>
+        <div style="margin-top: 10px;"><span class="tag tag-red">미완</span></div>
+      </div>
+      <div class="panel2">
+        <h3>Location 테이블</h3>
+        <div style="font-size: 28px; font-weight: 800; color: var(--red); margin: 8px 0;">0건</div>
+        <div style="font-size: 12px; color: var(--muted);">에란겔 30 + 태이고 30<br>= 60개 필요.<br>/locations/recommend 결과 없음.</div>
+        <div style="margin-top: 10px;"><span class="tag tag-red">미완</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- D1 MAP IMAGES -->
+<div class="section">
+  <div class="panel">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div style="background: rgba(62,207,142,.2); border: 2px solid var(--green); border-radius: 8px; padding: 4px 14px; font-weight: 700; color: var(--green);">D1</div>
+      <h2 style="margin:0;">에란겔 / 태이고 공식 맵 이미지 확보</h2>
+    </div>
+
+    <div class="conclusion" style="margin-bottom: 16px;">
+      <div class="label green">결정 완료</div>
+      <p><strong>공식 PUBG 이미지를 가져온다.</strong> pubg.com 또는 pubg.wiki.gg에서 격자 포함 전체맵 이미지 확보. 최소 1024x1024px 정사각형 JPEG.</p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <h3>Leaflet 바인딩 방식</h3>
+        <div class="panel2" style="margin-bottom: 8px;">
+          <div style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">CRS.Simple 설정</div>
+          <div class="formula-box">
+            <div class="formula">bounds = [[0,0],[1,1]]</div>
+            <div class="formula-sub">이미지 좌상단 = (0,0) / 우하단 = (1,1)<br>모든 마커/원 좌표도 이 범위 내</div>
+          </div>
+        </div>
+        <div class="panel2">
+          <div style="font-size: 12px; margin-bottom: 4px; color: var(--green);">검증 기준</div>
+          <div style="font-size: 12px; color: var(--muted);">Pochinki는 D4~E5 사이 (coordX≈0.44, coordY≈0.49)에 표시되어야 함.</div>
+        </div>
+      </div>
+      <div>
+        <h3>소스 우선순위</h3>
+        <div class="status-list">
+          <div class="status-item">
+            <div class="status-icon done">1</div>
+            <div class="status-text">
+              <strong>pubg.com/en/game-info/maps/</strong>
+              <span>공식 페이지 — 격자가 포함된 전체맵 이미지</span>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="status-icon info">2</div>
+            <div class="status-text">
+              <strong>pubg.wiki.gg 미디어 파일</strong>
+              <span>커뮤니티 위키 — 고해상도 자료</span>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="status-icon warn">3</div>
+            <div class="status-text">
+              <strong>게임 내 M키 스크린샷</strong>
+              <span>직접 캡처 — 격자 오버레이 별도 작업 필요</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; padding: 10px; background: rgba(0,0,0,.3); border-radius: 6px;">
+          <div style="font-size: 11px; color: var(--muted);">대상 파일 경로</div>
+          <div class="code" style="display: block; margin-top: 4px;">apps/frontend/public/maps/erangel.jpg</div>
+          <div class="code" style="display: block; margin-top: 4px;">apps/frontend/public/maps/taego.jpg</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COORDINATE SYSTEM -->
+<div class="section">
+  <div class="panel">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div style="background: rgba(79,142,247,.2); border: 2px solid var(--accent); border-radius: 8px; padding: 4px 14px; font-weight: 700; color: var(--accent);">좌표계</div>
+      <h2 style="margin:0;">PUBG 그리드 → 0-1 정규화 변환</h2>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <h3>API 좌표 → 0-1 공식</h3>
+        <div class="formula-box" style="margin-bottom: 12px;">
+          <div class="formula">coordX = X_cm / 816,000</div>
+          <div class="formula" style="margin-top: 4px;">coordY = Y_cm / 816,000</div>
+          <div class="formula-sub">출처: documentation.pubg.com API 좌표 범위 0~816,000 확인<br>그리드 8×8 = 각 셀 102,000cm / 서쪽=0 동쪽=1 / 북쪽=0 남쪽=1</div>
+        </div>
+
+        <h3>그리드 셀 → 중심 coordX/Y 변환표</h3>
+        <div class="grid2" style="gap: 8px;">
+          <table>
+            <thead><tr><th>열 (서→동)</th><th>중심 coordX</th></tr></thead>
+            <tbody>
+              <tr><td><strong>A</strong></td><td><span class="code">0.0625</span></td></tr>
+              <tr><td><strong>B</strong></td><td><span class="code">0.1875</span></td></tr>
+              <tr><td><strong>C</strong></td><td><span class="code">0.3125</span></td></tr>
+              <tr><td><strong>D</strong></td><td><span class="code">0.4375</span></td></tr>
+              <tr><td><strong>E</strong></td><td><span class="code">0.5625</span></td></tr>
+              <tr><td><strong>F</strong></td><td><span class="code">0.6875</span></td></tr>
+              <tr><td><strong>G</strong></td><td><span class="code">0.8125</span></td></tr>
+              <tr><td><strong>H</strong></td><td><span class="code">0.9375</span></td></tr>
+            </tbody>
+          </table>
+          <table>
+            <thead><tr><th>행 (북→남)</th><th>중심 coordY</th></tr></thead>
+            <tbody>
+              <tr><td><strong>1</strong></td><td><span class="code">0.0625</span></td></tr>
+              <tr><td><strong>2</strong></td><td><span class="code">0.1875</span></td></tr>
+              <tr><td><strong>3</strong></td><td><span class="code">0.3125</span></td></tr>
+              <tr><td><strong>4</strong></td><td><span class="code">0.4375</span></td></tr>
+              <tr><td><strong>5</strong></td><td><span class="code">0.5625</span></td></tr>
+              <tr><td><strong>6</strong></td><td><span class="code">0.6875</span></td></tr>
+              <tr><td><strong>7</strong></td><td><span class="code">0.8125</span></td></tr>
+              <tr><td><strong>8</strong></td><td><span class="code">0.9375</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size: 11px; color: var(--muted); margin-top: 6px;">공식: 열 n번째 중심 = (2n-1)/16</div>
+
+        <div style="margin-top: 10px; padding: 10px; background: rgba(79,142,247,.08); border: 1px solid rgba(79,142,247,.2); border-radius: 6px;">
+          <div style="font-size: 11px; color: var(--accent); font-weight: 600;">예시: Pochinki</div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">그리드 D~E / 4~5 사이 → <span class="code">coordX ≈ 0.44</span> <span class="code">coordY ≈ 0.49</span></div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">도시 내 세밀한 포지션(능선·컴파운드)은 1km² 셀 안에서 추가 정밀화 필요</div>
+        </div>
+      </div>
+
+      <div>
+        <h3>에란겔 그리드 맵 (주요 랜드마크)</h3>
+        <div style="background: #1a2535; border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+          <div style="display: grid; grid-template-columns: 18px repeat(8, 1fr); gap: 1px; font-size: 10px;">
+            <div></div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">A</div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">B</div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">C</div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">D</div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">E</div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">F</div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">G</div>
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">H</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">1</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(62,207,142,.15); padding: 3px; text-align: center; color: var(--green); font-size: 8px;">Sev</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">2</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(62,207,142,.15); padding: 3px; text-align: center; color: var(--green); font-size: 8px;">Geor</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">3</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(245,166,0,.15); padding: 3px; text-align: center; color: var(--orange); font-size: 8px;">School</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(62,207,142,.15); padding: 3px; text-align: center; color: var(--green); font-size: 8px;">Yas</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">4</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(245,166,0,.3); padding: 3px; text-align: center; color: #fff; font-size: 8px; font-weight: 700;">Poch</div>
+            <div style="background: rgba(245,166,0,.15); padding: 3px; text-align: center; color: var(--orange); font-size: 8px;">Poch</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">5</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(62,207,142,.15); padding: 3px; text-align: center; color: var(--green); font-size: 8px;">Rozh</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">6</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(62,207,142,.15); padding: 3px; text-align: center; color: var(--green); font-size: 8px;">Mylta</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">7</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(157,111,255,.15); padding: 3px; text-align: center; color: var(--purple); font-size: 8px;">Prison</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+
+            <div style="background: var(--panel); text-align: center; padding: 3px; color: var(--muted); font-weight: 700;">8</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(157,111,255,.15); padding: 3px; text-align: center; color: var(--purple); font-size: 8px;">Mil</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+            <div style="background: rgba(79,142,247,.06); padding: 3px; text-align: center; color: rgba(255,255,255,.25);">·</div>
+          </div>
+          <div style="font-size: 10px; color: var(--muted); margin-top: 6px;">각 셀 = 1km x 1km · 좌상단(A1)=(0,0) · 우하단(H8)=(1,1)</div>
+          <div style="font-size: 10px; color: rgba(245,166,0,.8); margin-top: 2px;">Poch 강조(D4) = coordX≈0.44 / coordY≈0.44</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- D2 CIRCLE PHASE -->
+<div class="section">
+  <div class="panel">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div style="background: rgba(62,207,142,.2); border: 2px solid var(--green); border-radius: 8px; padding: 4px 14px; font-weight: 700; color: var(--green);">D2</div>
+      <h2 style="margin:0;">CirclePhase 타이밍 시드</h2>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="conclusion" style="margin-bottom: 16px;">
+          <div class="label green">조사 완료 — Normal = Ranked</div>
+          <p>Patch 23.1(2023)에서 Normal Phase 1~3 타이밍을 Ranked에 맞춰 통일. Patch 33.1까지 변경 없음. <strong>mode 컬럼 불필요, DB 분리 불필요.</strong></p>
+        </div>
+
+        <h3>에란겔 9페이즈 (pubg.wiki.gg 기준, 확정)</h3>
+        <div class="bar-legend">
+          <div class="bar-legend-item"><div class="bar-legend-dot" style="background: rgba(79,142,247,.5);"></div>대기(wait)</div>
+          <div class="bar-legend-item"><div class="bar-legend-dot" style="background: #3ecf8e;"></div>수축(shrink)</div>
+        </div>
+
+        <div class="phase-row">
+          <div class="phase-num">1</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-wait" style="width: 31%; flex-shrink:0;">120s</div>
+            <div class="phase-shrink" style="width: 69%; background: linear-gradient(90deg, #3ecf8e, #2bb87a); color: #000;">270s</div>
+          </div>
+          <div class="phase-meta">390s 합계</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">2</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-shrink" style="width: 100%; background: linear-gradient(90deg, #3ecf8e, #2bb87a); color: #000; font-size: 11px;">180s</div>
+          </div>
+          <div class="phase-meta">180s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">3</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-shrink" style="width: 73%; background: linear-gradient(90deg, #4db8a0, #3a9e88); color: #000;">130s</div>
+            <div style="flex:1;"></div>
+          </div>
+          <div class="phase-meta">130s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">4</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-shrink" style="width: 67%; background: linear-gradient(90deg, #5ba898, #4a9082); color: #000;">120s</div>
+            <div style="flex:1;"></div>
+          </div>
+          <div class="phase-meta">120s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">5</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-shrink" style="width: 56%; background: linear-gradient(90deg, #6a9890, #58837a); color: #000;">100s</div>
+            <div style="flex:1;"></div>
+          </div>
+          <div class="phase-meta">100s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">6</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-shrink" style="width: 50%; background: linear-gradient(90deg, #798888, #617070); color: #ddd;">90s</div>
+            <div style="flex:1;"></div>
+          </div>
+          <div class="phase-meta">90s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">7</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-shrink" style="width: 39%; background: linear-gradient(90deg, #887878, #706060); color: #ddd;">70s</div>
+            <div style="flex:1;"></div>
+          </div>
+          <div class="phase-meta">70s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">8</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-shrink" style="width: 33%; background: linear-gradient(90deg, #886858, #705040); color: #ddd;">60s</div>
+            <div style="flex:1;"></div>
+          </div>
+          <div class="phase-meta">60s</div>
+        </div>
+        <div class="phase-row">
+          <div class="phase-num">9</div>
+          <div class="phase-bar-wrap">
+            <div class="phase-wait" style="width: 8%; flex-shrink:0; font-size:9px;">30s</div>
+            <div class="phase-shrink" style="width: 8%; background: linear-gradient(90deg, #996644, #7a4a30); color: #ddd; font-size:9px;">30s</div>
+            <div style="flex:1;"></div>
+          </div>
+          <div class="phase-meta">60s</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="conclusion pending" style="margin-bottom: 16px;">
+          <div class="label yellow">미확인 — 태이고 Phase 1 대기시간</div>
+          <p>태이고 Phase 1 대기시간이 에란겔보다 짧다고 알려져 있으나 <strong>pubg.wiki.gg Taego 항목에 정확한 수치 미수록.</strong> 구현 시 직접 확인 후 분기 처리 필요.</p>
+        </div>
+
+        <h3>DB 구조 — CirclePhase</h3>
+        <div class="panel2" style="margin-bottom: 12px;">
+          <table>
+            <thead><tr><th>컬럼</th><th>타입</th><th>설명</th></tr></thead>
+            <tbody>
+              <tr><td>id</td><td>Int</td><td>PK</td></tr>
+              <tr><td>mapId</td><td>Int</td><td>Map FK (erangel=1, taego=2)</td></tr>
+              <tr><td>phase</td><td>Int</td><td>1~9</td></tr>
+              <tr><td>waitSeconds</td><td>Int</td><td>대기 시간 (초)</td></tr>
+              <tr><td>shrinkSeconds</td><td>Int</td><td>수축 시간 (초)</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top: 8px; font-size: 11px; color: var(--green);">mode 컬럼 없음 — Normal=Ranked 통일 후 불필요</div>
+        </div>
+
+        <h3>완료 기준</h3>
+        <div class="status-list">
+          <div class="status-item">
+            <div class="status-icon todo">□</div>
+            <div class="status-text">
+              <strong>circle_phases 18건</strong>
+              <span>에란겔 9개 + 태이고 9개</span>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="status-icon todo">□</div>
+            <div class="status-text">
+              <strong>alert-service 타이머 작동 확인</strong>
+              <span>OCR → 초 변환 → 30/20/10초 알림 트리거</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px;">
+          <h3>파일</h3>
+          <div class="code" style="display: block;">apps/services/location/prisma/seed.ts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- D3 LOCATION COORDS -->
+<div class="section">
+  <div class="panel">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div style="background: rgba(62,207,142,.2); border: 2px solid var(--green); border-radius: 8px; padding: 4px 14px; font-weight: 700; color: var(--green);">D3</div>
+      <h2 style="margin:0;">프로 위치 좌표 시드 — 왜 도시명이 부족한가</h2>
+    </div>
+
+    <div class="conclusion" style="margin-bottom: 16px;">
+      <div class="label green">핵심 인사이트</div>
+      <p>에란겔 "Pochinki" = 약 500x600m 범위 안에 수십 개 건물. 프로들이 실제로 쓰는 건 "Pochinki 북쪽 Triple" 또는 "Pochinki 동쪽 능선". 자기장 반경 r=0.05 수준에서는 <strong>도시 내 50m 차이가 생사를 가름.</strong> 시드 단위: 능선·컴파운드·고지.</p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <h3>v1 수록 포지션 카테고리 (에란겔 기준)</h3>
+        <ul class="cat-list">
+          <li class="cat-item">
+            <div class="cat-icon land">🏙</div>
+            <div class="cat-text">
+              <strong>랜드마크 중심 — 8개 <span class="pill pill-A">A등급</span></strong>
+              <span>게임 내 이름이 표시되는 지역 중심 좌표.<br>Pochinki, School, Military Base, Georgopol, Rozhok, Yasnaya, Mylta Power, Prison</span>
+            </div>
+          </li>
+          <li class="cat-item">
+            <div class="cat-icon ridge">⛰</div>
+            <div class="cat-text">
+              <strong>능선·고지 — 10개 <span class="pill pill-S">S등급</span></strong>
+              <span>지형 고점. 자기장 엄폐·시야 확보 우수.<br>Pochinki 북능선, School 동능선, Rozhok 남서 고지, 중앙 E4 고지 등</span>
+            </div>
+          </li>
+          <li class="cat-item">
+            <div class="cat-icon comp">🏠</div>
+            <div class="cat-text">
+              <strong>격리 컴파운드 — 7개 <span class="pill pill-A">A등급</span></strong>
+              <span>도시 외곽 2~4개 건물 집합. 방어·엄폐 유리.<br>Farm North/South, 중부 고립 컴파운드 5곳</span>
+            </div>
+          </li>
+          <li class="cat-item">
+            <div class="cat-icon water">🌊</div>
+            <div class="cat-text">
+              <strong>수계 인접 고지 — 5개 <span class="pill pill-B">B등급</span></strong>
+              <span>호수·강 주변 산등성이. 시야 확보 + 자연 장벽.<br>대형 호수 서안, 강 상류 고지, Sosnovka 섬 포지션</span>
+            </div>
+          </li>
+        </ul>
+
+        <div style="margin-top: 16px;">
+          <h3>완료 기준</h3>
+          <div class="status-list">
+            <div class="status-item">
+              <div class="status-icon todo">□</div>
+              <div class="status-text">
+                <strong>locations 60건</strong>
+                <span>에란겔 30개 + 태이고 30개</span>
+              </div>
+            </div>
+            <div class="status-item">
+              <div class="status-icon todo">□</div>
+              <div class="status-text">
+                <strong>/locations/recommend → S포지션 3개+</strong>
+                <span>자기장 반경 r=0.2 기준</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3>좌표 획득 방법 — 3가지 비교</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="method-card recommended">
+            <div class="method-badge"><span class="tag tag-green">v1 권장</span></div>
+            <div class="method-title">A. pubgmap.io 인터랙티브 맵</div>
+            <div class="method-row"><span class="method-key">정밀도</span><span class="method-val" style="color: var(--green);">높음</span></div>
+            <div class="method-row"><span class="method-key">공수</span><span class="method-val">중간 (마우스 클릭)</span></div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+              마우스를 원하는 위치에 올리면 내부적으로 Leaflet 좌표 사용.<br>
+              DevTools Network에서 API 콜 캡처 또는 JS에서 역산.<br>
+              그리드 변환표로 0-1 정규화.
+            </div>
+          </div>
+
+          <div class="method-card future">
+            <div class="method-badge"><span class="tag tag-purple">v2 예정</span></div>
+            <div class="method-title">B. PUBG Telemetry API</div>
+            <div class="method-row"><span class="method-key">정밀도</span><span class="method-val" style="color: var(--purple);">최고 (실제 프로 경기)</span></div>
+            <div class="method-row"><span class="method-key">공수</span><span class="method-val">높음</span></div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+              공식 PUBG API에서 프로 경기 telemetry 다운로드.<br>
+              Phase 5~8 팀 위치 K-means 클러스터링.<br>
+              클러스터 중심 = 실제 포지션, 빈도 = usageCount.
+            </div>
+          </div>
+
+          <div class="method-card" style="opacity:.6;">
+            <div class="method-badge"><span class="tag tag-red">비권장</span></div>
+            <div class="method-title" style="color: var(--red);">C. 트레이닝 모드 직접 방문</div>
+            <div class="method-row"><span class="method-key">정밀도</span><span class="method-val">높음</span></div>
+            <div class="method-row"><span class="method-key">공수</span><span class="method-val" style="color: var(--red);">매우 높음</span></div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+              게임 내 직접 이동 → 좌표 읽기. 60개 기준 수시간 소요.
+            </div>
+          </div>
+        </div>
+
+        <div class="panel2" style="margin-top: 12px;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 6px;">시드 레코드 구조 예시</div>
+          <div style="font-family: 'Cascadia Code', monospace; font-size: 11px; color: var(--teal);">
+            {<br>
+            &nbsp;&nbsp;mapId: 1,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--muted)">// erangel</span><br>
+            &nbsp;&nbsp;name: "Pochinki 북능선",<br>
+            &nbsp;&nbsp;coordX: 0.427,&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: var(--muted)">// pubgmap.io 확인값</span><br>
+            &nbsp;&nbsp;coordY: 0.388,<br>
+            &nbsp;&nbsp;tier: "S",<br>
+            &nbsp;&nbsp;usageCount: 0,<br>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dot map -->
+    <div style="margin-top: 16px;">
+      <h3>에란겔 v1 포지션 분포 (30개, 개념 배치)</h3>
+      <div style="background: #1a2535; border: 1px solid var(--border); border-radius: 6px; height: 220px; position: relative; overflow: hidden;">
+        <svg style="position: absolute; inset: 0; width: 100%; height: 100%;" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line x1="12.5" y1="0" x2="12.5" y2="100" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="25" y1="0" x2="25" y2="100" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="37.5" y1="0" x2="37.5" y2="100" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="62.5" y1="0" x2="62.5" y2="100" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="75" y1="0" x2="75" y2="100" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="87.5" y1="0" x2="87.5" y2="100" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="0" y1="12.5" x2="100" y2="12.5" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="0" y1="25" x2="100" y2="25" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="0" y1="37.5" x2="100" y2="37.5" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="0" y1="62.5" x2="100" y2="62.5" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="0" y1="75" x2="100" y2="75" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <line x1="0" y1="87.5" x2="100" y2="87.5" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>
+          <!-- S-tier (gold) -->
+          <circle cx="44" cy="38" r="2.5" fill="#f5a623"/>
+          <circle cx="48" cy="43" r="2.5" fill="#f5a623"/>
+          <circle cx="31" cy="27" r="2.5" fill="#f5a623"/>
+          <circle cx="43" cy="28" r="2.5" fill="#f5a623"/>
+          <circle cx="56" cy="26" r="2.5" fill="#f5a623"/>
+          <circle cx="50" cy="54" r="2.5" fill="#f5a623"/>
+          <circle cx="38" cy="51" r="2.5" fill="#f5a623"/>
+          <circle cx="58" cy="44" r="2.5" fill="#f5a623"/>
+          <circle cx="63" cy="60" r="2.5" fill="#f5a623"/>
+          <circle cx="24" cy="47" r="2.5" fill="#f5a623"/>
+          <!-- A-tier (silver) -->
+          <circle cx="44" cy="44" r="2" fill="#9db8d0"/>
+          <circle cx="30" cy="30" r="2" fill="#9db8d0"/>
+          <circle cx="19" cy="22" r="2" fill="#9db8d0"/>
+          <circle cx="55" cy="29" r="2" fill="#9db8d0"/>
+          <circle cx="51" cy="49" r="2" fill="#9db8d0"/>
+          <circle cx="63" cy="63" r="2" fill="#9db8d0"/>
+          <circle cx="44" cy="70" r="2" fill="#9db8d0"/>
+          <circle cx="27" cy="70" r="2" fill="#9db8d0"/>
+          <circle cx="35" cy="59" r="2" fill="#9db8d0"/>
+          <circle cx="70" cy="46" r="2" fill="#9db8d0"/>
+          <circle cx="20" cy="55" r="2" fill="#9db8d0"/>
+          <circle cx="36" cy="42" r="2" fill="#9db8d0"/>
+          <circle cx="67" cy="33" r="2" fill="#9db8d0"/>
+          <circle cx="81" cy="22" r="2" fill="#9db8d0"/>
+          <circle cx="72" cy="71" r="2" fill="#9db8d0"/>
+          <!-- B-tier (bronze) -->
+          <circle cx="16" cy="70" r="1.8" fill="#c48a4a"/>
+          <circle cx="22" cy="75" r="1.8" fill="#c48a4a"/>
+          <circle cx="34" cy="77" r="1.8" fill="#c48a4a"/>
+          <circle cx="58" cy="72" r="1.8" fill="#c48a4a"/>
+          <circle cx="75" cy="64" r="1.8" fill="#c48a4a"/>
+        </svg>
+        <div style="position: absolute; bottom: 6px; right: 8px; font-size: 9px; color: rgba(255,255,255,.4);">
+          <span style="color: #f5a623;">●</span> S 능선/고지&nbsp;&nbsp;
+          <span style="color: #9db8d0;">●</span> A 랜드마크/컴파운드&nbsp;&nbsp;
+          <span style="color: #c48a4a;">●</span> B 수계
+        </div>
+        <div style="position: absolute; top: 6px; left: 8px; font-size: 9px; color: rgba(255,255,255,.3);">A1</div>
+        <div style="position: absolute; bottom: 6px; right: 30px; font-size: 9px; color: rgba(255,255,255,.3);">H8</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- D4 VERIFICATION -->
+<div class="section">
+  <div class="panel">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+      <div style="background: rgba(62,207,142,.2); border: 2px solid var(--green); border-radius: 8px; padding: 4px 14px; font-weight: 700; color: var(--green);">D4</div>
+      <h2 style="margin:0;">로컬 전체 플로우 검증 체크리스트</h2>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <h3>실행 환경</h3>
+        <div style="font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 12px; background: rgba(0,0,0,.4); border: 1px solid var(--border); border-radius: 6px; padding: 14px; color: var(--teal); line-height: 2.2;">
+          docker compose up -d<br>
+          pnpm --filter @pubg-helper/location \<br>
+          &nbsp;&nbsp;exec prisma migrate dev<br>
+          pnpm --filter @pubg-helper/location \<br>
+          &nbsp;&nbsp;exec prisma db seed<br>
+          <span style="color: var(--muted)"># 4개 서비스 + 프론트 실행</span>
+        </div>
+      </div>
+      <div>
+        <h3>검증 항목 (5개 전부 통과 필요)</h3>
+        <div class="status-list">
+          <div class="status-item">
+            <div class="status-icon todo">□</div>
+            <div class="status-text"><strong>에란겔/태이고 맵 이미지 Leaflet 정상 렌더링</strong><span>지형·격자 일치 확인</span></div>
+          </div>
+          <div class="status-item">
+            <div class="status-icon todo">□</div>
+            <div class="status-text"><strong>화면공유 → M키 → 자기장 원 오버레이</strong><span>정확한 위치에 표시</span></div>
+          </div>
+          <div class="status-item">
+            <div class="status-icon todo">□</div>
+            <div class="status-text"><strong>자기장 안 포지션 마커 사이드패널 출력</strong><span>S=금, A=은, B=동 등급별</span></div>
+          </div>
+          <div class="status-item">
+            <div class="status-icon todo">□</div>
+            <div class="status-text"><strong>OCR 타이머 30/20/10초 브라우저 알림</strong><span>정상 발동 확인</span></div>
+          </div>
+          <div class="status-item">
+            <div class="status-icon todo">□</div>
+            <div class="status-text"><strong>에란겔 ↔ 태이고 전환 시 마커 초기화</strong><span>이전 맵 데이터 잔류 없음</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- v2 ROADMAP -->
+<div class="section">
+  <div class="panel" style="border-color: rgba(157,111,255,.3); background: rgba(157,111,255,.04);">
+    <h2 style="color: var(--purple);">향후: v2 좌표 고도화 — PUBG Telemetry API</h2>
+    <div class="grid4" style="margin-top: 12px;">
+      <div class="panel2" style="text-align: center;">
+        <div style="font-size: 22px; margin-bottom: 6px;">📡</div>
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px;">1. API 수집</div>
+        <div style="font-size: 11px; color: var(--muted);">공식 PUBG API<br>프로 경기 telemetry</div>
+      </div>
+      <div class="panel2" style="text-align: center;">
+        <div style="font-size: 22px; margin-bottom: 6px;">📍</div>
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px;">2. 위치 추출</div>
+        <div style="font-size: 11px; color: var(--muted);">Phase 5~9<br>팀 위치 좌표</div>
+      </div>
+      <div class="panel2" style="text-align: center;">
+        <div style="font-size: 22px; margin-bottom: 6px;">🔵</div>
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px;">3. 클러스터링</div>
+        <div style="font-size: 11px; color: var(--muted);">K-means<br>포지션 50개+</div>
+      </div>
+      <div class="panel2" style="text-align: center;">
+        <div style="font-size: 22px; margin-bottom: 6px;">⭐</div>
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px;">4. 자동 Tier</div>
+        <div style="font-size: 11px; color: var(--muted);">클러스터 크기로<br>S/A/B 자동 산출</div>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 12px; font-size: 12px; color: var(--muted);">Phase 5 (K8s 배포) 완료 후 별도 이슈로 진행</div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div class="panel" style="border-color: rgba(62,207,142,.3); background: rgba(62,207,142,.05);">
+  <h2>지금 해야 할 것 — 순서대로</h2>
+  <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px;">
+    <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
+      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">1</div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px;">D1 — 공식 맵 이미지 확보</div>
+        <div style="font-size: 11px; color: var(--muted);">pubg.com 또는 pubg.wiki.gg에서 1024px+ 다운로드</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
+      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">2</div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px;">D2 — CirclePhase 18건 시드</div>
+        <div style="font-size: 11px; color: var(--muted);">태이고 Phase 1 wiki 직접 확인 후 분기 처리</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
+      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">3</div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px;">D3 — pubgmap.io 기반 60개 포지션 시드</div>
+        <div style="font-size: 11px; color: var(--muted);">능선·컴파운드·고지 단위, 그리드 변환표로 0-1 정규화</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 220px;">
+      <div style="background: rgba(62,207,142,.2); color: var(--green); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">4</div>
+      <div>
+        <div style="font-weight: 600; font-size: 13px;">D4 — 로컬 전체 플로우 검증</div>
+        <div style="font-size: 11px; color: var(--muted);">5항목 전부 통과 후 PUB-24~27 CI/CD 진행</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 20px; text-align: center; font-size: 11px; color: var(--muted);">
+  docs/resources/mockups/2026-05-12-decision-data-plan.html · v2 · 2026-05-12
+</div>
+
+</body>
+</html>

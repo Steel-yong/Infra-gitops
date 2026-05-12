@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUBG Helper — UI 목업 (현재 + OCR 타이머)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+    background: #0d0d14;
+    color: #e2e8f0;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  /* ── 헤더 ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    height: 48px;
+    background: #13131f;
+    border-bottom: 1px solid #1e1e30;
+  }
+  .logo { font-size: 0.88rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #f59e0b; }
+  .logo span { color: #e2e8f0; opacity: 0.4; margin: 0 0.25rem; }
+  .header-status { display: flex; gap: 0.75rem; align-items: center; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+  .status-txt { font-size: 0.7rem; color: #6b7280; }
+
+  /* ── 바디 ── */
+  .body { display: flex; height: calc(100vh - 48px); overflow: hidden; }
+
+  /* ── 왼쪽 사이드바 ── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: #13131f;
+    border-right: 1px solid #1e1e30;
+    overflow-y: auto;
+  }
+  .side-section { padding: 0.875rem 1rem; border-bottom: 1px solid #1e1e30; }
+  .side-label {
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #4b5563; margin-bottom: 0.6rem;
+  }
+
+  /* 맵 선택 */
+  .map-btns { display: flex; gap: 0.375rem; }
+  .map-btn {
+    flex: 1; padding: 0.4rem 0; border-radius: 6px;
+    border: 1px solid #2a2a3e; background: #1c1c2e;
+    color: #94a3b8; font-size: 0.75rem; font-weight: 500; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .map-btn.active { background: #1d3a5e; border-color: #3b82f6; color: #93c5fd; }
+
+  /* 자기장 알림 */
+  .alert-list { display: flex; flex-direction: column; gap: 0.45rem; }
+  .alert-item { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+  .alert-item input[type=checkbox] { width: 14px; height: 14px; accent-color: #f59e0b; }
+  .alert-item span { font-size: 0.78rem; color: #cbd5e1; }
+  .alert-item small { font-size: 0.65rem; color: #4b5563; margin-left: auto; }
+
+  /* ──────────────────────────────────────────
+     🆕 OCR 타이머 패널 (PUB-15 미구현)
+     ────────────────────────────────────────── */
+  .timer-panel {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #1e1e30;
+    position: relative;
+  }
+  .new-badge {
+    position: absolute; top: 0.6rem; right: 0.75rem;
+    background: #7c3aed; color: #ede9fe;
+    font-size: 0.55rem; font-weight: 700; letter-spacing: 0.08em;
+    padding: 0.15rem 0.4rem; border-radius: 4px; text-transform: uppercase;
+  }
+  .timer-display {
+    display: flex; align-items: center; gap: 0.75rem;
+    background: #0f0f1a; border: 1px solid #1e1e30;
+    border-radius: 8px; padding: 0.625rem 0.875rem;
+    margin-bottom: 0.625rem;
+  }
+  .timer-icon { font-size: 1.1rem; }
+  .timer-time {
+    font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    color: #f59e0b; letter-spacing: 0.04em; line-height: 1;
+  }
+  .timer-time.danger { color: #ef4444; animation: pulse 0.8s ease-in-out infinite; }
+  .timer-time.warning { color: #f97316; }
+  .timer-label { font-size: 0.65rem; color: #4b5563; margin-top: 0.2rem; }
+  .timer-state {
+    display: flex; align-items: center; gap: 0.375rem;
+    font-size: 0.68rem; color: #94a3b8; margin-bottom: 0.375rem;
+  }
+  .state-badge {
+    padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600;
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .state-shrinking { background: #7f1d1d; color: #fca5a5; }
+  .state-waiting  { background: #1e3a5f; color: #93c5fd; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* OCR 인식 영역 미리보기 */
+  .ocr-preview {
+    background: #08080f; border: 1px dashed #2a2a3e;
+    border-radius: 6px; padding: 0.5rem; margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .ocr-crop {
+    width: 64px; height: 22px; background: #1c1c2e; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700; color: #fbbf24; letter-spacing: 0.05em;
+    border: 1px solid #374151; flex-shrink: 0;
+  }
+  .ocr-meta { font-size: 0.62rem; color: #4b5563; line-height: 1.5; }
+  .ocr-meta b { color: #6b7280; }
+
+  /* ── 화면공유 섹션 ── */
+  .capture-section {
+    flex: 3.5; display: flex; flex-direction: column;
+    background: #0f0f1a; border-right: 1px solid #1e1e30;
+    height: 55vh; align-self: flex-start; max-height: calc(100vh - 48px);
+  }
+  .capture-header {
+    padding: 0.75rem 0.875rem; border-bottom: 1px solid #1e1e30;
+    flex-shrink: 0; display: flex; flex-direction: column; gap: 0.4rem;
+  }
+  .capture-btn {
+    width: 100%; padding: 0.55rem 0; border-radius: 8px; border: none;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .capture-btn.start { background: #16a34a; color: #fff; }
+  .capture-btn.stop  { background: #dc2626; color: #fff; }
+  .capture-btn.start:hover { background: #15803d; }
+  .capture-btn.stop:hover  { background: #b91c1c; }
+  .preview-wrapper {
+    flex: 1; background: #08080f; display: flex; align-items: center;
+    justify-content: center; min-height: 0; position: relative; overflow: hidden;
+  }
+  .preview-placeholder { font-size: 0.7rem; color: #374151; text-align: center; line-height: 2; }
+
+  /* 화면공유 중 오버레이 (타이머 감지 위치 표시) */
+  .preview-active {
+    width: 100%; height: 100%; background: #0a1628;
+    position: relative; overflow: hidden;
+  }
+  .game-screen-mock {
+    width: 100%; height: 100%; object-fit: cover;
+    background: linear-gradient(160deg, #0a1628 0%, #0d2240 50%, #0a1628 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .game-mock-text { color: #1d3a5e; font-size: 0.7rem; text-align: center; line-height: 2; }
+  .ocr-region-overlay {
+    position: absolute; bottom: 12%; right: 8%;
+    border: 1.5px solid #f59e0b; border-radius: 3px;
+    padding: 1px 4px; background: rgba(245,158,11,0.12);
+    font-size: 0.65rem; color: #f59e0b; display: flex; align-items: center; gap: 0.25rem;
+  }
+  .ocr-region-overlay::before {
+    content: '';
+    position: absolute; top: -12px; left: 0;
+    font-size: 0.55rem; color: #f59e0b; white-space: nowrap;
+  }
+  .ocr-label-tag {
+    position: absolute; bottom: calc(12% + 28px); right: 8%;
+    font-size: 0.55rem; color: #f59e0b; background: rgba(0,0,0,0.6);
+    padding: 0.1rem 0.3rem; border-radius: 3px;
+  }
+
+  /* ── 오른쪽 맵 영역 ── */
+  .map-area { flex: 6.5; position: relative; overflow: hidden; background: #0d0d14; }
+  .map-mock {
+    width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 40% 40%, #0d2040 0%, #08101e 60%, #050810 100%);
+    position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+  .map-grid {
+    position: absolute; inset: 0; opacity: 0.06;
+    background-image:
+      linear-gradient(#94a3b8 1px, transparent 1px),
+      linear-gradient(90deg, #94a3b8 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .map-label { color: #1d3a5e; font-size: 0.75rem; text-align: center; line-height: 2; z-index: 1; }
+
+  /* 자기장 원 */
+  .circle-overlay {
+    position: absolute;
+    border: 2px solid rgba(255,255,255,0.85);
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(255,255,255,0.15), inset 0 0 40px rgba(255,255,255,0.03);
+    pointer-events: none;
+    top: 20%; left: 25%;
+    width: 50%; height: 66%;
+  }
+  .circle-center {
+    position: absolute; width: 8px; height: 8px; border-radius: 50%;
+    background: #60a5fa; box-shadow: 0 0 8px #60a5fa;
+    top: calc(20% + 33% - 4px); left: calc(25% + 25% - 4px);
+  }
+
+  /* 위치 마커 */
+  .marker {
+    position: absolute; display: flex; flex-direction: column; align-items: center;
+    transform: translate(-50%, -50%); cursor: pointer;
+  }
+  .marker-dot {
+    width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.3);
+    box-shadow: 0 0 6px currentColor;
+  }
+  .marker-label {
+    font-size: 0.55rem; font-weight: 700; margin-top: 2px;
+    background: rgba(0,0,0,0.7); padding: 0.1rem 0.3rem; border-radius: 3px;
+    white-space: nowrap;
+  }
+  .s-tier { color: #fbbf24; }
+  .a-tier { color: #a78bfa; }
+  .b-tier { color: #6b7280; }
+
+  /* 오른쪽 위치 패널 */
+  .location-panel {
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 200px; background: rgba(15,15,26,0.92);
+    border-left: 1px solid #1e1e30; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .panel-header {
+    padding: 0.625rem 0.875rem; border-bottom: 1px solid #1e1e30;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #4b5563;
+  }
+  .location-item {
+    padding: 0.5rem 0.75rem; border-bottom: 1px solid #151522;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .tier-badge {
+    width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center;
+    justify-content: center; font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
+  }
+  .tier-S { background: #78350f; color: #fbbf24; }
+  .tier-A { background: #2e1065; color: #a78bfa; }
+  .tier-B { background: #1a1a2e; color: #6b7280; }
+  .loc-info { flex: 1; min-width: 0; }
+  .loc-name { font-size: 0.75rem; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .loc-dist { font-size: 0.62rem; color: #4b5563; }
+
+  /* ── 범례 ── */
+  .legend {
+    position: absolute; bottom: 1rem; left: 1rem;
+    background: rgba(15,15,26,0.85); border: 1px solid #1e1e30;
+    border-radius: 8px; padding: 0.625rem 0.875rem;
+    display: flex; flex-direction: column; gap: 0.35rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.65rem; color: #6b7280; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── 탭 ── */
+  .tabs { display: flex; border-bottom: 1px solid #1e1e30; }
+  .tab {
+    flex: 1; padding: 0.5rem 0; text-align: center;
+    font-size: 0.68rem; color: #4b5563; cursor: pointer; border: none; background: none;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab.active { color: #93c5fd; border-bottom-color: #3b82f6; }
+
+  /* ── 알림 토스트 (데모용) ── */
+  .toast {
+    position: fixed; top: 60px; right: 1rem;
+    background: #1c1c2e; border: 1px solid #f59e0b;
+    border-radius: 8px; padding: 0.625rem 0.875rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    animation: slideIn 0.3s ease-out;
+    z-index: 100;
+  }
+  .toast-icon { font-size: 1rem; }
+  .toast-txt { font-size: 0.78rem; color: #fbbf24; font-weight: 600; }
+  .toast-sub { font-size: 0.65rem; color: #94a3b8; }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* 미구현 강조 오버레이 */
+  .not-impl-note {
+    background: rgba(124,58,237,0.08); border: 1px dashed #7c3aed;
+    border-radius: 6px; padding: 0.375rem 0.5rem; margin-top: 0.375rem;
+    font-size: 0.6rem; color: #a78bfa; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<header class="header">
+  <span class="logo">PUBG<span>·</span>Helper</span>
+  <div class="header-status">
+    <div class="status-dot"></div>
+    <span class="status-txt">캡처 중 · capture:3001</span>
+  </div>
+</header>
+
+<div class="body">
+
+  <!-- ── 왼쪽 사이드바 ── -->
+  <aside class="sidebar">
+
+    <!-- 맵 선택 -->
+    <div class="side-section">
+      <p class="side-label">맵 선택</p>
+      <div class="map-btns">
+        <button class="map-btn active">에란겔</button>
+        <button class="map-btn">태이고</button>
+      </div>
+    </div>
+
+    <!-- 🆕 OCR 타이머 (PUB-15 미구현) -->
+    <div class="timer-panel side-section">
+      <span class="new-badge">PUB-15 미구현</span>
+      <p class="side-label">자기장 타이머</p>
+
+      <div class="timer-state">
+        <span class="state-badge state-shrinking">⚡ 줄어드는 중</span>
+      </div>
+
+      <div class="timer-display">
+        <span class="timer-icon">⏱</span>
+        <div>
+          <div class="timer-time danger">0:23</div>
+          <div class="timer-label">다음 자기장까지</div>
+        </div>
+      </div>
+
+      <div class="ocr-preview">
+        <div class="ocr-crop">1:23</div>
+        <div class="ocr-meta">
+          <b>OCR 인식</b><br>
+          1920×1080 · 미니맵 우측<br>
+          Tesseract.js whitelist: 0-9:
+        </div>
+      </div>
+
+      <div class="not-impl-note">
+        구현 필요: ocrWorker.ts + useAlertTimer.ts<br>
+        빨간 느낌표 픽셀 감지로 상태 구분
+      </div>
+    </div>
+
+    <!-- 자기장 알림 -->
+    <div class="side-section">
+      <p class="side-label">자기장 알림</p>
+      <div class="alert-list">
+        <label class="alert-item">
+          <input type="checkbox" checked>
+          <span>30초 전 알림</span>
+          <small>🔔</small>
+        </label>
+        <label class="alert-item">
+          <input type="checkbox" checked>
+          <span>20초 전 알림</span>
+          <small>🔔</small>
+        </label>
+        <label class="alert-item">
+          <input type="checkbox" checked>
+          <span>10초 전 알림</span>
+          <small>🔔</small>
+        </label>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── 화면공유 섹션 ── -->
+  <section class="capture-section">
+    <div class="capture-header">
+      <button class="capture-btn stop">■ 공유 중지</button>
+    </div>
+    <div class="preview-wrapper">
+      <div class="preview-active">
+        <div class="game-screen-mock">
+          <div class="game-mock-text">
+            PUBG 게임 화면 공유 중<br>
+            (프레임 캡처 500ms 주기)
+          </div>
+        </div>
+        <!-- OCR 감지 영역 표시 -->
+        <div class="ocr-label-tag">OCR 감지 영역</div>
+        <div class="ocr-region-overlay">1:23</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 오른쪽 맵 영역 ── -->
+  <section class="map-area">
+    <div class="map-mock">
+      <div class="map-grid"></div>
+      <span class="map-label">에란겔 전체맵<br>(Leaflet CRS.Simple)</span>
+
+      <!-- 자기장 원 오버레이 -->
+      <div class="circle-overlay"></div>
+      <div class="circle-center"></div>
+
+      <!-- 위치 마커 -->
+      <div class="marker s-tier" style="top:38%;left:42%">
+        <div class="marker-dot" style="color:#fbbf24;background:#fbbf24"></div>
+        <span class="marker-label s-tier">로젠탈 S</span>
+      </div>
+      <div class="marker a-tier" style="top:44%;left:50%">
+        <div class="marker-dot" style="color:#a78bfa;background:#a78bfa"></div>
+        <span class="marker-label a-tier">야스나야 A</span>
+      </div>
+      <div class="marker a-tier" style="top:32%;left:54%">
+        <div class="marker-dot" style="color:#a78bfa;background:#a78bfa"></div>
+        <span class="marker-label a-tier">노보 A</span>
+      </div>
+      <div class="marker b-tier" style="top:52%;left:38%">
+        <div class="marker-dot" style="color:#6b7280;background:#6b7280"></div>
+        <span class="marker-label b-tier">게오르고 B</span>
+      </div>
+    </div>
+
+    <!-- 위치 패널 -->
+    <div class="location-panel">
+      <div class="tabs">
+        <button class="tab active">위치 추천</button>
+        <button class="tab">전체</button>
+      </div>
+      <div class="panel-header">자기장 내 위치 · 4곳</div>
+      <div class="location-item">
+        <div class="tier-badge tier-S">S</div>
+        <div class="loc-info">
+          <div class="loc-name">로젠탈 창고</div>
+          <div class="loc-dist">중심까지 1.2km</div>
+        </div>
+      </div>
+      <div class="location-item">
+        <div class="tier-badge tier-A">A</div>
+        <div class="loc-info">
+          <div class="loc-name">야스나야 광장</div>
+          <div class="loc-dist">중심까지 2.4km</div>
+        </div>
+      </div>
+      <div class="location-item">
+        <div class="tier-badge tier-A">A</div>
+        <div class="loc-info">
+          <div class="loc-name">노보레프니스코예</div>
+          <div class="loc-dist">중심까지 2.8km</div>
+        </div>
+      </div>
+      <div class="location-item">
+        <div class="tier-badge tier-B">B</div>
+        <div class="loc-info">
+          <div class="loc-name">게오르고폴</div>
+          <div class="loc-dist">중심까지 3.5km</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 범례 -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ffffff;opacity:0.8"></div>자기장 경계</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>자기장 중심</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>S 등급</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>A 등급</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>B 등급</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- 23초 알림 토스트 -->
+<div class="toast">
+  <span class="toast-icon">🔔</span>
+  <div>
+    <div class="toast-txt">자기장 23초!</div>
+    <div class="toast-sub">지금 이동하세요</div>
+  </div>
+</div>
+
+</body>
+</html>
