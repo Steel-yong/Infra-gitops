@@ -118,4 +118,27 @@ describe('LocationService', () => {
 
     expect(result).toHaveLength(20);
   });
+
+  it('findAll — 맵 타입의 모든 위치를 반환한다', async () => {
+    mockPrisma.map.findUnique.mockResolvedValue(erangelMap);
+    mockPrisma.location.findMany.mockResolvedValue([
+      makeLocation('loc-a', 0.1, 0.1),
+      makeLocation('loc-b', 0.9, 0.9),
+    ]);
+
+    const result = await service.findAll('erangel');
+
+    expect(result).toHaveLength(2);
+    expect(result.every((l) => l.mapType === 'erangel')).toBe(true);
+    expect(mockPrisma.location.findMany).toHaveBeenCalledWith({ where: { mapId: 'map-erangel' } });
+  });
+
+  it('findAll — 맵이 없으면 빈 배열을 반환한다', async () => {
+    mockPrisma.map.findUnique.mockResolvedValue(null);
+
+    const result = await service.findAll('taego');
+
+    expect(result).toHaveLength(0);
+    expect(mockPrisma.location.findMany).not.toHaveBeenCalled();
+  });
 });
