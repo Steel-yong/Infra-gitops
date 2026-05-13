@@ -53,9 +53,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_CAPTURE_URL: http://localhost:3001
-      NEXT_PUBLIC_LOCATION_URL: http://localhost:3002
-      NEXT_PUBLIC_ALERT_URL: http://localhost:3003
+      NEXT_PUBLIC_CAPTURE_SERVICE_URL: http://127.0.0.1:3001
+      NEXT_PUBLIC_LOCATION_SERVICE_URL: http://127.0.0.1:3002
+      NEXT_PUBLIC_ALERT_SERVICE_URL: http://127.0.0.1:3003
 
 volumes:
   postgres_data:

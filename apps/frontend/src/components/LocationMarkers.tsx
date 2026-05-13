@@ -16,7 +16,7 @@ interface LocationMarkersProps {
 }
 
 /**
- * CRS.Simple 좌표계 기준 center=[coordY, coordX].
+ * coordY는 이미지 좌표계(북→남 0→1)이고 Leaflet은 남→북 0→1이므로 1-coordY로 뒤집는다.
  * MapCanvas children으로 렌더링해야 Leaflet 컨텍스트를 사용할 수 있다.
  */
 export function LocationMarkers({ locations }: LocationMarkersProps) {
@@ -25,7 +25,7 @@ export function LocationMarkers({ locations }: LocationMarkersProps) {
       {locations.map((loc) => (
         <CircleMarker
           key={loc.id}
-          center={[loc.coordY, loc.coordX]}
+          center={[1 - loc.coordY, loc.coordX]}
           radius={8}
           pathOptions={{
             color: TIER_COLORS[loc.tier],

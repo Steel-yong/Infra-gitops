@@ -25,10 +25,10 @@ describe('CircleOverlay', () => {
     expect(screen.getByTestId('circle')).toBeInTheDocument();
   });
 
-  it('center는 [y, x] 순서로 전달된다 (Leaflet lat/lng)', () => {
+  it('center는 [1-y, x] 순서로 전달된다 (이미지 좌표계 → Leaflet Y축 뒤집기)', () => {
     render(<CircleOverlay circleData={{ x: 0.3, y: 0.7, r: 0.1 }} />);
     const circle = screen.getByTestId('circle');
-    expect(circle).toHaveAttribute('data-center-lat', '0.7');
+    expect(circle).toHaveAttribute('data-center-lat', String(1 - 0.7));
     expect(circle).toHaveAttribute('data-center-lng', '0.3');
   });
 
@@ -37,11 +37,11 @@ describe('CircleOverlay', () => {
     expect(screen.getByTestId('circle')).toHaveAttribute('data-radius', '0.25');
   });
 
-  it('circleData 변경 시 새 원으로 교체된다', () => {
+  it('circleData 변경 시 새 원으로 교체된다 (1-y 변환 유지)', () => {
     const { rerender } = render(<CircleOverlay circleData={{ x: 0.5, y: 0.5, r: 0.2 }} />);
     rerender(<CircleOverlay circleData={{ x: 0.8, y: 0.2, r: 0.1 }} />);
     const circle = screen.getByTestId('circle');
-    expect(circle).toHaveAttribute('data-center-lat', '0.2');
+    expect(circle).toHaveAttribute('data-center-lat', String(1 - 0.2));
     expect(circle).toHaveAttribute('data-center-lng', '0.8');
     expect(circle).toHaveAttribute('data-radius', '0.1');
   });

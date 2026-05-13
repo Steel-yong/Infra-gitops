@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>PUBG Helper 작업 감사 보고서 — 2026-05-13</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #181b24;
+    --panel-2: #1f2330;
+    --border: #2a2f3d;
+    --text: #e6e8ee;
+    --muted: #9aa0ab;
+    --accent: #6ea8fe;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --crit: #ef4444;
+    --info: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 4px;
+    color: #fff;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+  h2 {
+    font-size: 18px;
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  h3 {
+    font-size: 15px;
+    margin: 18px 0 8px;
+    color: #cbd5e1;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card .value {
+    font-size: 24px;
+    font-weight: 700;
+    margin-top: 6px;
+  }
+  .card.ok .value { color: var(--ok); }
+  .card.warn .value { color: var(--warn); }
+  .card.crit .value { color: var(--crit); }
+  .card.info .value { color: var(--info); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  th {
+    background: var(--panel-2);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.ok { background: rgba(74, 222, 128, 0.15); color: var(--ok); }
+  .badge.warn { background: rgba(251, 191, 36, 0.15); color: var(--warn); }
+  .badge.crit { background: rgba(239, 68, 68, 0.15); color: var(--crit); }
+  .badge.info { background: rgba(56, 189, 248, 0.15); color: var(--info); }
+  .badge.muted { background: rgba(154, 160, 171, 0.15); color: var(--muted); }
+  .issue-box {
+    background: var(--panel);
+    border-left: 3px solid var(--warn);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .issue-box.crit { border-left-color: var(--crit); }
+  .issue-box.info { border-left-color: var(--info); }
+  .issue-box.ok { border-left-color: var(--ok); }
+  .issue-box .title {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .issue-box .body {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  code {
+    background: var(--panel-2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 12px;
+    color: #f5e6a8;
+  }
+  pre {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .file-list {
+    columns: 2;
+    column-gap: 16px;
+    margin: 8px 0;
+  }
+  .file-list li {
+    break-inside: avoid;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 12px;
+    color: #cbd5e1;
+    list-style: none;
+    padding: 2px 0;
+  }
+  .pill {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--panel-2);
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<h1>PUBG Helper 작업 감사 보고서</h1>
+<div class="subtitle">2026-05-13 · develop 브랜치 기준 · Linear / Git / Worktree / 미커밋 변경 전수 점검</div>
+
+<h2>📊 한눈에 보기</h2>
+<div class="grid">
+  <div class="card ok">
+    <div class="label">Linear Done</div>
+    <div class="value">23/23</div>
+  </div>
+  <div class="card warn">
+    <div class="label">미머지 OPEN PR</div>
+    <div class="value">3</div>
+  </div>
+  <div class="card crit">
+    <div class="label">불일치 (Linear Done · PR CLOSED)</div>
+    <div class="value">1</div>
+  </div>
+  <div class="card crit">
+    <div class="label">develop 미커밋 변경</div>
+    <div class="value">16</div>
+  </div>
+</div>
+
+<h2>🌳 Worktree · 브랜치 매트릭스</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Worktree</th>
+      <th>브랜치</th>
+      <th>develop 머지</th>
+      <th>GitHub PR</th>
+      <th>워크트리 작업 상태</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Infra-gitops <span class="pill">메인</span></td>
+      <td>develop</td>
+      <td>—</td>
+      <td>—</td>
+      <td><span class="badge crit">🔴 변경 16개 미커밋</span></td>
+    </tr>
+    <tr>
+      <td>ci-docker-build</td>
+      <td>feature/ci-docker-build</td>
+      <td><span class="badge muted">미머지</span></td>
+      <td><span class="badge warn">#74 OPEN</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-15</td>
+      <td>feature/PUB-15</td>
+      <td><span class="badge ok">머지됨</span></td>
+      <td><span class="badge ok">#66 MERGED</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-16</td>
+      <td>feature/PUB-16</td>
+      <td><span class="badge ok">머지됨</span></td>
+      <td><span class="badge ok">#67 MERGED</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-17</td>
+      <td>feature/PUB-17</td>
+      <td><span class="badge ok">머지됨</span></td>
+      <td><span class="badge ok">#68 MERGED</span></td>
+      <td><span class="badge warn">pnpm-lock 잔재 1줄</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-18</td>
+      <td>feature/PUB-18</td>
+      <td><span class="badge ok">머지됨</span></td>
+      <td><span class="badge ok">#69 MERGED</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-24</td>
+      <td>feature/PUB-24</td>
+      <td><span class="badge muted">미머지</span></td>
+      <td><span class="badge ok">#70 MERGED</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-25</td>
+      <td>feature/PUB-25</td>
+      <td><span class="badge muted">미머지</span></td>
+      <td><span class="badge crit">#71 CLOSED ⚠️</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-26</td>
+      <td>feature/PUB-26</td>
+      <td><span class="badge muted">미머지</span></td>
+      <td><span class="badge warn">#72 OPEN</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td>feature-PUB-27</td>
+      <td>feature/PUB-27</td>
+      <td><span class="badge muted">미머지</span></td>
+      <td><span class="badge warn">#73 OPEN</span></td>
+      <td><span class="badge ok">깨끗</span></td>
+    </tr>
+    <tr>
+      <td colspan="5" style="color: var(--muted); font-size: 12px; text-align: center; font-style: italic;">
+        Orphan 디렉토리 (worktree 미등록): /mnt/d/infra project/feature-PUB-5, feature-PUB-6 (둘 다 빈 폴더)
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>🚨 발견된 이상점</h2>
+
+<div class="issue-box crit">
+  <div class="title">🔴 [심각] Linear Status 거짓 — PR #71 (PUB-25) CLOSED 상태</div>
+  <div class="body">
+    Linear의 PUB-25(CD 파이프라인)는 <code>Done</code>으로 마킹됐지만 실제 GitHub PR #71은 <b>CLOSED (미머지)</b>.
+    CD 코드가 main에 안 올라간 상태. 다른 AI가 Linear status만 닫고 PR 머지는 안 한 정황.
+    PUB-26/27도 PR OPEN인데 Linear Done.
+  </div>
+</div>
+
+<div class="issue-box crit">
+  <div class="title">🔴 [규칙 위반] CLAUDE.md "worktree로 작업" 규칙 위반</div>
+  <div class="body">
+    현재 16개 변경사항이 모두 <b>메인 폴더의 develop 브랜치</b>에 직접 쌓여있음.
+    CLAUDE.md 1부 4단계는 <b>"모든 브랜치 작업은 반드시 git worktree로 한다"</b>고 명시.
+    또한 이 변경은 명백히 <b>"비밀창고(Stash) 기능"</b>이라는 하나의 feature지만 Linear 이슈 없이 진행됨.
+  </div>
+</div>
+
+<div class="issue-box warn">
+  <div class="title">🟡 [의심] 좌표계 일관성 깨질 가능성 (Y축 뒤집기)</div>
+  <div class="body">
+    <code>LocationMarkers.tsx</code>의 마커 좌표가 <code>[loc.coordY, loc.coordX]</code> → <code>[1 - loc.coordY, loc.coordX]</code>로 변경.
+    <code>StashMarkers.tsx</code>도 동일 패턴. 그런데 <b><code>CircleOverlay.tsx</code>는 변경 없음</b> →
+    자기장 원과 위치 마커가 서로 다른 좌표계로 그려질 가능성. 시각 검증 필수.
+  </div>
+</div>
+
+<div class="issue-box warn">
+  <div class="title">🟡 [위생] Orphan worktree 디렉토리 2개</div>
+  <div class="body">
+    <code>/mnt/d/infra project/feature-PUB-5</code>, <code>feature-PUB-6</code>이 디스크에 빈 폴더로 남아있음.
+    <code>git worktree list</code>에서는 이미 해제됨. 직접 <code>rmdir</code> 가능.
+  </div>
+</div>
+
+<div class="issue-box info">
+  <div class="title">🟢 [위생] .claude/images/ 한국어 PNG 8장 untracked</div>
+  <div class="body">
+    사용자가 공유한 스크린샷들. <code>.gitignore</code>에 <code>.claude/images/</code> 추가 권장.
+  </div>
+</div>
+
+<h2>📝 미커밋 변경 16개 분류</h2>
+
+<h3>A. 비밀창고 기능 (Stash) — 신규 한 덩어리</h3>
+<table>
+  <thead><tr><th>경로</th><th>변경 종류</th><th>내용</th></tr></thead>
+  <tbody>
+    <tr><td><code>apps/services/location/prisma/seed.ts</code></td><td>Modify</td><td>에란겔 17 + 태이고 17 = <b>비밀창고 34개 좌표 시드</b></td></tr>
+    <tr><td><code>apps/services/location/src/location/location.controller.ts</code></td><td>Modify</td><td><code>GET /locations?mapType=</code> 엔드포인트 추가</td></tr>
+    <tr><td><code>apps/services/location/src/location/location.service.ts</code></td><td>Modify</td><td><code>findAll(mapType)</code> 메서드 추가</td></tr>
+    <tr><td><code>apps/frontend/src/components/StashMarkers.tsx</code></td><td><b>신규</b></td><td>펄싱 금색 마커 컴포넌트 (✅ 첫 줄 한국어 주석 있음)</td></tr>
+    <tr><td><code>apps/frontend/src/hooks/useStashLocations.ts</code></td><td><b>신규</b></td><td>비밀창고 전체 조회 훅 (proTeamNames 필터)</td></tr>
+    <tr><td><code>apps/frontend/src/app/page.tsx</code></td><td>Modify</td><td>StashMarkers를 MapCanvas에 통합</td></tr>
+    <tr><td><code>apps/frontend/src/app/globals.css</code></td><td>Modify</td><td><code>.stash-marker</code> 펄스 애니메이션 스타일</td></tr>
+  </tbody>
+</table>
+
+<h3>B. 좌표계 수정 (검증 필요)</h3>
+<table>
+  <thead><tr><th>경로</th><th>변경</th></tr></thead>
+  <tbody>
+    <tr><td><code>apps/frontend/src/components/LocationMarkers.tsx</code></td><td><code>[loc.coordY, loc.coordX]</code> → <code>[1 - loc.coordY, loc.coordX]</code></td></tr>
+  </tbody>
+</table>
+
+<h3>C. CORS 활성화</h3>
+<table>
+  <thead><tr><th>경로</th><th>변경</th></tr></thead>
+  <tbody>
+    <tr><td><code>apps/services/{alert,capture,location}/src/main.ts</code></td><td>각각 <code>app.enableCors();</code> 추가</td></tr>
+  </tbody>
+</table>
+
+<h3>D. 환경변수 이름 통일 (좋은 정리)</h3>
+<table>
+  <thead><tr><th>경로</th><th>변경</th></tr></thead>
+  <tbody>
+    <tr><td><code>docker-compose.yml</code></td><td><code>NEXT_PUBLIC_*_URL</code> → <code>NEXT_PUBLIC_*_SERVICE_URL</code> (프론트 코드와 일치)</td></tr>
+  </tbody>
+</table>
+
+<h3>E. 빌드 / 문서 정리</h3>
+<table>
+  <thead><tr><th>경로</th><th>변경</th></tr></thead>
+  <tbody>
+    <tr><td><code>apps/frontend/src/components/MapCanvas.tsx</code></td><td>Leaflet CSS import 제거 (globals.css로 이동)</td></tr>
+    <tr><td><code>apps/frontend/next.config.js</code></td><td><code>allowedDevOrigins</code>에 <code>127.0.0.1</code> 추가</td></tr>
+    <tr><td><code>package.json</code></td><td>pnpm <code>onlyBuiltDependencies</code> 명시 (approve-builds)</td></tr>
+    <tr><td><code>CLAUDE.md</code></td><td>PARA 문서 구조 + HTML 시각화 규칙 추가</td></tr>
+    <tr><td><code>docs/plans/2026-05-06-001-...plan.md</code></td><td>삭제 (이미 <code>docs/projects/</code>로 이전 커밋됨, 잔재 정리)</td></tr>
+    <tr><td><code>.claude/settings.local.json</code></td><td>로컬 권한 설정</td></tr>
+    <tr><td><code>pnpm-lock.yaml</code></td><td>락 파일 갱신</td></tr>
+  </tbody>
+</table>
+
+<h2>✅ 권장 후속 조치 (우선순위)</h2>
+<ol>
+  <li>
+    <b>미커밋 변경 → 새 worktree로 옮기기</b>
+    <pre># develop의 변경을 stash
+git stash push -u -m "stash-feature-WIP"
+
+# 새 worktree + 브랜치 생성
+git worktree add -b feature/PUB-XX ../feature-PUB-XX develop
+
+# 새 worktree에서 stash 적용
+cd "../feature-PUB-XX"
+git stash pop</pre>
+    먼저 Linear에서 <b>"비밀창고 위치 표시 기능"</b> 이슈를 새로 만들고 (PUB-28 예상),
+    위 명령으로 PUB-28 worktree로 옮긴 뒤 거기서 커밋·PR 진행.
+  </li>
+  <li>
+    <b>PR #71/72/73 상태 정리</b> — Linear와 GitHub 실제 상태를 맞추기.
+    PUB-25는 PR을 재오픈 또는 새 PR 작성, PUB-26/27은 머지.
+  </li>
+  <li>
+    <b>좌표계 시각 검증</b> — Leaflet 지도에서 자기장 원 / 위치 마커 / 비밀창고 마커가
+    같은 좌표계로 정확히 겹쳐 그려지는지 브라우저 확인.
+  </li>
+  <li>
+    <b>위생 정리</b>:
+    <ul>
+      <li><code>rmdir "/mnt/d/infra project/feature-PUB-5" "/mnt/d/infra project/feature-PUB-6"</code></li>
+      <li><code>.gitignore</code>에 <code>.claude/images/</code> 추가</li>
+      <li>PUB-17 worktree의 pnpm-lock.yaml 잔재 정리</li>
+    </ul>
+  </li>
+</ol>
+
+<div class="footer">
+  생성: 2026-05-13 · 작성자: Claude Opus 4.7 (Max) · 입력: <code>/compound-engineering:ce-work</code> 감사 요청
+</div>
+
+</body>
+</html>

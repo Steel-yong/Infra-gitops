@@ -7,6 +7,7 @@ import type { LocationData } from '@pubg-helper/shared';
 
 const mockLocationService = {
   recommend: vi.fn(),
+  findAll: vi.fn(),
 };
 
 const mockResult: LocationData[] = [
@@ -61,5 +62,23 @@ describe('LocationController', () => {
     });
 
     expect(result).toEqual([]);
+  });
+
+  it('GET / — mapType 쿼리를 서비스에 전달하고 결과를 반환한다', async () => {
+    mockLocationService.findAll.mockResolvedValue(mockResult);
+
+    const result = await controller.findAll('erangel');
+
+    expect(result).toEqual(mockResult);
+    expect(mockLocationService.findAll).toHaveBeenCalledWith('erangel');
+  });
+
+  it('GET / — 결과가 비면 빈 배열을 그대로 반환한다', async () => {
+    mockLocationService.findAll.mockResolvedValue([]);
+
+    const result = await controller.findAll('taego');
+
+    expect(result).toEqual([]);
+    expect(mockLocationService.findAll).toHaveBeenCalledWith('taego');
   });
 });

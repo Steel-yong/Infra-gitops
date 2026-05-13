@@ -146,6 +146,44 @@ PR 오픈 → CI 통과 (커버리지 95% 미달 시 블락) → ArgoCD 자동 �
 콜론은 코드, 키-값 쌍, 라벨 안에서만 사용.
 모든 한국어 문장 종결부는 ., ?, ! 여야 한다.
 
+## 문서화 원칙
+
+### docs/ PARA 구조 필수
+모든 문서는 반드시 PARA 구조를 따른다.
+
+```
+docs/
+├── projects/     # 현재 진행 중인 프로젝트 계획 (완료 시 archives로 이동)
+├── areas/        # 지속 관리 영역 — 인프라 설정, SSH, 운영 노트 등
+├── resources/    # 참고 자료 — 해결된 버그, 패턴, 목업, 의사결정
+│   ├── solutions/    # 버그 해결책, 아키텍처 패턴, 컨벤션
+│   └── mockups/      # HTML 시각화 파일
+└── archives/     # 완료/비활성 문서 보관
+```
+
+규칙.
+- 새 계획 문서 → `docs/projects/`
+- 인프라 설정, SSH, 운영 관련 기록 → `docs/areas/`
+- 해결된 문제, 패턴, 목업 → `docs/resources/`
+- 완료된 프로젝트 문서 → `docs/archives/`
+- `docs/plans/`, `docs/solutions/`, `docs/mockups/`, `docs/decisions/` 경로는 사용하지 마라.
+
+### 사용자 결정사항 HTML 시각화 필수
+사용자가 결정해야 할 사항이 있을 때 텍스트로만 설명하지 마라.
+반드시 `docs/resources/mockups/[날짜]-decision-[주제].html`로 시각화해서 보여준 뒤 결정을 받아라.
+
+시각화에 포함할 것.
+- 선택지별 트레이드오프 비교표.
+- 각 선택지의 영향 범위.
+- 추천 선택지와 이유.
+- 결정 후 다음 액션.
+
+형식.
+- 자급자족 단일 HTML (CSS 인라인, 외부 의존성 없음).
+- 다크 테마, 한국어 라벨.
+
+---
+
 ## 작업 완료 후 플로우
 
 커밋 완료 후:
@@ -235,6 +273,9 @@ Infra-gitops/
 │       └── alert/             # 자기장 타이머 + 알림 (NestJS)
 ├── packages/
 │   └── shared/                # 공통 타입, DTO, 인터페이스
+├── docs/
+│   ├── plans/                 # 계획 문서
+│   └── solutions/             # 해결된 문제 문서 (버그, 패턴, 관례) — 카테고리별 YAML 프론트매터 (module, tags, problem_type)
 ├── clusters/                  # K8s 매니페스트 (기존 인프라)
 ├── applicationsets/           # ArgoCD AppSet (기존 인프라)
 ├── pnpm-workspace.yaml

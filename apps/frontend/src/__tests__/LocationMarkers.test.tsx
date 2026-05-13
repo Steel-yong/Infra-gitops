@@ -66,10 +66,10 @@ describe('LocationMarkers', () => {
     expect(screen.getByTestId('circle-marker')).toHaveAttribute('data-color', '#CD7F32');
   });
 
-  it('마커 center는 [coordY, coordX] 순서다', () => {
+  it('마커 center는 [1-coordY, coordX] 순서다 (이미지 좌표계 → Leaflet Y축 뒤집기)', () => {
     render(<LocationMarkers locations={[makeLocation({ coordX: 0.3, coordY: 0.7 })]} />);
     const marker = screen.getByTestId('circle-marker');
-    expect(marker).toHaveAttribute('data-lat', '0.7');
+    expect(marker).toHaveAttribute('data-lat', String(1 - 0.7));
     expect(marker).toHaveAttribute('data-lng', '0.3');
   });
 
