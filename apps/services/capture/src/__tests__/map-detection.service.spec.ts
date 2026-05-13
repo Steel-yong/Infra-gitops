@@ -46,7 +46,8 @@ describe('MapDetectionService', () => {
     expect(await service.isMapOpen(base64)).toBe(false);
   });
 
-  it('중앙 30% 영역이 파란색이면 → true', async () => {
+  it('이미지 일부가 청록색이고 3% 이상이면 → true', async () => {
+    // 전체를 갈색으로 채우고 중앙 30% 구역만 청록색 (약 9% → 임계치 초과)
     const w = 100, h = 100;
     const l = Math.floor((w - Math.floor(w * 0.3)) / 2);
     const r = l + Math.floor(w * 0.3);
@@ -58,9 +59,15 @@ describe('MapDetectionService', () => {
     expect(await service.isMapOpen(base64)).toBe(true);
   });
 
-  it('b > 150 이지만 r, g 조건 미달 → false', async () => {
-    // b=160 이지만 r=120이라 b <= r*1.5(=180) → false
-    const base64 = await makeImage(100, 100, () => [120, 120, 160]);
+  it('PUBG 바다색(어두운 청록) 픽셀만 → true', async () => {
+    // R:40, G:55, B:80 — 에란겔 바다 특유의 어두운 청록
+    const base64 = await makeImage(100, 100, () => [40, 55, 80]);
+    expect(await service.isMapOpen(base64)).toBe(true);
+  });
+
+  it('밝은 하늘색(R,G 높음)은 바다색과 구분 → false', async () => {
+    // R:130, G:160, B:190 — 게임 하늘색은 R/G가 115 초과라 제외됨
+    const base64 = await makeImage(100, 100, () => [130, 160, 190]);
     expect(await service.isMapOpen(base64)).toBe(false);
   });
 });

@@ -33,6 +33,17 @@ export class CircleService {
     const circle = fitCircle(points);
     if (!circle) return null;
 
+    // 합리적인 반경 범위 체크: 이미지 너비의 5~90%
+    if (circle.r < width * 0.05 || circle.r > Math.max(width, height) * 0.9) return null;
+
+    // 피팅 품질 검증: 평균 잔차가 반경의 25% 초과면 점들이 원을 이루지 않는다고 판단
+    const avgResidual =
+      points.reduce((sum, [x, y]) => {
+        const dist = Math.sqrt((x - circle.cx) ** 2 + (y - circle.cy) ** 2);
+        return sum + Math.abs(dist - circle.r);
+      }, 0) / points.length;
+    if (avgResidual > circle.r * 0.25) return null;
+
     return {
       x: circle.cx / width,
       y: circle.cy / height,
