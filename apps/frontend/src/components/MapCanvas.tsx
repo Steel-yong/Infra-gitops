@@ -17,7 +17,14 @@ const BOUNDS: [[number, number], [number, number]] = [
 function MapUpdater({ mapType }: { mapType: MapType }) {
   const map = useMap();
   useEffect(() => {
-    map.fitBounds(BOUNDS);
+    map.fitBounds(BOUNDS, { padding: [0, 0] });
+    // 컨테이너 폭 기준으로 지도가 꽉 차도록 줌 보정
+    const size = map.getSize();
+    if (size.x > size.y) {
+      const currentZoom = map.getZoom();
+      const ratio = size.x / size.y;
+      map.setZoom(currentZoom + Math.log2(ratio), { animate: false });
+    }
   }, [mapType, map]);
   return null;
 }

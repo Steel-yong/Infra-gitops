@@ -27,8 +27,8 @@ body {
 
 /* 비밀창고 마커 */
 .stash-marker {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   background: rgba(251, 191, 36, 0.2);
   border: 2px solid #FBB024;
   border-radius: 50%;
@@ -36,6 +36,6 @@ body {
 }
 
 @keyframes stash-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
-  50%       { box-shadow: 0 0 0 7px rgba(251, 191, 36, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6); }
+  50%       { box-shadow: 0 0 0 9px rgba(251, 191, 36, 0); }
 }

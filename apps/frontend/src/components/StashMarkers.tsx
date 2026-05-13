@@ -8,9 +8,9 @@ import type { LocationData } from '@pubg-helper/shared';
 const stashIcon = divIcon({
   className: '',
   html: '<div class="stash-marker"></div>',
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-  tooltipAnchor: [9, 0],
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  tooltipAnchor: [12, 0],
 });
 
 interface StashMarkersProps {
