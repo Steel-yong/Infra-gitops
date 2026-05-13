@@ -15,5 +15,47 @@ services:
       timeout: 5s
       retries: 5
 
+  capture:
+    build:
+      context: .
+      dockerfile: apps/services/capture/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+
+  location:
+    build:
+      context: .
+      dockerfile: apps/services/location/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://pubg_helper:pubg_helper_local@postgres:5432/pubg_helper
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  alert:
+    build:
+      context: .
+      dockerfile: apps/services/alert/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_CAPTURE_URL: http://localhost:3001
+      NEXT_PUBLIC_LOCATION_URL: http://localhost:3002
+      NEXT_PUBLIC_ALERT_URL: http://localhost:3003
+
 volumes:
   postgres_data:
