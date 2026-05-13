@@ -8,6 +8,7 @@ import { MAP_TYPES } from '@pubg-helper/shared';
 import { useCaptureSocket } from '../hooks/useCaptureSocket';
 import { useScreenCapture } from '../hooks/useScreenCapture';
 import { useLocations } from '../hooks/useLocations';
+import { useStashLocations } from '../hooks/useStashLocations';
 import { useWebNotifications } from '../hooks/useWebNotifications';
 import { LocationPanel } from '../components/LocationPanel';
 import styles from './page.module.css';
@@ -19,6 +20,10 @@ const CircleOverlay = dynamic(
 );
 const LocationMarkers = dynamic(
   () => import('../components/LocationMarkers').then((m) => ({ default: m.LocationMarkers })),
+  { ssr: false },
+);
+const StashMarkers = dynamic(
+  () => import('../components/StashMarkers').then((m) => ({ default: m.StashMarkers })),
   { ssr: false },
 );
 
@@ -33,6 +38,7 @@ export default function Page() {
     onError: (msg) => setCaptureError(msg),
   });
   const { locations, error: locationError } = useLocations(circleData, mapType);
+  const stashes = useStashLocations(mapType);
   const { permission, requestPermission } = useWebNotifications();
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -150,6 +156,7 @@ export default function Page() {
         {/* ── 오른쪽: 맵 영역 (6.5) ── */}
         <div className={styles.mapArea}>
           <MapCanvas mapType={mapType}>
+            <StashMarkers stashes={stashes} />
             <CircleOverlay circleData={circleData} />
             <LocationMarkers locations={locations} />
           </MapCanvas>

@@ -6,7 +6,6 @@ import { MapContainer, ImageOverlay, useMap } from 'react-leaflet';
 import { CRS } from 'leaflet';
 import type { MapType } from '@pubg-helper/shared';
 import styles from './MapCanvas.module.css';
-import 'leaflet/dist/leaflet.css';
 
 /** 0~1 정규화 좌표계 경계. CircleOverlay와 좌표계를 공유한다. */
 const BOUNDS: [[number, number], [number, number]] = [
