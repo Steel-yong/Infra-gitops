@@ -202,6 +202,16 @@
   background: #b91c1c;
 }
 
+.captureHint {
+  font-size: 0.72rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.captureHint strong {
+  color: #93c5fd;
+}
+
 .captureError {
   font-size: 0.72rem;
   color: #f87171;

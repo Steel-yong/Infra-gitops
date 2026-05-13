@@ -44,7 +44,10 @@ export function useScreenCapture({ onFrame, onError }: UseScreenCaptureOptions):
 
     let capturedStream: MediaStream;
     try {
-      capturedStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      capturedStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: 'monitor' },
+        audio: false,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : '화면공유 권한 거부';
       onError?.(msg);

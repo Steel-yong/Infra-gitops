@@ -131,6 +131,11 @@ export default function Page() {
             >
               {isCapturing ? '공유 종료' : '공유 시작'}
             </button>
+            {!isCapturing && (
+              <p className={styles.captureHint}>
+                공유 시작 후 <strong>화면 전체</strong> 탭에서 배그가 있는 모니터를 선택하세요.
+              </p>
+            )}
             {captureError && (
               <p className={styles.captureError}>{captureError}</p>
             )}
