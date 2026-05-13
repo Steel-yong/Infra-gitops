@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUBG Helper — 작업 현황 (2026-05-12)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f0f13; color: #e1e1e6; min-height: 100vh; padding: 32px; }
+  h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #6b7280; margin-bottom: 32px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .full { grid-column: 1 / -1; }
+
+  .card { background: #18181f; border: 1px solid #2a2a35; border-radius: 12px; padding: 20px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: #22c55e; }
+  .dot-yellow { background: #f59e0b; box-shadow: 0 0 8px #f59e0b80; }
+  .dot-gray { background: #4b5563; }
+  .dot-red { background: #ef4444; }
+
+  /* Progress bar */
+  .progress-bar { height: 8px; background: #2a2a35; border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #22c55e); border-radius: 99px; transition: width 0.3s; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-bottom: 16px; }
+
+  /* Issue list */
+  .issue-list { display: flex; flex-direction: column; gap: 6px; }
+  .issue-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13px; }
+  .issue-row:hover { background: #1f1f2a; }
+  .issue-id { font-family: monospace; font-size: 11px; color: #6366f1; font-weight: 600; min-width: 54px; }
+  .issue-title { flex: 1; color: #c4c4d0; line-height: 1.4; }
+  .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .badge-done { background: #14532d40; color: #22c55e; border: 1px solid #22c55e40; }
+  .badge-inprogress { background: #78350f40; color: #f59e0b; border: 1px solid #f59e0b60; }
+  .badge-todo { background: #1f2937; color: #6b7280; border: 1px solid #374151; }
+  .badge-pr { background: #1e1b4b40; color: #818cf8; border: 1px solid #4338ca40; }
+
+  /* Worktree */
+  .worktree-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .wt-card { background: #1f1f2a; border: 1px solid #2a2a35; border-radius: 8px; padding: 12px; }
+  .wt-card.inprogress { border-color: #f59e0b60; background: #1a1710; }
+  .wt-card.done-cleanup { border-color: #ef444440; background: #1a1012; }
+  .wt-branch { font-family: monospace; font-size: 12px; color: #6366f1; margin-bottom: 4px; }
+  .wt-hash { font-family: monospace; font-size: 10px; color: #4b5563; }
+  .wt-status { font-size: 11px; margin-top: 6px; }
+  .wt-status.active { color: #f59e0b; }
+  .wt-status.cleanup { color: #ef4444; }
+  .wt-status.ok { color: #22c55e; }
+
+  /* Docs / PARA */
+  .para-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .para-section { background: #1f1f2a; border-radius: 8px; padding: 14px; }
+  .para-letter { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .para-name { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
+  .para-file { font-size: 11px; color: #6b7280; padding: 4px 0; border-bottom: 1px solid #2a2a35; display: block; }
+  .para-file:last-child { border-bottom: none; }
+  .para-missing { font-size: 11px; color: #ef444480; font-style: italic; padding: 4px 0; }
+  .para-p { color: #6366f1; }
+  .para-a { color: #22c55e; }
+  .para-r { color: #f59e0b; }
+  .para-arch { color: #9ca3af; }
+
+  /* Alert box */
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
+  .alert-warn { background: #78350f20; border: 1px solid #f59e0b40; color: #fcd34d; }
+  .alert-ok { background: #14532d20; border: 1px solid #22c55e40; color: #86efac; }
+  .alert-red { background: #7f1d1d20; border: 1px solid #ef444440; color: #fca5a5; }
+  .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Stats row */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat { background: #18181f; border: 1px solid #2a2a35; border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 800; margin-bottom: 2px; }
+  .stat-label { font-size: 11px; color: #6b7280; }
+  .stat-done { color: #22c55e; }
+  .stat-progress { color: #f59e0b; }
+  .stat-wt { color: #6366f1; }
+  .stat-remain { color: #9ca3af; }
+
+  /* Phase timeline */
+  .timeline { display: flex; gap: 0; margin-bottom: 6px; }
+  .phase { flex: 1; text-align: center; padding: 8px 4px; font-size: 11px; position: relative; }
+  .phase::after { content: ''; position: absolute; right: 0; top: 50%; width: 1px; height: 60%; background: #2a2a35; transform: translateY(-50%); }
+  .phase:last-child::after { display: none; }
+  .phase-num { font-size: 16px; font-weight: 800; display: block; }
+  .phase-label { color: #6b7280; display: block; margin-top: 2px; }
+  .phase-done { color: #22c55e; }
+  .phase-active { color: #f59e0b; }
+  .phase-todo { color: #4b5563; }
+
+  .section-gap { margin-top: 4px; }
+  .tag { display: inline-block; font-size: 10px; background: #2a2a35; color: #9ca3af; padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
+</style>
+</head>
+<body>
+<h1>PUBG Helper — 작업 현황</h1>
+<p class="subtitle">2026-05-12 기준 | Worktree 8개 · Linear PUB-27개 이슈 · develop 브랜치</p>
+
+<!-- 통계 -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num stat-done">22</div>
+    <div class="stat-label">Done 이슈</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num stat-progress">1</div>
+    <div class="stat-label">In Progress</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num stat-wt">8</div>
+    <div class="stat-label">열린 Worktree</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num stat-remain">7</div>
+    <div class="stat-label">정리 필요 Worktree</div>
+  </div>
+</div>
+
+<!-- 전체 진행률 -->
+<div class="card full" style="margin-bottom:20px;">
+  <div class="card-title"><span class="dot dot-green"></span> 전체 진행률</div>
+  <div class="progress-bar"><div class="progress-fill" style="width: 82%"></div></div>
+  <div class="progress-label"><span>PUB-5 기반 세팅 완료 → PUB-27 Vault 완료</span><span>22 / 27 이슈 완료 (82%)</span></div>
+
+  <div class="timeline">
+    <div class="phase">
+      <span class="phase-num phase-done">✓</span>
+      <span class="phase-label">Phase 1<br>기반 세팅</span>
+    </div>
+    <div class="phase">
+      <span class="phase-num phase-done">✓</span>
+      <span class="phase-label">Phase 2<br>백엔드 서비스</span>
+    </div>
+    <div class="phase">
+      <span class="phase-num phase-done">✓</span>
+      <span class="phase-label">Phase 3<br>프론트엔드</span>
+    </div>
+    <div class="phase">
+      <span class="phase-num phase-active">⏳</span>
+      <span class="phase-label">Phase 4<br>OCR/알림</span>
+    </div>
+    <div class="phase">
+      <span class="phase-num phase-done">✓</span>
+      <span class="phase-label">Phase 5<br>CI/CD + K8s</span>
+    </div>
+    <div class="phase">
+      <span class="phase-num phase-todo">○</span>
+      <span class="phase-label">Phase 6<br>통합 검증</span>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+<!-- 왼쪽: 이슈 현황 -->
+<div class="card">
+  <div class="card-title"><span class="dot dot-yellow"></span> 현재 진행 중</div>
+
+  <div class="alert alert-warn">
+    <span class="alert-icon">⚠</span>
+    <div>
+      <strong>PUB-15</strong> — OCR Web Worker (Tesseract.js 타이머 인식)<br>
+      <span style="font-size:11px; color:#9ca3af;">코드 커밋 완료 (acfaf5a) · PR 미개설 · Linear "In Progress"</span><br>
+      <span style="font-size:11px; color:#9ca3af;">ocrWorker.ts · useAlertTimer.ts · 커버리지 95% 달성</span>
+    </div>
+  </div>
+
+  <div class="card-title section-gap"><span class="dot dot-green"></span> 최근 완료 이슈</div>
+  <div class="issue-list">
+    <div class="issue-row">
+      <span class="issue-id">PUB-27</span>
+      <span class="issue-title">Vault 시크릿 + ESO ExternalSecret 설정</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-26</span>
+      <span class="issue-title">K8s 매니페스트 + ArgoCD AppSet (전체 배포)</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-25</span>
+      <span class="issue-title">Docker 빌드 + GitHub Actions CD (Harbor push)</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-24</span>
+      <span class="issue-title">GitHub Actions CI (lint/test/coverage 95% 게이트)</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-23</span>
+      <span class="issue-title">전체 통합 — 메인 페이지 조립</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-22</span>
+      <span class="issue-title">알림 설정 UI + Web Notifications API</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-21</span>
+      <span class="issue-title">프로 위치 마커 + 등급별 표시 + 거리순 랭킹</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-18</span>
+      <span class="issue-title">alert-service WebSocket Gateway</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-17</span>
+      <span class="issue-title">location-service 프로 위치 조회 API</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+    <div class="issue-row">
+      <span class="issue-id">PUB-16</span>
+      <span class="issue-title">Prisma DB 스키마 + 마이그레이션 (에란겔+태이고)</span>
+      <span class="badge badge-done">Done</span>
+    </div>
+  </div>
+</div>
+
+<!-- 오른쪽: Worktree 현황 -->
+<div class="card">
+  <div class="card-title"><span class="dot dot-yellow"></span> Worktree 현황</div>
+
+  <div class="alert alert-warn" style="margin-bottom:12px;">
+    <span class="alert-icon">🧹</span>
+    <div>완료된 이슈 7개의 worktree가 미삭제 상태입니다.<br>
+    <span style="font-size:11px;">PUB-16~18, PUB-24~27 — PR 머지 후 정리 권장</span></div>
+  </div>
+
+  <div class="worktree-grid">
+    <div class="wt-card inprogress">
+      <div class="wt-branch">feature/PUB-15</div>
+      <div class="wt-hash">acfaf5a</div>
+      <div class="wt-status active">● In Progress — PR 대기</div>
+    </div>
+    <div class="wt-card done-cleanup">
+      <div class="wt-branch">feature/PUB-16</div>
+      <div class="wt-hash">3451ad6</div>
+      <div class="wt-status cleanup">✕ Done — 정리 필요</div>
+    </div>
+    <div class="wt-card done-cleanup">
+      <div class="wt-branch">feature/PUB-17</div>
+      <div class="wt-hash">4afa01c</div>
+      <div class="wt-status cleanup">✕ Done — 정리 필요</div>
+    </div>
+    <div class="wt-card done-cleanup">
+      <div class="wt-branch">feature/PUB-18</div>
+      <div class="wt-hash">206d831</div>
+      <div class="wt-status cleanup">✕ Done — 정리 필요</div>
+    </div>
+    <div class="wt-card done-cleanup">
+      <div class="wt-branch">feature/PUB-24</div>
+      <div class="wt-hash">7d3ae7a</div>
+      <div class="wt-status cleanup">✕ Done — 정리 필요</div>
+    </div>
+    <div class="wt-card done-cleanup">
+      <div class="wt-branch">feature/PUB-25</div>
+      <div class="wt-hash">76ccf10</div>
+      <div class="wt-status cleanup">✕ Done — 정리 필요</div>
+    </div>
+    <div class="wt-card done-cleanup">
+      <div class="wt-branch">feature/PUB-26</div>
+      <div class="wt-hash">9f590b1</div>
+      <div class="wt-status cleanup">✕ Done — 정리 필요</div>
+    </div>
+    <div class="wt-card done-cleanup">
+      <div class="wt-branch">feature/PUB-27</div>
+      <div class="wt-hash">f492a2d</div>
+      <div class="wt-status cleanup">✕ Done — 정리 필요</div>
+    </div>
+  </div>
+</div>
+
+<!-- PARA 문서 현황 (full width) -->
+<div class="card full">
+  <div class="card-title"><span class="dot dot-red"></span> PARA 문서 구조 — SSH 작업 문서화 확인</div>
+
+  <div class="alert alert-red" style="margin-bottom:16px;">
+    <span class="alert-icon">✗</span>
+    <div>
+      <strong>PARA 구조 미적용.</strong> 현재 docs/ 폴더는 PARA(Projects/Areas/Resources/Archives)가 아닌 plans/solutions/mockups/decisions 구조입니다.<br>
+      <span style="font-size:11px; color:#fca5a5;">SSH 원격접속 설정에 대한 PARA 문서화도 확인되지 않았습니다.</span>
+    </div>
+  </div>
+
+  <div class="para-grid">
+    <div class="para-section" style="border: 1px solid #6366f140;">
+      <div class="para-letter para-p">P</div>
+      <div class="para-name">Projects (진행 중 프로젝트)</div>
+      <span class="para-file">plans/2026-05-06-001-feat-pubg-helper-full-project-plan.md</span>
+      <span class="para-missing">→ docs/projects/ 폴더 없음</span>
+    </div>
+    <div class="para-section" style="border: 1px solid #22c55e40;">
+      <div class="para-letter para-a">A</div>
+      <div class="para-name">Areas (지속 관리 영역)</div>
+      <span class="para-missing">→ SSH 설정 문서 없음</span>
+      <span class="para-missing">→ K8s 인프라 운영 노트 없음</span>
+      <span class="para-missing">→ docs/areas/ 폴더 없음</span>
+    </div>
+    <div class="para-section" style="border: 1px solid #f59e0b40;">
+      <div class="para-letter para-r">R</div>
+      <div class="para-name">Resources (참고 자료)</div>
+      <span class="para-file">solutions/architecture-patterns/circle-detection-kasa-algebraic-fit.md</span>
+      <span class="para-file">solutions/conventions/nestjs-websocket-gateway-cors-setup.md</span>
+      <span class="para-file">solutions/developer-experience/wsl2-webpack-file-watching-polling.md</span>
+      <span class="para-file">solutions/integration-issues/*.md (2개)</span>
+      <span class="para-file">solutions/ui-bugs/leaflet-ssr-hydration-error-nextjs.md</span>
+      <span class="para-file">decisions/ai-workflow-preferences.md</span>
+      <span class="para-file">mockups/*.html (2개)</span>
+    </div>
+    <div class="para-section" style="border: 1px solid #37415140;">
+      <div class="para-letter para-arch">A</div>
+      <div class="para-name">Archives (완료/보관)</div>
+      <span class="para-missing">→ docs/archives/ 폴더 없음</span>
+      <span class="para-missing">→ 완료된 Phase 1~3 보관 없음</span>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <div class="alert alert-warn">
+      <span class="alert-icon">🔑</span>
+      <div>
+        <strong>SSH 원격접속 설정 확인.</strong> settings.local.json에 SSH 관련 권한 <span style="font-family:monospace; font-size:11px;">Bash(service ssh *)</span>, <span style="font-family:monospace; font-size:11px;">Bash(systemctl is-active *)</span>이 추가되어 있으나,<br>
+        어떤 설정을 했는지(포트, 방화벽, authorized_keys 등) PARA Areas 문서로 기록된 내용이 없습니다.
+      </div>
+    </div>
+    <div class="alert alert-ok">
+      <span class="alert-icon">✓</span>
+      <div>
+        <strong>Solutions 폴더는 잘 채워지고 있습니다.</strong> WSL2 파일감시, MediaStream Worker 오류, Leaflet SSR, pnpm 경로 이슈 등 6개 해결책이 문서화되어 있습니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 다음 할 일 -->
+<div class="card full">
+  <div class="card-title"><span class="dot dot-yellow"></span> 지금 당장 해야 할 것</div>
+  <div class="issue-list">
+    <div class="issue-row" style="background:#1a1710; border: 1px solid #f59e0b30; border-radius:8px;">
+      <span style="font-size:16px;">1️⃣</span>
+      <span class="issue-title"><strong>PUB-15 PR 개설</strong> — OCR Worker 코드가 커밋되었으나 PR이 없음. feature/PUB-15 → develop PR 생성 필요.</span>
+      <span class="badge badge-inprogress">긴급</span>
+    </div>
+    <div class="issue-row" style="background:#1a1012; border: 1px solid #ef444430; border-radius:8px;">
+      <span style="font-size:16px;">2️⃣</span>
+      <span class="issue-title"><strong>완료 Worktree 7개 정리</strong> — PUB-16~18, PUB-24~27 worktree 삭제 (git worktree remove).</span>
+      <span class="badge badge-todo">권장</span>
+    </div>
+    <div class="issue-row" style="background:#111827; border: 1px solid #6366f130; border-radius:8px;">
+      <span style="font-size:16px;">3️⃣</span>
+      <span class="issue-title"><strong>SSH 설정 PARA 문서화</strong> — docs/areas/ssh-remote-access.md 로 어제 한 SSH 설정 내용 기록.</span>
+      <span class="badge badge-todo">권장</span>
+    </div>
+    <div class="issue-row" style="background:#111827; border: 1px solid #6366f130; border-radius:8px;">
+      <span style="font-size:16px;">4️⃣</span>
+      <span class="issue-title"><strong>docs/ PARA 재구조화</strong> — plans/ → projects/, decisions/ + solutions/ → resources/, 완료 Phase → archives/ 이동.</span>
+      <span class="badge badge-todo">나중에</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<div style="margin-top:20px; text-align:center; font-size:11px; color:#374151;">
+  생성: 2026-05-12 · 데이터: Linear API + git worktree · 브랜치: develop
+</div>
+</body>
+</html>

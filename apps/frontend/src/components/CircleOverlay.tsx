@@ -9,15 +9,16 @@ interface CircleOverlayProps {
 }
 
 /**
- * CircleData의 0~1 정규화 좌표를 CRS.Simple 좌표계에 그대로 사용한다.
- * center: [y, x] (Leaflet lat/lng 순서), radius: r (좌표 단위)
+ * CircleData의 0~1 좌표는 이미지 좌표계(북→남 0→1)이고,
+ * Leaflet CRS.Simple은 lat이 위로 증가(남→북 0→1)이므로 y축을 뒤집어 그린다.
+ * LocationMarkers·StashMarkers와 동일한 1-y 변환으로 좌표계를 통일한다.
  */
 export function CircleOverlay({ circleData }: CircleOverlayProps) {
   if (!circleData) return null;
 
   return (
     <Circle
-      center={[circleData.y, circleData.x]}
+      center={[1 - circleData.y, circleData.x]}
       radius={circleData.r}
       pathOptions={{
         color: '#4488ff',

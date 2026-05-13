@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUB-15 결과물 — OCR Web Worker + useAlertTimer</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #6c63ff;
+    --accent2: #00d2ff;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --tag-bg: #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; }
+
+  /* ── 헤더 ── */
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 24px;
+  }
+  .badge { display: inline-block; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 12px; }
+  header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  header p  { color: var(--muted); font-size: 13px; }
+  .meta { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+  .meta-item { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+  .meta-item strong { color: var(--text); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; }
+
+  /* ── 레이아웃 ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  section { margin-bottom: 36px; }
+  h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  h2 .icon { font-size: 18px; }
+
+  /* ── 카드 ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card h3 { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--accent2); display: flex; align-items: center; gap: 6px; }
+  .card p  { color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+  /* ── 커버리지 바 ── */
+  .cov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .cov-item label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .cov-bar { background: var(--surface2); border-radius: 6px; height: 10px; overflow: hidden; }
+  .cov-fill { height: 100%; border-radius: 6px; transition: width 1s ease; }
+  .cov-fill.full    { background: linear-gradient(90deg, #22c55e, #16a34a); }
+  .cov-fill.high    { background: linear-gradient(90deg, #84cc16, #65a30d); }
+  .cov-pct { font-size: 20px; font-weight: 800; margin-top: 6px; }
+  .cov-pct.full { color: var(--green); }
+  .cov-pct.high { color: #84cc16; }
+
+  /* ── 파일 목록 ── */
+  .file-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .file-list li { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border-radius: 8px; font-size: 12px; font-family: 'Cascadia Code', 'Consolas', monospace; }
+  .file-list li .pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-family: 'Segoe UI', sans-serif; font-weight: 600; margin-left: auto; white-space: nowrap; }
+  .pill.new    { background: #14532d; color: #86efac; }
+  .pill.update { background: #1e3a5f; color: #93c5fd; }
+  .file-path { color: var(--accent2); }
+  .file-dir  { color: var(--muted); }
+
+  /* ── 테스트 목록 ── */
+  .test-suite { margin-bottom: 16px; }
+  .suite-name { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .suite-name::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; }
+  .test-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .test-list li { display: flex; align-items: flex-start; gap: 8px; padding: 7px 12px; background: var(--surface2); border-radius: 6px; font-size: 11px; line-height: 1.5; }
+  .test-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── 플로우 다이어그램 ── */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-top: 8px; }
+  .flow-node { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 12px; text-align: center; min-width: 110px; }
+  .flow-node .fn { font-weight: 700; color: var(--accent2); font-size: 11px; font-family: monospace; }
+  .flow-node .desc { color: var(--muted); font-size: 10px; margin-top: 3px; }
+  .flow-arrow { color: var(--muted); font-size: 18px; padding: 0 6px; }
+  .flow-node.highlight { border-color: var(--accent); background: #1e1b4b; }
+
+  /* ── 통계 카드 ── */
+  .stat-row { display: flex; gap: 16px; }
+  .stat { flex: 1; background: var(--surface2); border-radius: 10px; padding: 16px; text-align: center; }
+  .stat .num { font-size: 28px; font-weight: 800; color: var(--accent2); }
+  .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── PR 카드 ── */
+  .pr-card { background: var(--surface); border: 1px solid #2d4a7a; border-radius: 12px; padding: 20px; display: flex; gap: 16px; align-items: flex-start; }
+  .pr-icon { font-size: 28px; flex-shrink: 0; }
+  .pr-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .pr-meta  { font-size: 11px; color: var(--muted); }
+  .pr-meta a { color: var(--accent2); text-decoration: none; }
+  .pr-badges { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .pr-badge { font-size: 10px; padding: 3px 10px; border-radius: 10px; font-weight: 600; }
+  .pr-badge.open   { background: #14532d; color: #86efac; }
+  .pr-badge.base   { background: #1e3a5f; color: #93c5fd; }
+  .pr-badge.commit { background: #2d1b4e; color: #c4b5fd; }
+
+  /* ── 코드 블록 ── */
+  pre { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 11px; overflow-x: auto; line-height: 1.7; }
+  .kw { color: #ff79c6; }
+  .fn { color: #50fa7b; }
+  .str{ color: #f1fa8c; }
+  .cm { color: #6272a4; }
+  .tp { color: #8be9fd; }
+  .nm { color: #bd93f9; }
+
+  /* ── 태그 ── */
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .tag { background: var(--tag-bg); border: 1px solid var(--border); color: var(--muted); font-size: 10px; padding: 2px 10px; border-radius: 10px; }
+
+  @media (max-width: 700px) {
+    .grid-2, .grid-3, .cov-grid { grid-template-columns: 1fr; }
+    .stat-row { flex-wrap: wrap; }
+    .flow { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">PUB-15 · DONE</div>
+  <h1>OCR Web Worker + useAlertTimer</h1>
+  <p>자기장 타이머 OCR 처리 워커 + 알림 훅 구현 — 프론트엔드 커버리지 95% 달성</p>
+  <div class="meta">
+    <div class="meta-item"><span class="dot"></span> <strong>상태:</strong> Done</div>
+    <div class="meta-item">📅 <strong>완료일:</strong> 2026-05-12</div>
+    <div class="meta-item">🌿 <strong>브랜치:</strong> feature/PUB-15 → develop</div>
+    <div class="meta-item">🔗 <strong>PR:</strong> <a href="https://github.com/Steel-yong/Infra-gitops/pull/66" style="color:#00d2ff">#66</a></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── 커버리지 ── -->
+  <section>
+    <h2><span class="icon">📊</span> 커버리지 달성 현황</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>📈 V8 Coverage (vitest)</h3>
+        <div class="cov-grid">
+          <div class="cov-item">
+            <label>Statements</label>
+            <div class="cov-bar"><div class="cov-fill full" style="width:100%"></div></div>
+            <div class="cov-pct full">100%</div>
+          </div>
+          <div class="cov-item">
+            <label>Branches</label>
+            <div class="cov-bar"><div class="cov-fill high" style="width:98.8%"></div></div>
+            <div class="cov-pct high">98.8%</div>
+          </div>
+          <div class="cov-item">
+            <label>Functions</label>
+            <div class="cov-bar"><div class="cov-fill full" style="width:100%"></div></div>
+            <div class="cov-pct full">100%</div>
+          </div>
+          <div class="cov-item">
+            <label>Lines</label>
+            <div class="cov-bar"><div class="cov-fill full" style="width:100%"></div></div>
+            <div class="cov-pct full">100%</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🧪 테스트 통계</h3>
+        <div class="stat-row" style="margin-bottom:14px">
+          <div class="stat"><div class="num">140</div><div class="lbl">총 테스트</div></div>
+          <div class="stat"><div class="num">16</div><div class="lbl">테스트 파일</div></div>
+          <div class="stat"><div class="num" style="color:#22c55e">0</div><div class="lbl">실패</div></div>
+        </div>
+        <p>임계값 95% 기준 전 항목 통과.<br>branches 1.2%p 미커버는 Worker 환경 한계 (브라우저 전용 API).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 변경 파일 ── -->
+  <section>
+    <h2><span class="icon">📁</span> 변경된 파일 (8개)</h2>
+    <ul class="file-list">
+      <li>
+        <span class="file-dir">src/workers/</span><span class="file-path">ocrWorker.ts</span>
+        <span class="pill new">NEW</span>
+      </li>
+      <li>
+        <span class="file-dir">src/hooks/</span><span class="file-path">useAlertTimer.ts</span>
+        <span class="pill new">NEW</span>
+      </li>
+      <li>
+        <span class="file-dir">src/__tests__/</span><span class="file-path">ocrWorker.test.ts</span>
+        <span class="pill new">NEW</span>
+      </li>
+      <li>
+        <span class="file-dir">src/__tests__/</span><span class="file-path">useAlertTimer.test.ts</span>
+        <span class="pill new">NEW</span>
+      </li>
+      <li>
+        <span class="file-dir">src/__tests__/</span><span class="file-path">useScreenCapture.test.ts</span>
+        <span class="pill update">UPDATE</span>
+      </li>
+      <li>
+        <span class="file-dir">src/__tests__/</span><span class="file-path">page.test.tsx</span>
+        <span class="pill update">UPDATE</span>
+      </li>
+      <li>
+        <span class="file-dir">src/__tests__/</span><span class="file-path">useLocations.test.ts</span>
+        <span class="pill update">UPDATE</span>
+      </li>
+      <li>
+        <span class="file-dir">src/__tests__/</span><span class="file-path">useWebNotifications.test.ts</span>
+        <span class="pill update">UPDATE</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ── 구현체 설명 ── -->
+  <section>
+    <h2><span class="icon">⚙️</span> 구현체 상세</h2>
+    <div class="grid-2">
+
+      <!-- ocrWorker -->
+      <div class="card">
+        <h3>🔍 ocrWorker.ts — OCR 처리 Web Worker</h3>
+        <p style="margin-bottom:14px">타이머 문자열 파싱·픽셀 분석·해상도별 크롭 좌표를 순수 함수로 분리.<br>onmessage 핸들러가 PROCESS / STOP / ERROR 메시지를 처리한다.</p>
+
+        <div class="flow">
+          <div class="flow-node">
+            <div class="fn">grabFrame()</div>
+            <div class="desc">캔버스 캡처</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node highlight">
+            <div class="fn">getTimerRegion()</div>
+            <div class="desc">해상도별 크롭</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node highlight">
+            <div class="fn">parseTimerString()</div>
+            <div class="desc">"1:38" → 98초</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node highlight">
+            <div class="fn">detectExclamation()</div>
+            <div class="desc">빨간 픽셀 &gt;5%</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <div class="fn">TIMER_STATE</div>
+            <div class="desc">postMessage</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag">TIMER_REGIONS</span>
+          <span class="tag">1920x1080</span>
+          <span class="tag">2560x1440</span>
+          <span class="tag">3840x2160</span>
+          <span class="tag">Uint8ClampedArray</span>
+        </div>
+      </div>
+
+      <!-- useAlertTimer -->
+      <div class="card">
+        <h3>⏰ useAlertTimer.ts — 임계값 알림 훅</h3>
+        <p style="margin-bottom:14px">자기장이 줄어드는 중(isShrinking=true)일 때만 30/20/10초 알림을 트리거.<br>동일 임계값 중복 방지 + 자기장 재시작 감지 시 alertedRef 자동 초기화.</p>
+
+        <pre><span class="cm">// 재시작 감지: 이전보다 초가 증가하면 리셋</span>
+<span class="kw">if</span> (prevSecondsRef.current !== <span class="kw">null</span>
+    && remainingSeconds > prevSecondsRef.current) {
+  alertedRef.current.<span class="fn">clear</span>();
+}
+
+<span class="cm">// 임계값 도달 시 1회만 발송</span>
+<span class="kw">if</span> (thresholds.<span class="fn">includes</span>(remainingSeconds)
+    && !alertedRef.current.<span class="fn">has</span>(remainingSeconds)) {
+  alertedRef.current.<span class="fn">add</span>(remainingSeconds);
+  <span class="fn">onAlert</span>(remainingSeconds);
+}</pre>
+
+        <div class="tags">
+          <span class="tag">useCallback</span>
+          <span class="tag">useRef</span>
+          <span class="tag">중복방지</span>
+          <span class="tag">재시작감지</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 테스트 목록 ── -->
+  <section>
+    <h2><span class="icon">🧪</span> 추가된 테스트 케이스</h2>
+    <div class="grid-2">
+
+      <div>
+        <!-- ocrWorker -->
+        <div class="test-suite">
+          <div class="suite-name">ocrWorker.test.ts — 순수 함수 + 핸들러 (30개)</div>
+          <ul class="test-list">
+            <li>"1:38" → 98초, "0:00" → 0초, "1:60" → null (범위 초과)</li>
+            <li>빨간 픽셀 10% → true, 1% → false, 경계값(r=200, g=80) 정확 처리</li>
+            <li>1920×1080 → TIMER_REGIONS 반환, 알 수 없는 해상도 → 폴백</li>
+            <li>STOP 메시지 → postMessage 없음</li>
+            <li>PROCESS → TIMER_STATE(seconds, isShrinking) 정확 반환</li>
+            <li>Uint8ClampedArray throw → ERROR(err.message) postMessage</li>
+            <li>비-Error throw → ERROR("OCR 처리 실패") postMessage</li>
+          </ul>
+        </div>
+
+        <!-- useAlertTimer -->
+        <div class="test-suite">
+          <div class="suite-name">useAlertTimer.test.ts (12개)</div>
+          <ul class="test-list">
+            <li>초기 displayState는 null</li>
+            <li>processState 호출 시 displayState 업데이트</li>
+            <li>isShrinking=false이면 onAlert 미호출</li>
+            <li>임계값 도달 시 onAlert 1회 호출</li>
+            <li>동일 임계값 2번 → onAlert 1회만</li>
+            <li>자기장 재시작(초 증가) → alertedRef 초기화 → 재알림</li>
+            <li>임계값 미포함 값 → onAlert 미호출</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <!-- useScreenCapture -->
+        <div class="test-suite">
+          <div class="suite-name">useScreenCapture.test.ts — 추가 테스트</div>
+          <ul class="test-list">
+            <li>navigator.mediaDevices=null → HTTPS 안내 메시지</li>
+            <li>빈 비디오 트랙 → "비디오 트랙 없음" onError</li>
+            <li>canvas getContext=null → onFrame 미호출</li>
+            <li>grabFrame 실패 → onError("캡처 실패")</li>
+            <li>500ms 인터벌 후 onFrame("dGVzdA==") 전달</li>
+          </ul>
+        </div>
+
+        <!-- page.test.tsx -->
+        <div class="test-suite">
+          <div class="suite-name">page.test.tsx — 추가 테스트</div>
+          <ul class="test-list">
+            <li>태이고 버튼 클릭 → aria-pressed=true</li>
+            <li>30초 알림 체크박스 토글 → checked 상태 변경</li>
+            <li>isCapturing=true → "공유 종료" 버튼 노출</li>
+            <li>permission denied → 권한 거부 메시지 렌더링</li>
+            <li>captureError 콜백 → 에러 메시지 렌더링</li>
+          </ul>
+        </div>
+
+        <!-- useLocations + useWebNotifications -->
+        <div class="test-suite">
+          <div class="suite-name">useLocations + useWebNotifications — 추가 테스트</div>
+          <ul class="test-list">
+            <li>비-Error fetch rejection → "위치 조회 실패"</li>
+            <li>Notification API 없는 환경 → requestPermission 무동작</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PR 정보 ── -->
+  <section>
+    <h2><span class="icon">🚀</span> PR</h2>
+    <div class="pr-card">
+      <div class="pr-icon">🔀</div>
+      <div>
+        <div class="pr-title">feat(frontend): OCR Web Worker + useAlertTimer + 커버리지 95% (PUB-15)</div>
+        <div class="pr-meta">
+          <a href="https://github.com/Steel-yong/Infra-gitops/pull/66">github.com/Steel-yong/Infra-gitops/pull/66</a>
+          &nbsp;·&nbsp; feature/PUB-15 → develop
+        </div>
+        <div class="pr-badges">
+          <span class="pr-badge open">Open</span>
+          <span class="pr-badge base">base: develop</span>
+          <span class="pr-badge commit">acfaf5a</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 다음 이슈 ── -->
+  <section>
+    <h2><span class="icon">➡️</span> 다음 이슈</h2>
+    <div class="grid-3">
+      <div class="card">
+        <h3>🗄️ PUB-16</h3>
+        <p>Prisma DB 스키마 + 마이그레이션<br>location-service 테이블 설계 및 초기 마이그레이션 파일 생성.</p>
+        <div class="tags"><span class="tag">prisma</span><span class="tag">postgresql</span><span class="tag">migration</span></div>
+      </div>
+      <div class="card">
+        <h3>🌐 PUB-17</h3>
+        <p>location-service API 구현<br>자기장 원 기반 추천 위치 필터링 + 등급별 정렬 엔드포인트.</p>
+        <div class="tags"><span class="tag">nestjs</span><span class="tag">rest</span><span class="tag">location</span></div>
+      </div>
+      <div class="card">
+        <h3>🔌 PUB-18</h3>
+        <p>capture-service WebSocket Gateway<br>프론트에서 프레임 수신 → 자기장 원 분석 → 결과 전송.</p>
+        <div class="tags"><span class="tag">nestjs</span><span class="tag">socket.io</span><span class="tag">hough</span></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // 커버리지 바 애니메이션
+  document.querySelectorAll('.cov-fill').forEach(el => {
+    const target = el.style.width;
+    el.style.width = '0%';
+    requestAnimationFrame(() => {
+      setTimeout(() => { el.style.width = target; }, 100);
+    });
+  });
+</script>
+</body>
+</html>
