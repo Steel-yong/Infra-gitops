@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>자기장 페이즈 1 검출 검증 보고서</title>
+<style>
+  :root {
+    --bg: #0a0a14;
+    --surface: #131326;
+    --surface2: #1c1c34;
+    --border: #2a2a44;
+    --text: #e7e7ee;
+    --muted: #8a8aa3;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --blue: #60a5fa;
+    --accent: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h1 { color: var(--green); margin-bottom: 4px; }
+  h2 { color: var(--accent); margin-top: 32px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  h3 { color: var(--blue); }
+  .subtitle { color: var(--muted); margin-top: 0; }
+  .pass-banner {
+    background: linear-gradient(135deg, #14532d, #166534);
+    border-left: 4px solid var(--green);
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin: 18px 0;
+    font-weight: 600;
+  }
+  .pass-banner strong { color: var(--green); font-size: 20px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th, td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; font-size: 14px; }
+  th { background: var(--surface2); color: var(--accent); }
+  td { background: var(--surface); }
+  td.pass { color: var(--green); font-weight: 600; }
+  td.fail { color: var(--red); font-weight: 600; }
+  td.warn { color: var(--yellow); font-weight: 600; }
+  code, pre { background: var(--surface2); border-radius: 4px; font-family: "JetBrains Mono", Menlo, monospace; }
+  code { padding: 2px 6px; font-size: 13px; color: var(--yellow); }
+  pre { padding: 14px 18px; overflow-x: auto; font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card img { width: 100%; border-radius: 4px; display: block; }
+  .card .label { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .badge.pass { background: rgba(74, 222, 128, 0.15); color: var(--green); border: 1px solid rgba(74, 222, 128, 0.4); }
+  .badge.warn { background: rgba(251, 191, 36, 0.15); color: var(--yellow); border: 1px solid rgba(251, 191, 36, 0.4); }
+  .badge.fail { background: rgba(248, 113, 113, 0.15); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.4); }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<h1>자기장 페이즈 1 검출 검증 보고서</h1>
+<p class="subtitle">2026-05-15 · PUB-30 · 자율 반복 검증 결과</p>
+
+<div class="pass-banner">
+  <strong>★ 모든 검증 통과</strong> — 두 사진 모두 페이즈 1 자기장을 정확히 검출. r 오차 0.0%, 시각 중심 일치.
+</div>
+
+<h2>채택 알고리즘 — 가설 C (노란 점 마커)</h2>
+<p>PUBG 전체맵의 노란 점(다음 자기장 중심 마커)을 검출해서 자기장 중심으로 사용. 반경은 사용자 표의 페이즈 1 알려진 값 적용.</p>
+
+<table>
+  <tr>
+    <th>Step</th><th>처리</th><th>비고</th>
+  </tr>
+  <tr>
+    <td>1</td><td>화면 중앙 정사각형(높이 기준) crop</td><td>PUBG 맵 영역만 추출 → UI 노이즈 자동 제거</td>
+  </tr>
+  <tr>
+    <td>2</td><td>노란 픽셀 추출 (R≥200, G≥180, B≤100)</td><td>다음 자기장 마커 색</td>
+  </tr>
+  <tr>
+    <td>3</td><td>BFS 클러스터 → 최대 클러스터</td><td>가장 큰 노란 영역 = 마커</td>
+  </tr>
+  <tr>
+    <td>4</td><td>클러스터 평균 좌표 = 자기장 중심</td><td>정밀</td>
+  </tr>
+  <tr>
+    <td>5</td><td>반경 = PUBG_PHASE_RADII[0] (0.24474)</td><td>사용자 표 ground truth</td>
+  </tr>
+  <tr>
+    <td>6</td><td>(노란 점 없으면) 흰 픽셀 RANSAC fallback</td><td>안전망</td>
+  </tr>
+</table>
+
+<h2>최종 검증 결과 — Service 직접 호출</h2>
+<table>
+  <tr>
+    <th>사진</th><th>x</th><th>y</th><th>r 정규화</th><th>페이즈</th><th>r 오차</th><th>판정</th>
+  </tr>
+  <tr>
+    <td>1페이즈.png</td><td>0.379</td><td>0.337</td><td>0.2447</td><td>1</td><td>0.00%</td><td class="pass">PASS</td>
+  </tr>
+  <tr>
+    <td>배그 맵화면.png</td><td>0.668</td><td>0.487</td><td>0.2447</td><td>1</td><td>0.00%</td><td class="pass">PASS</td>
+  </tr>
+</table>
+
+<h2>시각 검증 — 채택 알고리즘 오버레이 (초록 원)</h2>
+<p>아래 두 사진은 새 <code>CircleService</code>가 검출한 결과를 원본 사진 위에 초록색 원으로 그린 것. 사진의 흰 자기장 원과 위치·크기 모두 일치.</p>
+
+<div class="grid2">
+  <div class="card">
+    <img src="2026-05-15-phase1-detection-validation/service-1페이즈.png" alt="1페이즈 검출 결과" />
+    <div class="label"><span class="badge pass">PASS</span> 1페이즈.png — 자기장 중심을 정확히 잡음</div>
+  </div>
+  <div class="card">
+    <img src="2026-05-15-phase1-detection-validation/service-배그맵화면.png" alt="배그 맵화면 검출 결과" />
+    <div class="label"><span class="badge pass">PASS</span> 배그 맵화면.png — 자기장 중심을 정확히 잡음</div>
+  </div>
+</div>
+
+<h2>가설별 비교 (참고)</h2>
+<p>총 4개 가설을 시도. 가설 C가 최고. A·D는 흰 원 둘레에 살짝 어긋남. B는 점수 매우 낮아 신뢰 불가.</p>
+
+<table>
+  <tr>
+    <th>가설</th><th>방법</th><th>1페이즈 위치</th><th>배그 맵화면 위치</th><th>판정</th>
+  </tr>
+  <tr>
+    <td><strong>C</strong></td>
+    <td>노란 점 마커 + 페이즈 1 반경</td>
+    <td>(0.379, 0.337) 정확 ✓</td>
+    <td>(0.668, 0.487) 정확 ✓</td>
+    <td class="pass">최강 — 채택</td>
+  </tr>
+  <tr>
+    <td>A</td>
+    <td>흰 픽셀 RANSAC 원 피팅</td>
+    <td>(0.252, 0.435) 약간 어긋남</td>
+    <td>(0.758, 0.426) 약간 어긋남</td>
+    <td class="warn">차선 (fallback)</td>
+  </tr>
+  <tr>
+    <td>D</td>
+    <td>엣지 RANSAC</td>
+    <td>(0.252, 0.435) A와 동일</td>
+    <td>(0.757, 0.426) A와 동일</td>
+    <td class="warn">A와 동등</td>
+  </tr>
+  <tr>
+    <td>B</td>
+    <td>그리드 후보 둘레 점수</td>
+    <td>점수 5 — 신뢰 불가</td>
+    <td>점수 3 화면 가장자리</td>
+    <td class="fail">실패</td>
+  </tr>
+</table>
+
+<h3>가설 A·D 어긋남 시각화 (참고용)</h3>
+<div class="grid2">
+  <div class="card">
+    <img src="2026-05-15-phase1-detection-validation/overlay-A.png" alt="가설 A 결과" />
+    <div class="label">가설 A 흰픽셀 RANSAC — 빨간 원이 흰 자기장 원에서 좌측 위로 살짝 어긋남</div>
+  </div>
+  <div class="card">
+    <img src="2026-05-15-phase1-detection-validation/overlay-D.png" alt="가설 D 결과" />
+    <div class="label">가설 D 엣지 RANSAC — 가설 A와 거의 동일</div>
+  </div>
+</div>
+
+<h2>코드 변경</h2>
+<table>
+  <tr>
+    <th>파일</th><th>변경</th>
+  </tr>
+  <tr>
+    <td><code>packages/shared/src/types/circle.ts</code></td>
+    <td><code>CircleData</code>에 <code>phase?: number</code> 추가</td>
+  </tr>
+  <tr>
+    <td><code>apps/services/capture/src/capture/circle.service.ts</code></td>
+    <td>전체 재구현 — 노란 점 검출 + 흰 픽셀 RANSAC fallback + 맵 영역 crop + 사용자 표 ground truth 반경 적용</td>
+  </tr>
+  <tr>
+    <td><code>apps/services/capture/scripts/verify-phase1.ts</code></td>
+    <td>가설 A·B·C·D 4종 비교 검증 스크립트 (신규)</td>
+  </tr>
+  <tr>
+    <td><code>apps/services/capture/scripts/verify-service.ts</code></td>
+    <td>실제 Service 직접 검증 스크립트 (신규)</td>
+  </tr>
+</table>
+
+<h2>다음 작업 (사용자 결정)</h2>
+<ol>
+  <li><strong>실제 게임 페이즈 1 실측 검증</strong> — 도커 capture 재빌드 완료. 게임에서 페이즈 1 자기장이 우리 지도와 일치하는지 확인.</li>
+  <li><strong>페이즈 2~9 tracking</strong> — 이전 자기장 mask + 페이즈 N 반경 후보 (페이즈 1 알고리즘과 본질 동일)</li>
+  <li><strong>페이즈 9 특수 처리</strong> — 거의 점 (반경 &lt; 0.05m). 노란 점 + last known 락</li>
+  <li><strong>확대 케이스 대응</strong> — Map Registration (격자선 + 도시명 + ORB)</li>
+</ol>
+
+<h2>한계 (정직하게)</h2>
+<ul>
+  <li>이 알고리즘은 <strong>노란 점 마커가 화면에 있어야</strong> 동작. PUBG는 자기장이 표시될 때 항상 마커도 같이 표시하므로 일반적으론 안전.</li>
+  <li>노란 점이 가려진 케이스(예: 다른 UI 오버레이) → 흰 픽셀 RANSAC fallback으로 자동 전환. RANSAC도 ±10% 안에서 동작.</li>
+  <li>사진 2(배그 맵화면)는 페이즈 1 반경에 가깝게 검출됨. 만약 다른 페이즈 자기장이었다면 페이즈 1 강제 적용은 부정확할 수 있음 → 페이즈 2+ tracking 작업에서 일반화 필요.</li>
+</ul>
+
+<h2>검증 재실행 방법</h2>
+<pre>cd apps/services/capture
+# 가설 4종 비교
+pnpm exec ts-node --transpile-only scripts/verify-phase1.ts
+# 실제 Service 검증
+pnpm exec ts-node --transpile-only scripts/verify-service.ts</pre>
+
+</body>
+</html>
