@@ -36,11 +36,9 @@ const INITIAL_STATE: OcrTimerState = {
   errorMessage: null,
 };
 
-const OCR_REVERIFY_SECONDS = 5; // 락 후 5초마다 OCR 보정
+const OCR_REVERIFY_SECONDS = 3; // 락 후 3초마다 OCR 보정
 const OCR_DRIFT_TOLERANCE = 3; // 로컬 추정과 OCR 값이 3초 이상 차이나면 OCR로 재동기화
-/** OCR 처리 지연 보상 — Tesseract OCR 한 사이클이 약 1~2초 걸려서
- * OCR이 읽은 시점에 게임은 그만큼 더 진행된 상태. 락할 때 빼서 게임과 sync 맞춤. */
-const OCR_LAG_COMPENSATION_SECONDS = 2.5;
+// OCR 처리 지연은 매 호출마다 performance.now()로 실측해서 동적으로 차감 (환경 무관 sync).
 
 export function useOcrTimer(
   video: HTMLVideoElement | null,
@@ -95,6 +93,8 @@ export function useOcrTimer(
           if (busyRef.current || !worker) return;
           if (!video.videoWidth || !video.videoHeight) return;
 
+          // tick 시작 시점 — setInterval 큐잉 + 전처리 + OCR 처리 전체를 lag으로 측정
+          const tickStartedAt = performance.now();
           const now = Date.now();
 
           // 0) 락 상태일 때 로컬 카운트다운 갱신
@@ -225,9 +225,12 @@ export function useOcrTimer(
             procCtx.putImageData(imgData, 0, 0);
 
             const result = await worker.recognize(procCanvas.toDataURL('image/png'));
+            const lagSeconds = (performance.now() - tickStartedAt) / 1000;
             const rawText = result.data.text.trim();
             const ocrSeconds = parseTimerString(rawText);
-            console.log('[OCR] 인식 결과:', JSON.stringify(rawText), '→', ocrSeconds);
+            console.log(
+              `[OCR] 인식 결과: ${JSON.stringify(rawText)} → ${ocrSeconds}, lag=${lagSeconds.toFixed(2)}s`,
+            );
             lastOcrTimeRef.current = now;
 
             // 느낌표 감지
@@ -262,13 +265,13 @@ export function useOcrTimer(
             }
 
             if (ocrSeconds !== null) {
-              // OCR 처리 지연 보상: 락하는 값에서 OCR_LAG_COMPENSATION_SECONDS 빼서 게임과 sync
-              const compensated = Math.max(0, ocrSeconds - OCR_LAG_COMPENSATION_SECONDS);
+              // OCR 처리 지연 보상: 이번 호출의 실측 lag만큼 차감해서 게임과 sync (동적)
+              const compensated = Math.max(0, ocrSeconds - lagSeconds);
               // 첫 락 또는 드리프트 보정
               const wasLocked = lockedAtRef.current !== null && lockedSecondsRef.current !== null;
               if (!wasLocked) {
                 console.log(
-                  `[OCR] 타이머 락 — OCR=${ocrSeconds}s → 보정 후 ${compensated}s (lag ${OCR_LAG_COMPENSATION_SECONDS}s 차감)`,
+                  `[OCR] 타이머 락 — OCR=${ocrSeconds}s → 보정 후 ${compensated.toFixed(2)}s (실측 lag ${lagSeconds.toFixed(2)}s 차감)`,
                 );
                 lockedAtRef.current = now;
                 lockedSecondsRef.current = compensated;

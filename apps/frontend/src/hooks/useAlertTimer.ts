@@ -42,7 +42,17 @@ export function useAlertTimer({
 
   const processState = useCallback(
     (remainingSeconds: number | null, isShrinking: boolean) => {
-      setDisplayState({ remainingSeconds, isShrinking });
+      // 같은 값이면 re-render 안 일으킴 (부모의 새 콜백 → re-render → 무한 루프 방지)
+      setDisplayState((prev) => {
+        if (
+          prev !== null &&
+          prev.remainingSeconds === remainingSeconds &&
+          prev.isShrinking === isShrinking
+        ) {
+          return prev;
+        }
+        return { remainingSeconds, isShrinking };
+      });
 
       // 이미 줄어드는 중이면 알림 없음. 또는 데이터 없으면 스킵.
       if (isShrinking || remainingSeconds === null) return;
