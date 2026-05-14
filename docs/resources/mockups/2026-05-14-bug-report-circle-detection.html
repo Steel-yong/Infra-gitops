@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>자기장 인식 버그 리포트 — 2026-05-14</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; }
+  .header { background: linear-gradient(135deg, #1a1f2e, #0d1117); padding: 32px; border-bottom: 1px solid #2d3748; }
+  .header h1 { font-size: 22px; color: #fff; margin-bottom: 6px; }
+  .header p { color: #718096; font-size: 13px; }
+  .badge { display: inline-block; background: #e53e3e; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-right: 8px; vertical-align: middle; }
+  .badge.warn { background: #d69e2e; }
+  .badge.ok { background: #38a169; }
+  .badge.info { background: #3182ce; }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px; }
+  .section { margin-bottom: 40px; }
+  .section h2 { font-size: 16px; color: #63b3ed; border-bottom: 1px solid #2d3748; padding-bottom: 8px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .section h3 { font-size: 14px; color: #90cdf4; margin-bottom: 10px; margin-top: 20px; }
+  .flow-box { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin-bottom: 24px; }
+  .flow-step { background: #1a2236; border: 1px solid #2d3748; border-right: none; padding: 14px 16px; flex: 1; min-width: 120px; position: relative; }
+  .flow-step:last-child { border-right: 1px solid #2d3748; }
+  .flow-step .step-label { font-size: 10px; color: #4a5568; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .flow-step .step-name { font-size: 13px; color: #e2e8f0; font-weight: 600; }
+  .flow-step .step-desc { font-size: 11px; color: #718096; margin-top: 4px; }
+  .flow-step.problem { border-color: #e53e3e; background: #1f1015; }
+  .flow-step.problem .step-name { color: #fc8181; }
+  .arrow { display: flex; align-items: center; color: #4a5568; font-size: 18px; padding: 0 4px; }
+  .bug-card { border-left: 3px solid #e53e3e; background: #1a1520; padding: 16px 20px; margin-bottom: 16px; border-radius: 0 8px 8px 0; }
+  .bug-card.warn { border-left-color: #d69e2e; background: #1a1810; }
+  .bug-card.info { border-left-color: #3182ce; background: #101825; }
+  .bug-card h4 { font-size: 13px; color: #e2e8f0; margin-bottom: 8px; }
+  .bug-card .code { background: #0d1117; border: 1px solid #2d3748; border-radius: 4px; padding: 10px 14px; font-family: 'Consolas', monospace; font-size: 12px; color: #a3e635; margin: 8px 0; overflow-x: auto; }
+  .bug-card .explain { font-size: 12px; color: #a0aec0; }
+  .visual-demo { background: #0d1117; border: 1px solid #2d3748; border-radius: 8px; padding: 24px; margin: 20px 0; }
+  .visual-demo canvas { display: block; margin: 0 auto; }
+  .visual-label { text-align: center; font-size: 11px; color: #4a5568; margin-top: 8px; }
+  .solution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .solution-card { background: #1a2236; border: 1px solid #2d3748; border-radius: 8px; padding: 20px; }
+  .solution-card.recommended { border-color: #38a169; }
+  .solution-card h4 { font-size: 13px; color: #90cdf4; margin-bottom: 8px; }
+  .solution-card ul { font-size: 12px; color: #a0aec0; padding-left: 16px; }
+  .solution-card ul li { margin-bottom: 6px; }
+  .solution-card .pros { color: #68d391; font-size: 11px; margin-top: 8px; }
+  .solution-card .cons { color: #fc8181; font-size: 11px; }
+  .recommendation { background: linear-gradient(135deg, #0f2e1a, #0a1f12); border: 1px solid #38a169; border-radius: 8px; padding: 20px; margin-top: 24px; }
+  .recommendation h3 { color: #68d391; margin-bottom: 12px; }
+  .recommendation .steps { counter-reset: step; }
+  .recommendation .steps li { counter-increment: step; padding: 8px 0 8px 32px; position: relative; color: #a0aec0; font-size: 13px; border-bottom: 1px solid #1a3a25; }
+  .recommendation .steps li:last-child { border-bottom: none; }
+  .recommendation .steps li::before { content: counter(step); position: absolute; left: 0; top: 8px; background: #38a169; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-right: 4px; }
+  .tag.critical { background: #742a2a; color: #fc8181; }
+  .tag.major { background: #744210; color: #f6ad55; }
+  .tag.minor { background: #1a365d; color: #63b3ed; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #1a2236; color: #90cdf4; padding: 10px 12px; text-align: left; border-bottom: 1px solid #2d3748; }
+  td { padding: 10px 12px; border-bottom: 1px solid #1a2236; color: #a0aec0; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1a2236; }
+  .highlight { color: #f6e05e; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="badge">BUG REPORT</span> 자기장 원 좌표 인식 불일치</h1>
+  <p>2026-05-14 &nbsp;|&nbsp; circle.service.ts · CircleOverlay.tsx · docker-compose.yml &nbsp;|&nbsp; 버그 3개 발견</p>
+</div>
+
+<div class="container">
+
+  <!-- 현재 흐름 -->
+  <div class="section">
+    <h2>현재 파이프라인</h2>
+    <div class="flow-box">
+      <div class="flow-step">
+        <div class="step-label">Step 1</div>
+        <div class="step-name">captureWorker</div>
+        <div class="step-desc">500ms마다 전체 화면 캡처<br>→ JPEG base64</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-label">Step 2</div>
+        <div class="step-name">MapDetection</div>
+        <div class="step-desc">청록색 픽셀 3% 이상<br>→ 전체맵 열림 판단</div>
+      </div>
+      <div class="flow-step problem">
+        <div class="step-label">Step 3 ⚠️</div>
+        <div class="step-name">CircleService</div>
+        <div class="step-desc">전체 화면에서 흰 픽셀<br>→ 원 피팅 (버그 있음)</div>
+      </div>
+      <div class="flow-step problem">
+        <div class="step-label">Step 4 ⚠️</div>
+        <div class="step-name">좌표 정규화</div>
+        <div class="step-desc">cx/width, r/min(w,h)<br>→ 비율 불일치</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-label">Step 5</div>
+        <div class="step-name">CircleOverlay</div>
+        <div class="step-desc">SVGOverlay 렌더링<br>viewBox 0 0 1 1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 버그 목록 -->
+  <div class="section">
+    <h2>발견된 버그 3개</h2>
+
+    <!-- 버그 1: 핵심 -->
+    <div class="bug-card">
+      <h4><span class="tag critical">CRITICAL</span> 버그 1 — 전체 화면 좌표를 맵 좌표로 착각</h4>
+      <div class="explain">
+        캡처된 이미지는 <strong>전체 게임 화면 (1920×1080)</strong>이지만,<br>
+        PUBG 전체맵에서 실제 지도 영역은 <strong>화면 중앙에 약 1080×1080 크기의 정사각형</strong>으로만 표시됨.<br>
+        <br>
+        circle.service.ts는 <strong>전체 화면 기준으로 정규화</strong>하지만,<br>
+        CircleOverlay + Leaflet 맵 이미지는 <strong>지도 이미지 기준 [0,1]×[0,1]</strong>을 사용함.<br>
+        → 결과적으로 원의 위치가 가로 방향으로 압축되어 표시됨.
+      </div>
+      <div class="code">
+// 현재 코드 (circle.service.ts:47-51)
+return {
+  x: circle.cx / width,              // 1920 기준 → x=0.5가 화면 중앙
+  y: circle.cy / height,             // 1080 기준 → y=0.5가 화면 중앙
+  r: circle.r / Math.min(width, height), // min=1080 기준
+};
+
+// 문제:
+// 실제 맵 영역이 x=[420, 1500] 범위라면
+// 맵 중심 cx=960 → x = 960/1920 = 0.5 (우연히 맞음)
+// 하지만 맵 좌측 cx=450 → x = 450/1920 = 0.23 (틀림! 맵 기준으로는 0.03이어야 함)
+// → 원이 실제 위치보다 훨씬 오른쪽으로 표시됨</div>
+    </div>
+
+    <!-- 버그 2 -->
+    <div class="bug-card warn">
+      <h4><span class="tag major">MAJOR</span> 버그 2 — 흰 픽셀 노이즈: UI 텍스트·지명·도로도 검출</h4>
+      <div class="explain">
+        자기장 원 테두리(흰 링)를 찾기 위해 r&gt;200, g&gt;200, b&gt;200 픽셀을 수집하는데,<br>
+        PUBG 전체맵에는 흰 픽셀이 아주 많음.
+      </div>
+      <div class="code">
+// circle.service.ts:25
+if (r > 200 && g > 200 && b > 200) {
+  points.push([x, y]);
+}
+
+// 화면에 존재하는 흰 픽셀들:
+// - 지도 위 도시 이름 텍스트 (Pochinki, Rozhok, ...)
+// - 도로 라인
+// - 그리드 라인
+// - 미니맵 테두리
+// - 탄약/아이템 UI 텍스트
+// → 이 모든 점들이 원 피팅에 들어가서 엉뚱한 원이 생성됨</div>
+    </div>
+
+    <!-- 버그 3 -->
+    <div class="bug-card info">
+      <h4><span class="tag minor">MINOR</span> 버그 3 — Docker NEXT_PUBLIC 환경변수 빌드 타임 이슈</h4>
+      <div class="explain">
+        Next.js의 NEXT_PUBLIC_* 변수는 <strong>빌드 시점</strong>에 번들에 포함됨.<br>
+        docker-compose.yml에서 environment로 전달해도, docker build 시점에는 해당 값이 없어서<br>
+        프론트엔드가 fallback 값인 <code>http://localhost:3001</code>을 사용하게 됨.
+      </div>
+      <div class="code">
+// docker-compose.yml
+frontend:
+  environment:
+    NEXT_PUBLIC_CAPTURE_SERVICE_URL: http://127.0.0.1:3001  # ← 빌드 타임에 미적용!
+
+// useCaptureSocket.ts
+const CAPTURE_SERVICE_URL =
+  process.env.NEXT_PUBLIC_CAPTURE_SERVICE_URL ?? 'http://localhost:3001';
+  // 위 환경변수가 빌드에 없으면 항상 localhost:3001 사용 (이 경우엔 우연히 맞을 수 있음)</div>
+    </div>
+  </div>
+
+  <!-- 핵심 시각화: 좌표 불일치 -->
+  <div class="section">
+    <h2>버그 1 시각화 — 좌표 불일치</h2>
+    <div class="visual-demo">
+      <canvas id="coordCanvas" width="860" height="300"></canvas>
+      <div class="visual-label">왼쪽: 실제 캡처된 화면 구조 / 오른쪽: CircleOverlay가 렌더링하는 좌표 공간</div>
+    </div>
+  </div>
+
+  <!-- 해결책 -->
+  <div class="section">
+    <h2>해결책 선택지</h2>
+    <div class="solution-grid">
+      <div class="solution-card recommended">
+        <h4>✅ 안 A — 청록색 경계로 맵 영역 자동 검출 (추천)</h4>
+        <ul>
+          <li>MapDetection에서 청록 픽셀의 <strong>bounding box</strong>를 반환</li>
+          <li>CircleService에서 해당 영역만 crop해서 원 검출</li>
+          <li>정규화를 crop 영역 크기 기준으로 변경</li>
+          <li>노이즈(UI 텍스트 등)도 자동으로 제외됨</li>
+        </ul>
+        <div class="pros">장점: 해상도 무관, 맵 크기 자동 적응, 노이즈 격리</div>
+        <div class="cons">단점: MapDetection 반환값 타입 변경 필요</div>
+      </div>
+      <div class="solution-card">
+        <h4>안 B — 해상도별 하드코딩 crop 좌표</h4>
+        <ul>
+          <li>1920×1080, 2560×1440 등 해상도별로</li>
+          <li>맵 영역의 left/top/width/height를 상수로 정의</li>
+          <li>해당 영역만 crop해서 분석</li>
+        </ul>
+        <div class="pros">장점: 구현 단순, 빠름</div>
+        <div class="cons">단점: 해상도 바뀌면 새로 측정해야 함, 유지보수 어려움</div>
+      </div>
+      <div class="solution-card">
+        <h4>안 C — 흰색 링 픽셀 필터 강화</h4>
+        <ul>
+          <li>흰 픽셀 중 주변에 파란색(자기장)이 있는 것만 선택</li>
+          <li>엣지 감지 + 원형 구조 필터 적용</li>
+        </ul>
+        <div class="pros">장점: 정밀도 높음</div>
+        <div class="cons">단점: 구현 복잡, 성능 저하 우려</div>
+      </div>
+      <div class="solution-card">
+        <h4>안 D — 파란 위험 구역 직접 검출</h4>
+        <ul>
+          <li>흰 링 대신 파란(r&lt;80, b&gt;150) 픽셀을 검출</li>
+          <li>파란 영역의 내부 경계를 원으로 피팅</li>
+          <li>전체맵에서 파란 색은 바다(청록)와 자기장(파란)이 다름</li>
+        </ul>
+        <div class="pros">장점: 자기장 색이 뚜렷해서 검출 쉬움</div>
+        <div class="cons">단점: 바다 색과 구분 로직 추가 필요</div>
+      </div>
+    </div>
+
+    <div class="recommendation">
+      <h3>추천 구현 순서</h3>
+      <ol class="steps">
+        <li><strong>안 A 채택:</strong> MapDetection.isMapOpen() → MapDetection.detectMapArea() 반환값 변경 (boolean → MapArea | null)</li>
+        <li>CircleService.extractCircle()가 MapArea를 받아 해당 영역만 crop</li>
+        <li>정규화: <code>x = (cx - mapLeft) / mapWidth</code>, <code>y = (cy - mapTop) / mapHeight</code>, <code>r = r / mapWidth</code> (정사각형 가정)</li>
+        <li>흰 픽셀 필터에 추가 조건: 인접 픽셀에 파란색이 있는 경우만 (옵션)</li>
+        <li>Docker NEXT_PUBLIC 이슈: Dockerfile에 ARG로 빌드 타임 전달하도록 수정</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 영향 파일 -->
+  <div class="section">
+    <h2>수정 대상 파일</h2>
+    <table>
+      <thead>
+        <tr><th>파일</th><th>변경 내용</th><th>우선순위</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="highlight">apps/services/capture/src/capture/map-detection.service.ts</td>
+          <td>반환값: boolean → MapArea | null (청록 픽셀 bounding box 포함)</td>
+          <td><span class="tag critical">P1</span></td>
+        </tr>
+        <tr>
+          <td class="highlight">apps/services/capture/src/capture/circle.service.ts</td>
+          <td>crop 영역 기준 좌표 정규화, 흰 픽셀 필터 강화 옵션</td>
+          <td><span class="tag critical">P1</span></td>
+        </tr>
+        <tr>
+          <td class="highlight">apps/services/capture/src/capture/capture.service.ts</td>
+          <td>MapArea 전달 시그니처 변경</td>
+          <td><span class="tag critical">P1</span></td>
+        </tr>
+        <tr>
+          <td>packages/shared/src/types/</td>
+          <td>MapArea 타입 추가 (옵션, 서비스 내부에서만 써도 됨)</td>
+          <td><span class="tag minor">P3</span></td>
+        </tr>
+        <tr>
+          <td>docker-compose.yml + apps/frontend/Dockerfile</td>
+          <td>ARG로 빌드 타임 NEXT_PUBLIC_* 전달</td>
+          <td><span class="tag major">P2</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('coordCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+
+ctx.fillStyle = '#0d1117';
+ctx.fillRect(0, 0, W, H);
+
+// 왼쪽: 실제 캡처 화면 (1920x1080)
+const lx = 10, ly = 20, lw = 390, lh = 260;
+ctx.strokeStyle = '#4a5568';
+ctx.strokeRect(lx, ly, lw, lh);
+ctx.fillStyle = '#1a2236';
+ctx.fillRect(lx, ly, lw, lh);
+
+// 실제 맵 영역 (화면 내 정사각형)
+const mapOff = lw * 0.15;
+const mapW = lh * 0.85;
+const mapX = lx + (lw - mapW) / 2;
+const mapY = ly + (lh - mapW) / 2;
+ctx.fillStyle = '#1e3a2e';
+ctx.fillRect(mapX, mapY, mapW, mapW);
+ctx.strokeStyle = '#276749';
+ctx.lineWidth = 1;
+ctx.strokeRect(mapX, mapY, mapW, mapW);
+
+// 바다 색
+ctx.fillStyle = 'rgba(30, 80, 100, 0.5)';
+ctx.fillRect(mapX, mapY, mapW * 0.15, mapW);
+ctx.fillRect(mapX + mapW * 0.85, mapY, mapW * 0.15, mapW);
+
+// 자기장 원 (실제 위치: 맵 왼쪽 상단 1/4)
+const circleRelX = 0.28; // 맵 내 x 비율
+const circleRelY = 0.35;
+const circleRelR = 0.22;
+const cxReal = mapX + circleRelX * mapW;
+const cyReal = mapY + circleRelY * mapW;
+const crReal = circleRelR * mapW;
+ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.arc(cxReal, cyReal, crReal, 0, Math.PI * 2);
+ctx.stroke();
+ctx.fillStyle = 'rgba(30, 100, 255, 0.15)';
+ctx.fill();
+
+// 레이블
+ctx.fillStyle = '#718096';
+ctx.font = '10px Segoe UI';
+ctx.fillText('캡처된 전체 화면 (1920×1080)', lx + 6, ly + 14);
+ctx.fillStyle = '#68d391';
+ctx.fillText('맵 영역', mapX + 5, mapY + 14);
+ctx.fillStyle = '#fc8181';
+ctx.font = 'bold 10px Segoe UI';
+ctx.fillText('자기장 원 (실제)', cxReal + crReal + 4, cyReal);
+
+// 치수 표시
+ctx.strokeStyle = '#4a5568';
+ctx.setLineDash([3, 3]);
+ctx.lineWidth = 0.5;
+ctx.beginPath();
+ctx.moveTo(lx, cy = mapY + mapW / 2);
+ctx.lineTo(cxReal, mapY + mapW / 2);
+ctx.stroke();
+ctx.setLineDash([]);
+
+// 정규화 표시 (잘못된)
+const normX_wrong = cxReal / lw;
+ctx.fillStyle = '#fc8181';
+ctx.font = '10px Consolas';
+ctx.fillText(`x = ${(cxReal - lx).toFixed(0)}/${lw} = ${normX_wrong.toFixed(2)} ❌`, lx + 6, H - 20);
+
+// 화살표
+ctx.fillStyle = '#4a5568';
+ctx.font = '28px serif';
+ctx.fillText('→', W/2 - 20, H/2 + 10);
+
+// 오른쪽: CircleOverlay 좌표계 (0~1)
+const rx = W/2 + 20, ry = 20, rw = W - rx - 20, rh = H - 40;
+ctx.fillStyle = '#1a2236';
+ctx.fillRect(rx, ry, rw, rh);
+ctx.strokeStyle = '#2d3748';
+ctx.lineWidth = 1;
+ctx.strokeRect(rx, ry, rw, rh);
+
+// 그리드
+ctx.strokeStyle = '#1e2d40';
+ctx.lineWidth = 0.5;
+for (let i = 1; i < 4; i++) {
+  ctx.beginPath();
+  ctx.moveTo(rx + i * rw/4, ry);
+  ctx.lineTo(rx + i * rw/4, ry + rh);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rx, ry + i * rh/4);
+  ctx.lineTo(rx + rw, ry + i * rh/4);
+  ctx.stroke();
+}
+
+// 잘못된 원 위치 (전체화면 기준 정규화)
+const wrongX = rx + (cxReal - lx) / lw * rw;
+const wrongY = ry + (cyReal - ly) / lh * rh;
+const wrongR = crReal / Math.min(lw, lh) * Math.min(rw, rh);
+ctx.strokeStyle = 'rgba(252, 129, 129, 0.6)';
+ctx.lineWidth = 2;
+ctx.setLineDash([4, 4]);
+ctx.beginPath();
+ctx.arc(wrongX, wrongY, wrongR, 0, Math.PI * 2);
+ctx.stroke();
+ctx.setLineDash([]);
+
+// 올바른 원 위치 (맵 영역 기준 정규화)
+const correctX = rx + circleRelX * rw;
+const correctY = ry + circleRelY * rh;
+const correctR = circleRelR * Math.min(rw, rh);
+ctx.strokeStyle = 'rgba(104, 211, 145, 0.9)';
+ctx.lineWidth = 2;
+ctx.beginPath();
+ctx.arc(correctX, correctY, correctR, 0, Math.PI * 2);
+ctx.stroke();
+ctx.fillStyle = 'rgba(30, 100, 255, 0.1)';
+ctx.fill();
+
+ctx.fillStyle = '#fc8181';
+ctx.font = '10px Segoe UI';
+ctx.fillText('현재 결과 (잘못됨)', wrongX + wrongR + 4, wrongY);
+ctx.fillStyle = '#68d391';
+ctx.fillText('올바른 결과', correctX + correctR + 4, correctY);
+
+ctx.fillStyle = '#718096';
+ctx.font = '10px Segoe UI';
+ctx.fillText('CircleOverlay SVG 좌표계 (0~1)', rx + 6, ry + 14);
+</script>
+</body>
+</html>

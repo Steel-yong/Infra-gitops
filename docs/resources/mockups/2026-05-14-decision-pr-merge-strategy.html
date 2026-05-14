@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PR 머지 결정 — 2026-05-14</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',sans-serif;font-size:14px;line-height:1.6}
+.header{background:linear-gradient(135deg,#1a1f2e,#0d1117);padding:32px;border-bottom:1px solid #2d3748}
+.header h1{font-size:22px;color:#fff;margin-bottom:6px}
+.header p{color:#718096;font-size:13px}
+.container{max-width:1100px;margin:0 auto;padding:32px}
+.section{margin-bottom:40px}
+.section h2{font-size:16px;color:#63b3ed;border-bottom:1px solid #2d3748;padding-bottom:8px;margin-bottom:20px;text-transform:uppercase;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+th{background:#1a2236;color:#90cdf4;padding:10px 12px;text-align:left;border-bottom:1px solid #2d3748;font-size:11px;text-transform:uppercase}
+td{padding:10px 12px;border-bottom:1px solid #1a2236;color:#a0aec0;vertical-align:top}
+tr:hover td{background:#1a2236}
+.status{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase}
+.status.merged{background:#22543d;color:#9ae6b4}
+.status.open{background:#744210;color:#f6ad55}
+.status.closed{background:#742a2a;color:#fc8181}
+.status.local-only{background:#2d3748;color:#a0aec0}
+.action{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700}
+.action.safe{background:#22543d;color:#9ae6b4}
+.action.danger{background:#742a2a;color:#fc8181}
+.action.review{background:#744210;color:#f6ad55}
+.bug-card{border-left:3px solid #e53e3e;background:#1a1520;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0}
+.bug-card.warn{border-left-color:#d69e2e;background:#1a1810}
+.bug-card.ok{border-left-color:#38a169;background:#0f1f15}
+.bug-card.info{border-left-color:#3182ce;background:#101825}
+.bug-card h4{font-size:13px;color:#e2e8f0;margin-bottom:8px}
+.code{background:#0d1117;border:1px solid #2d3748;border-radius:4px;padding:10px 14px;font-family:Consolas,monospace;font-size:11px;color:#a3e635;margin:8px 0;overflow-x:auto;white-space:pre}
+.diff-stat{font-family:Consolas,monospace;font-size:11px}
+.diff-add{color:#9ae6b4}
+.diff-del{color:#fc8181;font-weight:700}
+.recommendation{background:linear-gradient(135deg,#0f2e1a,#0a1f12);border:1px solid #38a169;border-radius:8px;padding:24px;margin-top:24px}
+.recommendation h3{color:#68d391;margin-bottom:12px}
+.steps{counter-reset:step}
+.steps li{counter-increment:step;padding:10px 0 10px 36px;position:relative;color:#a0aec0;font-size:13px;border-bottom:1px solid #1a3a25}
+.steps li:last-child{border-bottom:none}
+.steps li::before{content:counter(step);position:absolute;left:0;top:10px;background:#38a169;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.steps li strong{color:#e2e8f0}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>PR 머지 전략 결정 보고서</h1>
+  <p>2026-05-14 | 워크트리 9개, 미머지 PR 3개, develop 11커밋 미푸시</p>
+</div>
+
+<div class="container">
+
+  <div class="section">
+    <h2>⚠️ 핵심 결론</h2>
+    <div class="bug-card">
+      <h4>열린 PR을 그대로 머지하면 <strong>최근 작업 6000줄이 삭제됨</strong></h4>
+      <p>PUB-25/26/27/ci-docker-build 브랜치는 14~22 커밋 뒤처져 있음. develop에는 그 사이에 들어간 작업들 (맵 이미지, Docker Compose, 비밀창고 기능, 자기장 좌표계 수정 등)이 있는데, 옛 브랜치에는 이게 없음.</p>
+      <p style="margin-top:8px;color:#fc8181;"><strong>→ 그대로 머지 시 develop의 최근 작업이 통째로 사라짐.</strong></p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>현황 — 9개 워크트리 + 4개 미정 PR</h2>
+    <table>
+      <thead>
+      <tr>
+        <th>브랜치</th>
+        <th>로컬</th>
+        <th>GitHub PR</th>
+        <th>develop 대비</th>
+        <th>판정</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td><code>feature/PUB-15</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status merged">PR #66 머지됨</span></td>
+        <td>ahead=0, behind=21</td>
+        <td><span class="action safe">워크트리 삭제만</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/PUB-16</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status merged">PR #67 머지됨</span></td>
+        <td>ahead=0, behind=21</td>
+        <td><span class="action safe">워크트리 삭제만</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/PUB-17</code></td>
+        <td>워크트리 있음 (pnpm-lock.yaml 변경)</td>
+        <td><span class="status merged">PR #68 머지됨</span></td>
+        <td>ahead=0, behind=21</td>
+        <td><span class="action review">변경 폐기 후 삭제</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/PUB-18</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status merged">PR #69 머지됨</span></td>
+        <td>ahead=0, behind=21</td>
+        <td><span class="action safe">워크트리 삭제만</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/PUB-24</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status merged">PR #70 머지됨</span></td>
+        <td>ahead=1, behind=14</td>
+        <td><span class="action safe">워크트리 삭제만<br>(작업은 develop에 이미 있음)</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/PUB-25</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status closed">PR #71 거부됨</span></td>
+        <td>ahead=1, behind=22</td>
+        <td><span class="action review">사용자 결정 필요</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/PUB-26</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status open">PR #72 열림</span></td>
+        <td>ahead=1, behind=22</td>
+        <td><span class="action danger">위험 — 리베이스 필요</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/PUB-27</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status open">PR #73 열림</span></td>
+        <td>ahead=1, behind=22</td>
+        <td><span class="action danger">위험 — 리베이스 필요</span></td>
+      </tr>
+      <tr>
+        <td><code>feature/ci-docker-build</code></td>
+        <td>워크트리 있음</td>
+        <td><span class="status open">PR #74 열림</span></td>
+        <td>ahead=1, behind=12</td>
+        <td><span class="action danger">위험 — 리베이스 필요</span></td>
+      </tr>
+      <tr>
+        <td><code>develop</code> (로컬)</td>
+        <td>현재 폴더</td>
+        <td>—</td>
+        <td><strong>로컬이 11커밋 앞섬</strong></td>
+        <td><span class="action safe">push 필요</span></td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>왜 그대로 머지하면 안 되나</h2>
+    <div class="bug-card warn">
+      <h4>예시: feature/PUB-26 vs develop</h4>
+      <div class="code">95 files changed, 497 insertions(+), <span class="diff-del">6441 deletions(-)</span></div>
+      <p>이 브랜치를 그대로 머지하면 6441줄이 삭제됨. 이건 develop에 들어간 다음 작업이 PUB-26 브랜치엔 없기 때문임.</p>
+      <ul style="margin:10px 0 0 20px;color:#fc8181;font-size:12px">
+        <li>4096×4096 고화질 맵 이미지 (3MB × 2맵)</li>
+        <li>docker-compose.yml + Dockerfile 5개</li>
+        <li>비밀창고 기능 (PUB-28)</li>
+        <li>Leaflet 좌표계 수정</li>
+        <li>자기장 렌더링 변경</li>
+        <li>화면공유 피커 안내</li>
+      </ul>
+    </div>
+    <div class="bug-card ok">
+      <h4>✅ 해결 방법: 리베이스 (develop 위에 올리기)</h4>
+      <div class="code">git checkout feature/PUB-26
+git rebase develop
+# 충돌 해결
+git push --force-with-lease</div>
+      <p>이렇게 하면 brancㅎ가 develop의 최신 상태 위에 자기 작업만 얹는 형태가 됨. 충돌 가능성 있어서 자동 머지 불가.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>안전한 자동 액션 vs 사용자 결정 필요</h2>
+    <table>
+      <thead>
+      <tr><th>액션</th><th>대상</th><th>위험도</th><th>설명</th></tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>✅ develop push</td>
+        <td>로컬 develop 11커밋</td>
+        <td><span class="action safe">SAFE</span></td>
+        <td>GitHub develop이 11커밋 뒤처져 있음. push만 하면 됨.</td>
+      </tr>
+      <tr>
+        <td>✅ 워크트리 삭제</td>
+        <td>PUB-15, 16, 18, 24</td>
+        <td><span class="action safe">SAFE</span></td>
+        <td>이미 develop에 머지됨. 워크트리 폴더만 정리.</td>
+      </tr>
+      <tr>
+        <td>⚠️ 워크트리 + 미커밋 변경 처리</td>
+        <td>PUB-17 (pnpm-lock.yaml)</td>
+        <td><span class="action review">REVIEW</span></td>
+        <td>이미 머지됐는데 lock 파일 변경이 남음. 폐기해도 무방할 가능성 높음.</td>
+      </tr>
+      <tr>
+        <td>🤔 PR 처리</td>
+        <td>PUB-25 (Closed)</td>
+        <td><span class="action review">USER</span></td>
+        <td>왜 거부됐는지 확인 필요. 워크트리/브랜치 삭제 여부 결정.</td>
+      </tr>
+      <tr>
+        <td>🛑 PR 머지</td>
+        <td>PUB-26, PUB-27, ci-docker-build</td>
+        <td><span class="action danger">DANGER</span></td>
+        <td>리베이스 필요. 자동 머지 절대 금지. 사용자가 직접 리베이스 의사결정 필요.</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="recommendation">
+    <h3>🎯 추천 진행 순서</h3>
+    <ol class="steps">
+      <li><strong>지금 즉시 자동 처리 (안전):</strong> <code>git push origin develop</code> — 11커밋 GitHub에 올림. 집에서 pull 가능.</li>
+      <li><strong>지금 즉시 자동 처리 (안전):</strong> 머지된 워크트리 4개 삭제 (PUB-15, 16, 18, 24).</li>
+      <li><strong>지금 즉시 자동 처리 (안전):</strong> PUB-17의 pnpm-lock.yaml 변경 폐기 + 워크트리 삭제.</li>
+      <li><strong>사용자 결정 필요:</strong> PUB-25 (Closed PR)는 보존할지 폐기할지. → 확인 후 처리.</li>
+      <li><strong>사용자 결정 필요:</strong> PUB-26, PUB-27, ci-docker-build 리베이스 진행 여부. 인프라 작업이라 중요하지만 충돌 가능성 있음. → 우선순위에 따라 결정.</li>
+      <li><strong>완료 후:</strong> develop pull (이미 현재 브랜치라 작업 폴더 자동 업데이트).</li>
+    </ol>
+  </div>
+
+  <div class="section" style="margin-top:32px">
+    <h2>현재 진행 중 별개 작업</h2>
+    <div class="bug-card info">
+      <h4>📋 자기장 인식 버그 (오늘의 주요 작업)</h4>
+      <p>오늘 시작한 자기장 좌표 버그 수정 작업은 위 PR 정리와 무관함. 정리 끝나면 자기장 버그 작업 이어서 진행.</p>
+      <p style="margin-top:6px;color:#718096;font-size:12px">참고: <code>docs/resources/mockups/2026-05-14-bug-report-circle-detection.html</code></p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
