@@ -94,24 +94,24 @@ async function main(): Promise<void> {
   console.log(`에란겔 CirclePhase ${ERANGEL_PHASES.length}개 완료`);
   console.log(`태이고 CirclePhase ${TAEGO_PHASES.length}개 완료`);
 
-  // 비밀창고 위치 시드 (참고 이미지 픽셀 분석 좌표 — 0~1 정규화)
-  // coordX = 서→동, coordY = 북→남
+  // 비밀창고 위치 시드 — 에란겔 비밀창고 위치.png 빨간 동그라미 픽셀 추출 (4096×4096 기준)
+  // coordX = 서→동, coordY = 북→남, 0~1 정규화
   const ERANGEL_STASHES = [
-    { id: 'erangel-stash-01', coordX: 0.630, coordY: 0.061 }, // Stalber 북쪽
-    { id: 'erangel-stash-02', coordX: 0.152, coordY: 0.222 }, // Zharki 근처
-    { id: 'erangel-stash-03', coordX: 0.503, coordY: 0.240 }, // Shooting Range 근처
-    { id: 'erangel-stash-04', coordX: 0.801, coordY: 0.259 }, // Kameshki 근처
-    { id: 'erangel-stash-05', coordX: 0.307, coordY: 0.277 }, // Georgopol 동쪽
-    { id: 'erangel-stash-06', coordX: 0.668, coordY: 0.452 }, // Shelter 근처
-    { id: 'erangel-stash-07', coordX: 0.169, coordY: 0.472 }, // Gatka 근처
-    { id: 'erangel-stash-08', coordX: 0.360, coordY: 0.496 }, // Pochinki 근처
-    { id: 'erangel-stash-09', coordX: 0.568, coordY: 0.592 }, // Mylta 근처
-    { id: 'erangel-stash-10', coordX: 0.832, coordY: 0.656 }, // Mylta Power 근처
-    { id: 'erangel-stash-11', coordX: 0.315, coordY: 0.693 }, // 서해안 남부
-    { id: 'erangel-stash-12', coordX: 0.136, coordY: 0.747 }, // Primorsk 근처
-    { id: 'erangel-stash-13', coordX: 0.535, coordY: 0.800 }, // Sosnovka 북쪽
-    { id: 'erangel-stash-14', coordX: 0.697, coordY: 0.915 }, // Novorepnoye 근처
-    { id: 'erangel-stash-15', coordX: 0.405, coordY: 0.916 }, // Sosnovka Military Base
+    { id: 'erangel-stash-01', coordX: 0.6257, coordY: 0.0818 }, // Stalber 북쪽
+    { id: 'erangel-stash-02', coordX: 0.1682, coordY: 0.2216 }, // Zharki 근처
+    { id: 'erangel-stash-03', coordX: 0.5037, coordY: 0.2402 }, // Shooting Range 근처
+    { id: 'erangel-stash-04', coordX: 0.7971, coordY: 0.2537 }, // Kameshki 근처
+    { id: 'erangel-stash-05', coordX: 0.3164, coordY: 0.2702 }, // Georgopol 동쪽
+    { id: 'erangel-stash-06', coordX: 0.6676, coordY: 0.4182 }, // Shelter 근처
+    { id: 'erangel-stash-07', coordX: 0.1808, coordY: 0.4325 }, // Gatka 근처
+    { id: 'erangel-stash-08', coordX: 0.3677, coordY: 0.4585 }, // Pochinki 근처
+    { id: 'erangel-stash-09', coordX: 0.5691, coordY: 0.5404 }, // Mylta 근처
+    { id: 'erangel-stash-10', coordX: 0.8251, coordY: 0.5976 }, // Mylta Power 근처
+    { id: 'erangel-stash-11', coordX: 0.3344, coordY: 0.6292 }, // 서해안 남부
+    { id: 'erangel-stash-12', coordX: 0.1538, coordY: 0.6754 }, // Primorsk 근처
+    { id: 'erangel-stash-13', coordX: 0.5372, coordY: 0.7225 }, // Sosnovka 북쪽
+    { id: 'erangel-stash-14', coordX: 0.4033, coordY: 0.8184 }, // Sosnovka Military Base
+    { id: 'erangel-stash-15', coordX: 0.6926, coordY: 0.8218 }, // Novorepnoye 근처
   ] as const;
 
   const TAEGO_STASHES = [

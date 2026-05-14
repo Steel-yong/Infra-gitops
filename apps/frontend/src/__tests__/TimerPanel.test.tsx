@@ -12,6 +12,8 @@ function makeState(partial: Partial<OcrTimerState> = {}): OcrTimerState {
     cropDataUrl: null,
     region: null,
     attempts: 0,
+    status: 'ready',
+    errorMessage: null,
     ...partial,
   };
 }

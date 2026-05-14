@@ -20,6 +20,17 @@
   line-height: 1.5;
 }
 
+.errorMsg {
+  font-size: 0.7rem;
+  color: #fca5a5;
+  line-height: 1.5;
+  word-break: break-word;
+  padding: 0.5rem;
+  background: rgba(127, 29, 29, 0.2);
+  border-radius: 4px;
+  border-left: 2px solid #ef4444;
+}
+
 .stateBadge {
   display: flex;
   gap: 0.375rem;
@@ -78,6 +89,42 @@
   font-size: 0.65rem;
   color: #4b5563;
   margin-top: 0.2rem;
+}
+
+.cropDebug {
+  background: #08080f;
+  border: 1px dashed #2a2a3e;
+  border-radius: 6px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cropLabel {
+  font-size: 0.6rem;
+  color: #6b7280;
+}
+
+.cropImg {
+  width: 100%;
+  height: auto;
+  border: 1px solid #2a2a3e;
+  border-radius: 4px;
+  image-rendering: pixelated;
+  background: #1c1c2e;
+}
+
+.cropText {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.cropText code {
+  background: #1c1c2e;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #fbbf24;
 }
 
 @keyframes pulse {

@@ -9,7 +9,6 @@ interface TimerPanelProps {
   isCapturing: boolean;
 }
 
-/** 잔여 초를 "M:SS" 포맷으로 변환. null이면 "--:--" */
 function formatSeconds(seconds: number | null): string {
   if (seconds === null) return '--:--';
   const m = Math.floor(seconds / 60);
@@ -17,7 +16,6 @@ function formatSeconds(seconds: number | null): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-/** 잔여 초 임계값에 따라 색상 클래스 결정 */
 function timerColorClass(remaining: number | null): string {
   if (remaining === null) return styles.timerNeutral;
   if (remaining <= 30) return styles.timerDanger;
@@ -31,6 +29,26 @@ export function TimerPanel({ state, isCapturing }: TimerPanelProps) {
       <div className={styles.panel}>
         <p className={styles.sectionLabel}>자기장 타이머</p>
         <p className={styles.idleMsg}>화면공유 시작 후 OCR 인식이 시작됩니다.</p>
+      </div>
+    );
+  }
+
+  if (state.status === 'loading') {
+    return (
+      <div className={styles.panel}>
+        <p className={styles.sectionLabel}>자기장 타이머</p>
+        <p className={styles.idleMsg}>OCR 엔진 다운로드 중... (최초 1회, 수십 초 소요)</p>
+      </div>
+    );
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className={styles.panel}>
+        <p className={styles.sectionLabel}>자기장 타이머</p>
+        <p className={styles.errorMsg}>
+          OCR 실패: {state.errorMessage ?? '알 수 없는 에러'}
+        </p>
       </div>
     );
   }
@@ -53,9 +71,24 @@ export function TimerPanel({ state, isCapturing }: TimerPanelProps) {
           <div className={`${styles.timerTime} ${timerColorClass(state.remainingSeconds)}`}>
             {formatSeconds(state.remainingSeconds)}
           </div>
-          <div className={styles.timerLabel}>다음 자기장까지</div>
+          <div className={styles.timerLabel}>
+            {state.isShrinking ? '자기장이 줄어들고 있습니다.' : '이동까지 남은시간'}
+          </div>
         </div>
       </div>
+
+      {/* OCR 디버그 — 크롭 영역이 PUBG 타이머와 일치하는지 시각 확인 */}
+      {state.cropDataUrl && state.region && (
+        <div className={styles.cropDebug}>
+          <p className={styles.cropLabel}>
+            OCR 크롭 영역 ({state.region.w}×{state.region.h} @ {state.region.x},{state.region.y})
+          </p>
+          <img src={state.cropDataUrl} alt="OCR 크롭" className={styles.cropImg} />
+          <p className={styles.cropText}>
+            인식: <code>{state.rawText || '(빈 문자열)'}</code>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

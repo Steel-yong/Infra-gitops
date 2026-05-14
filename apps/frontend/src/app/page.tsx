@@ -11,9 +11,15 @@ import { useLocations } from '../hooks/useLocations';
 import { useStashLocations } from '../hooks/useStashLocations';
 import { useWebNotifications } from '../hooks/useWebNotifications';
 import { useOcrTimer } from '../hooks/useOcrTimer';
+import { useAlertTimer } from '../hooks/useAlertTimer';
+import { useLockedCircle } from '../hooks/useLockedCircle';
+import { playAlarmBeep } from '../hooks/playAlarmBeep';
 import { LocationPanel } from '../components/LocationPanel';
 import { TimerPanel } from '../components/TimerPanel';
 import styles from './page.module.css';
+
+/** 알람 lead — 표시 타이머가 게임과 sync되어 있으므로 0초 (정확한 시점에 알림). */
+const CAPTURE_LAG_LEAD_SECONDS = 0;
 
 const MapCanvas = dynamic(() => import('../components/MapCanvas'), { ssr: false });
 const CircleOverlay = dynamic(
@@ -39,12 +45,37 @@ export default function Page() {
     onFrame: sendFrame,
     onError: (msg) => setCaptureError(msg),
   });
-  const { locations, error: locationError } = useLocations(circleData, mapType);
   const stashes = useStashLocations(mapType);
   const { permission, requestPermission } = useWebNotifications();
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const ocrTimer = useOcrTimer(videoRef.current, isCapturing);
+
+  // 위치 락: "줄어듦 → 대기" 전환 시점에만 위치 갱신, 그 외 고정.
+  const lockedCircle = useLockedCircle(circleData, ocrTimer.isShrinking);
+
+  // 위치 추천도 락된 원 기준으로 (락 안 됐으면 동작 안 함)
+  const { locations, error: locationError } = useLocations(lockedCircle, mapType);
+
+  // OCR 타이머 결과를 알림 훅에 전달 — 임계값(사용자 설정) + 1초 lead로 발송
+  const { processState: processAlertState } = useAlertTimer({
+    thresholds: alertEnabled,
+    leadSeconds: CAPTURE_LAG_LEAD_SECONDS,
+    onAlert: (seconds) => {
+      // 비프음은 권한 무관 (탭이 활성화돼 있으면 들림)
+      playAlarmBeep();
+      // 브라우저 알림은 권한 허용 시
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new Notification('자기장 알림', {
+          body: `자기장까지 ${seconds}초 남았습니다.`,
+        });
+      }
+    },
+  });
+
+  useEffect(() => {
+    processAlertState(ocrTimer.remainingSeconds, ocrTimer.isShrinking);
+  }, [ocrTimer.remainingSeconds, ocrTimer.isShrinking, processAlertState]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -162,7 +193,7 @@ export default function Page() {
         <div className={styles.mapArea}>
           <MapCanvas mapType={mapType}>
             <StashMarkers stashes={stashes} />
-            <CircleOverlay circleData={circleData} />
+            <CircleOverlay circleData={lockedCircle} />
             <LocationMarkers locations={locations} />
           </MapCanvas>
         </div>

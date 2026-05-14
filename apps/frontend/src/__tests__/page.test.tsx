@@ -43,6 +43,8 @@ vi.mock('../hooks/useOcrTimer', () => ({
     cropDataUrl: null,
     region: null,
     attempts: 0,
+    status: 'idle',
+    errorMessage: null,
   })),
 }));
 
