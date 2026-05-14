@@ -1,13 +1,24 @@
-// 캡처 프레임에서 자기장 원의 중심과 반경을 추출하는 서비스
+// 캡처 프레임의 맵 영역에서 자기장 원의 중심과 반경을 추출하는 서비스
 import { Injectable } from '@nestjs/common';
 import sharp from 'sharp';
 import type { CircleData } from '@pubg-helper/shared';
+import type { MapArea } from './map-detection.service';
 
 @Injectable()
 export class CircleService {
-  async extractCircle(base64: string): Promise<CircleData | null> {
+  /**
+   * 캡처 프레임의 mapArea 영역만 잘라내 자기장 원을 검출한다.
+   * 정규화는 mapArea 기준 0~1 좌표로 수행한다 (Leaflet 맵 좌표계와 일치).
+   */
+  async extractCircle(base64: string, mapArea: MapArea): Promise<CircleData | null> {
     const buffer = Buffer.from(base64, 'base64');
     const { data, info } = await sharp(buffer)
+      .extract({
+        left: mapArea.left,
+        top: mapArea.top,
+        width: mapArea.width,
+        height: mapArea.height,
+      })
       .removeAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
@@ -33,8 +44,8 @@ export class CircleService {
     const circle = fitCircle(points);
     if (!circle) return null;
 
-    // 합리적인 반경 범위 체크: 이미지 너비의 5~90%
-    if (circle.r < width * 0.05 || circle.r > Math.max(width, height) * 0.9) return null;
+    // 합리적인 반경 범위 체크: 맵 너비의 5~90%
+    if (circle.r < width * 0.05 || circle.r > width * 0.9) return null;
 
     // 피팅 품질 검증: 평균 잔차가 반경의 25% 초과면 점들이 원을 이루지 않는다고 판단
     const avgResidual =
@@ -44,10 +55,11 @@ export class CircleService {
       }, 0) / points.length;
     if (avgResidual > circle.r * 0.25) return null;
 
+    // mapArea 기준 0~1 정규화 (정사각형 가정: width === height)
     return {
       x: circle.cx / width,
       y: circle.cy / height,
-      r: circle.r / Math.min(width, height),
+      r: circle.r / width,
     };
   }
 }
