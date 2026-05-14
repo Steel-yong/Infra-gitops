@@ -7,7 +7,7 @@ import {
   parseTimerString,
   detectExclamationMark,
   type TimerRegion,
-} from '../workers/ocrWorker';
+} from '../workers/timer-ocr-utils';
 
 export interface OcrTimerState {
   /** OCR이 인식한 원본 텍스트 (내부 디버깅용, UI에는 미표시) */
