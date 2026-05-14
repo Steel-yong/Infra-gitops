@@ -10,9 +10,7 @@ import { useScreenCapture } from '../hooks/useScreenCapture';
 import { useLocations } from '../hooks/useLocations';
 import { useStashLocations } from '../hooks/useStashLocations';
 import { useWebNotifications } from '../hooks/useWebNotifications';
-import { useOcrTimer } from '../hooks/useOcrTimer';
 import { LocationPanel } from '../components/LocationPanel';
-import { TimerPanel } from '../components/TimerPanel';
 import styles from './page.module.css';
 
 const MapCanvas = dynamic(() => import('../components/MapCanvas'), { ssr: false });
@@ -44,7 +42,6 @@ export default function Page() {
   const { permission, requestPermission } = useWebNotifications();
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const ocrTimer = useOcrTimer(videoRef.current, isCapturing);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -79,8 +76,6 @@ export default function Page() {
               ))}
             </div>
           </div>
-
-          <TimerPanel state={ocrTimer} isCapturing={isCapturing} />
 
           <div className={styles.sideSection}>
             <p className={styles.sideSectionLabel}>자기장 알림</p>
@@ -136,6 +131,11 @@ export default function Page() {
             >
               {isCapturing ? '공유 종료' : '공유 시작'}
             </button>
+            {!isCapturing && (
+              <p className={styles.captureHint}>
+                공유 시작 후 <strong>화면 전체</strong> 탭에서 배그가 있는 모니터를 선택하세요.
+              </p>
+            )}
             {captureError && (
               <p className={styles.captureError}>{captureError}</p>
             )}
