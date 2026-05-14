@@ -7,4 +7,6 @@ export interface CircleData {
   y: number;
   /** 자기장 원 반경 (0~1 정규화) */
   r: number;
+  /** 검출된 반경에서 추정한 PUBG 페이즈 번호 (1~8). 검출 정확도 디버깅용. */
+  phase?: number;
 }

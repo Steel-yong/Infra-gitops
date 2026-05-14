@@ -7,6 +7,8 @@ import styles from './TimerPanel.module.css';
 interface TimerPanelProps {
   state: OcrTimerState;
   isCapturing: boolean;
+  /** capture-service가 검출한 반경에서 추정한 PUBG 페이즈 (1~8). 검출 정확도 디버깅용. */
+  phase?: number | null;
 }
 
 function formatSeconds(seconds: number | null): string {
@@ -23,7 +25,7 @@ function timerColorClass(remaining: number | null): string {
   return styles.timerNormal;
 }
 
-export function TimerPanel({ state, isCapturing }: TimerPanelProps) {
+export function TimerPanel({ state, isCapturing, phase = null }: TimerPanelProps) {
   if (!isCapturing) {
     return (
       <div className={styles.panel}>
@@ -76,6 +78,11 @@ export function TimerPanel({ state, isCapturing }: TimerPanelProps) {
           </div>
         </div>
       </div>
+
+      <p className={styles.phaseLine}>
+        현재 페이즈: <strong>{phase !== null ? `${phase}페이즈` : '—'}</strong>
+        <span className={styles.phaseHint}> (검출 반경 추정값)</span>
+      </p>
 
       {/* OCR 디버그 — 크롭 영역이 PUBG 타이머와 일치하는지 시각 확인 */}
       {state.cropDataUrl && state.region && (

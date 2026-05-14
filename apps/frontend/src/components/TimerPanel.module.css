@@ -91,6 +91,27 @@
   margin-top: 0.2rem;
 }
 
+.phaseLine {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  padding: 0.4rem 0.6rem;
+  background: #0f0f1a;
+  border: 1px solid #1e1e30;
+  border-radius: 6px;
+}
+
+.phaseLine strong {
+  color: #fbbf24;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.phaseHint {
+  margin-left: 0.4rem;
+  font-size: 0.65rem;
+  color: #6b7280;
+}
+
 .cropDebug {
   background: #08080f;
   border: 1px dashed #2a2a3e;

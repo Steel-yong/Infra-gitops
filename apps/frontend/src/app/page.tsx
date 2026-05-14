@@ -111,7 +111,11 @@ export default function Page() {
             </div>
           </div>
 
-          <TimerPanel state={ocrTimer} isCapturing={isCapturing} />
+          <TimerPanel
+            state={ocrTimer}
+            isCapturing={isCapturing}
+            phase={lockedCircle?.phase ?? circleData?.phase ?? null}
+          />
 
           <div className={styles.sideSection}>
             <p className={styles.sideSectionLabel}>자기장 알림</p>
