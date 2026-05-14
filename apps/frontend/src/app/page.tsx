@@ -40,7 +40,7 @@ export default function Page() {
   const [alertEnabled, setAlertEnabled] = useState<number[]>([30, 20, 10]);
   const [captureError, setCaptureError] = useState<string | null>(null);
 
-  const { circleData, sendFrame } = useCaptureSocket();
+  const { circleData, sendFrame, setIsShrinking } = useCaptureSocket();
   const { isCapturing, stream, start, stop } = useScreenCapture({
     onFrame: sendFrame,
     onError: (msg) => setCaptureError(msg),
@@ -82,6 +82,11 @@ export default function Page() {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
+
+  // OCR이 잡은 isShrinking을 capture-service에 전달 — frame upload payload에 동봉됨
+  useEffect(() => {
+    setIsShrinking(ocrTimer.isShrinking);
+  }, [ocrTimer.isShrinking, setIsShrinking]);
 
   return (
     <main className={styles.root}>

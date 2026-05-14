@@ -12,3 +12,9 @@ export const SocketEvents = {
 } as const;
 
 export type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];
+
+/** frame:upload payload — frontend가 isShrinking 신호 동봉. 후방 호환: 문자열도 허용. */
+export interface FrameUploadPayload {
+  base64: string;
+  isShrinking: boolean;
+}

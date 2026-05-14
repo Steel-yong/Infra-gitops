@@ -1,8 +1,9 @@
 // capture-service WebSocket 연결 및 CircleData 상태를 관리하는 훅
+// isShrinking 신호를 frame upload에 동봉해서 backend가 페이즈 카운터 + 검출 스킵에 활용한다.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { SocketEvents } from '@pubg-helper/shared';
-import type { CircleData } from '@pubg-helper/shared';
+import type { CircleData, FrameUploadPayload } from '@pubg-helper/shared';
 
 const CAPTURE_SERVICE_URL =
   process.env.NEXT_PUBLIC_CAPTURE_SERVICE_URL ?? 'http://localhost:3001';
@@ -11,18 +12,20 @@ export interface UseCaptureSocketReturn {
   circleData: CircleData | null;
   connected: boolean;
   sendFrame: (base64: string) => void;
+  /** ocrTimer.isShrinking 변화 시 호출. frame upload payload에 동봉된다. */
+  setIsShrinking: (v: boolean) => void;
 }
 
 /**
  * capture-service에 socket.io로 연결하고 자기장 원 데이터를 수신한다.
- * - circle:result → circleData 갱신 (이전 원 교체)
- * - map:none → circleData null (원 숨김)
- * - disconnect → circleData 유지 (마지막 원 표시)
+ * setIsShrinking으로 OCR의 isShrinking을 ref에 주입 (page.tsx 변수 정의 순서 회피).
  */
 export function useCaptureSocket(): UseCaptureSocketReturn {
   const [circleData, setCircleData] = useState<CircleData | null>(null);
   const [connected, setConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const isShrinkingRef = useRef(false);
+  const setIsShrinking = useCallback((v: boolean) => { isShrinkingRef.current = v; }, []);
 
   useEffect(() => {
     const socket = io(CAPTURE_SERVICE_URL, { transports: ['websocket'] });
@@ -40,8 +43,12 @@ export function useCaptureSocket(): UseCaptureSocketReturn {
   }, []);
 
   const sendFrame = useCallback((base64: string) => {
-    socketRef.current?.emit(SocketEvents.FRAME_UPLOAD, base64);
+    const payload: FrameUploadPayload = {
+      base64,
+      isShrinking: isShrinkingRef.current,
+    };
+    socketRef.current?.emit(SocketEvents.FRAME_UPLOAD, payload);
   }, []);
 
-  return { circleData, connected, sendFrame };
+  return { circleData, connected, sendFrame, setIsShrinking };
 }

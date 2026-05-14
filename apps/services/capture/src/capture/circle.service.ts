@@ -36,9 +36,6 @@ function minScoreForPhase(phase: number): number {
   return Math.max(12, Math.floor(baseScore * ratio));
 }
 
-const SCALE_MIN = 0.7;
-const SCALE_MAX = 3.0;
-
 interface CropArea {
   data: Buffer;
   size: number;
@@ -60,7 +57,11 @@ interface DetectionCandidate {
 export class CircleService {
   private readonly logger = new Logger(CircleService.name);
 
-  async extractCircle(base64: string): Promise<CircleData | null> {
+  /**
+   * @param hintPhase 이전 검출 페이즈 (gateway가 세션 추적). 있으면 그 페이즈와 ±1 후보만 검색.
+   *                  없으면(cold start) 페이즈 1~8 모두 후보.
+   */
+  async extractCircle(base64: string, hintPhase?: number): Promise<CircleData | null> {
     const buffer = Buffer.from(base64, 'base64');
     const { data, info } = await sharp(buffer)
       .removeAlpha()
@@ -68,21 +69,31 @@ export class CircleService {
       .toBuffer({ resolveWithObject: true });
 
     const cropped = this.cropMapArea(data, info.width, info.height);
-    const scale = this.detectMapScale(cropped.data, cropped.size) ?? 1.0;
+    const scale = 1.0;
     const blueRatio = this.measureBlueRatio(cropped.data, cropped.size);
 
-    // 모드 분기 — 도메인 룰
+    // 페이즈 후보 — hintPhase가 있으면 ±1, 없으면 모드별 기본
+    const allPhasesForBlueEdge = [1, 2, 3, 4, 5, 6, 7, 8];
+    const phaseCandidates = hintPhase
+      ? [
+          Math.max(1, hintPhase - 1),
+          hintPhase,
+          Math.min(8, hintPhase + 1),
+        ].filter((p, i, arr) => arr.indexOf(p) === i)
+      : allPhasesForBlueEdge;
+
     let detection: DetectionCandidate | null;
     if (blueRatio >= 0.05) {
       // 페이즈 2~8 모드 — 외부 파란 있음
-      detection = this.detectByBlueEdgeRANSAC(cropped.data, cropped.size, scale);
-      // 페이즈 1 흰 원 RANSAC도 시도 — 페이즈 1 줄어드는 중에 외부 파란 일부 보일 수 있음
+      detection = this.detectByBlueEdgeRANSAC(cropped.data, cropped.size, scale, phaseCandidates);
       if (!detection) {
+        // 페이즈 1 fallback (줄어드는 중에 외부 파란 일부)
         detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, [1]);
       }
     } else {
-      // 페이즈 1 모드 — 외부 파란 없음
-      detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, [1]);
+      // 페이즈 1 모드 — 외부 파란 없음 또는 매우 적음
+      const phase1Candidates = phaseCandidates.includes(1) ? [1] : phaseCandidates;
+      detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phase1Candidates);
     }
 
     if (!detection) {
@@ -135,9 +146,17 @@ export class CircleService {
     return { data: out, size, offsetX, offsetY };
   }
 
-  /** PUBG 자기장 외부 파란 색 픽셀인지 판정 (반투명 진한 파랑). */
+  /** PUBG 자기장 외부 파란 색 픽셀인지 판정 (반투명 진한 파랑).
+   * 바다(청록) 제외: 자기장은 G가 R보다 크지 않거나 비슷, 바다는 G가 R보다 훨씬 큼.
+   * 자기장: B가 G보다 명확히 큼 (b > g + 30). */
   private isBluePixel(r: number, g: number, b: number): boolean {
-    return b > r + 25 && b > g + 10 && b > 80 && r < 140;
+    return (
+      b > r + 30 &&
+      b > g + 30 &&
+      b > 90 &&
+      r < 130 &&
+      g < r + 25 // 바다 제외 (바다는 G >> R)
+    );
   }
 
   /** 파란 픽셀 비율 (4픽셀 stride 샘플링). */
@@ -153,49 +172,12 @@ export class CircleService {
     return total ? blue / total : 0;
   }
 
-  /** 격자선 간격으로 확대 비율 추정. */
-  private detectMapScale(pixels: Buffer, size: number): number | null {
-    const rowDarkness: number[] = new Array(size).fill(0);
-    for (let y = 0; y < size; y++) {
-      let count = 0;
-      for (let x = 0; x < size; x += 4) {
-        const i = (y * size + x) * 3;
-        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
-        const gray = (r + g + b) / 3;
-        if (gray > 130 && gray < 220 && Math.abs(r - g) < 25 && Math.abs(g - b) < 25) {
-          count++;
-        }
-      }
-      rowDarkness[y] = count;
-    }
-    const mean = rowDarkness.reduce((s, v) => s + v, 0) / size;
-    const variance = rowDarkness.reduce((s, v) => s + (v - mean) ** 2, 0) / size;
-    const stddev = Math.sqrt(variance);
-    const threshold = mean + 1.5 * stddev;
-    const lineRows: number[] = [];
-    for (let y = 0; y < size; y++) if (rowDarkness[y] > threshold) lineRows.push(y);
-    if (lineRows.length < 4) return null;
-
-    const gaps: number[] = [];
-    let lastY = lineRows[0];
-    for (let i = 1; i < lineRows.length; i++) {
-      const gap = lineRows[i] - lastY;
-      if (gap > size * 0.05) { gaps.push(gap); lastY = lineRows[i]; }
-    }
-    if (gaps.length < 2) return null;
-
-    gaps.sort((a, b) => a - b);
-    const median = gaps[Math.floor(gaps.length / 2)];
-    const scale = (size / 8) / median;
-    if (scale < SCALE_MIN || scale > SCALE_MAX) return null;
-    return scale;
-  }
-
-  /** 파란 외부 → 비파란 내부 전환 픽셀 RANSAC. 페이즈 1~8 후보, 모든 페이즈에 robust. */
+  /** 파란 외부 → 비파란 내부 전환 픽셀 RANSAC. 페이즈 후보 제한 가능 (hintPhase 지원). */
   private detectByBlueEdgeRANSAC(
     pixels: Buffer,
     size: number,
     scale: number,
+    phasesAllowed: number[],
   ): DetectionCandidate | null {
     const edgePoints: Array<[number, number]> = [];
     for (let y = 1; y < size - 1; y++) {
@@ -203,7 +185,6 @@ export class CircleService {
         const i = (y * size + x) * 3;
         const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
         if (!this.isBluePixel(r, g, b)) continue;
-        // 인접 4픽셀 중 하나라도 비파란이면 = 자기장 경계
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
           const ni = ((y + dy) * size + (x + dx)) * 3;
           if (!this.isBluePixel(pixels[ni], pixels[ni + 1], pixels[ni + 2])) {
@@ -214,7 +195,7 @@ export class CircleService {
       }
     }
     if (edgePoints.length < 20) return null;
-    return this.runRansac(edgePoints, size, scale, 'blue-edge', [1, 2, 3, 4, 5, 6, 7, 8]);
+    return this.runRansac(edgePoints, size, scale, 'blue-edge', phasesAllowed);
   }
 
   /** 흰 픽셀 RANSAC. 페이즈 후보 제한 가능 (페이즈 1 cold start). */

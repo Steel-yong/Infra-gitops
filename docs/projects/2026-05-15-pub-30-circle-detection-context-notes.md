@@ -107,6 +107,45 @@ PASS 못 하면 다른 가설로.
 - OCR 페이즈 번호 직접 추출 (게임 화면 확인 필요)
 - 확대 케이스 — Map Registration (격자선 + 도시명 + ORB)
 
+## 결정 10 — 진짜 원인: capture 컨테이너가 컴파일 에러로 죽어있었음
+
+격자선 검출 비활성화 시 메서드만 남겨두고 호출은 제거 → TS strict `TS6133: declared but never read` → 컨테이너 시작 실패. 새 코드가 아예 안 돌고 있었음. 사용자가 본 검출은 이전 컨테이너 잔존 상태.
+
+교훈: TS strict 환경에서 코드 일부 비활성화 시 dead 메서드도 같이 제거. **다음부터 도커 재빌드 후 컨테이너 로그 1회 확인 필수**.
+
+## 결정 11 — PUBG 맵 영역 동적 검출 (PUB-29 코드 이식)
+
+기존 가정: capture가 받는 frame = PUBG 풀화면. cropMapArea는 화면 중앙 정사각형.
+
+실제: 사용자가 `getDisplayMedia` 모니터 전체 공유 → frame = 우리 웹페이지 + PUBG 같이 있는 모니터. 화면 중앙이 PUBG 맵이 아닐 수 있음.
+
+해결 (PUB-29 코드 그대로):
+- mapDetection.detectMapArea: 청록(바다) 픽셀 bounding box → PUBG 맵 영역 정사각형 추출
+- 검증: 종횡비 0.8~1.25 + 너비 40%+ + 청록 비율 2%+
+- fallback: 화면 중앙 정사각형 (기존)
+- capture.service가 sharp.extract로 mapArea만 잘라 circle.service에 전달
+
+이로써 사용자 모니터 어디에 PUBG가 있어도 자동 검출. 단순 확대도 자동 처리. 패닝(화면이 PUBG 일부)은 여전히 ORB 매칭 필요.
+
+## 결정 12 — hintPhase backend stateful (사용자 제안 반영)
+
+CaptureGateway가 세션별 마지막 검출 페이즈 추적:
+- 30초 안 검출 있으면 hintPhase = 마지막 페이즈
+- circle.service가 hintPhase ±1 후보만 RANSAC → 안정성 ↑
+- 30초 미검출 cold start (페이즈 1~8 다)
+
+## 결정 13 — isShrinking 신호 frontend → backend (사용자 제안 반영)
+
+FRAME_UPLOAD payload를 `{ base64, isShrinking }` 객체로 변경 (옛 string도 호환):
+- useCaptureSocket이 setIsShrinking ref setter 노출 (page.tsx 변수 순서 회피)
+- ocrTimer.isShrinking 변화마다 ref 업데이트
+- sendFrame 호출 시 ref에서 latest 읽음
+
+backend CaptureGateway:
+- isShrinking=true이고 마지막 결과 있으면 → 새 검출 안 함, lastResult 그대로 재전송
+- 자기장 줄어드는 중 = 화면 안정 안 함 → 검출 노이즈 ↑ 회피
+- "대기 시간에만 정확한 위치 검출"이라는 사용자 도메인 룰 그대로 반영
+
 ## 결정 9 — 두 모드 분기 (사용자 도메인 룰 반영, 2026-05-15 추가)
 
 사용자 추가 통찰:
