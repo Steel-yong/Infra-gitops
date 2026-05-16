@@ -30,13 +30,14 @@ const PUBG_PHASE_RADII = [
   0.00254, // phase 8: 20.75m
 ] as const;
 
-/** 페이즈별 최소 점수 — 이론 max score의 40% 균일 비율 + floor 80.
- * 이론 max score = 외곽선 픽셀 수 ≈ 2π × r × 두께(2px), 페이즈 1~2는 maxPts=3000 cap에 걸림.
- * 40% 비율: 페이즈 1 가짜 검출은 빡빡하게 차단, 페이즈 4~5도 합리적 신뢰 유지.
- * floor 80: 페이즈 6~8 이론 max가 너무 작아 cold start에서 사실상 차단 (이중 방어). */
+/** 페이즈별 최소 점수 — 반경 비례 + floor 200.
+ * 페이즈 1: 800점 기준, 페이즈 4 이하는 floor 200 강제.
+ * 외곽선 두께가 1px일 수 있어 40% 그라디언트는 진짜 자기장도 못 넘을 위험. 보수적 값 유지.
+ * 페이즈 5~8 잡음 차단은 coldStartPhases [1,2,3,4] 후보 제한으로 1차 방어. */
 function minScoreForPhase(phase: number): number {
-  const maxScores = [3000, 1822, 1005, 553, 277, 138, 69, 34];
-  return Math.max(80, Math.floor(maxScores[phase - 1] * 0.4));
+  const baseScore = 800;
+  const ratio = PUBG_PHASE_RADII[phase - 1] / PUBG_PHASE_RADII[0];
+  return Math.max(200, Math.floor(baseScore * ratio));
 }
 
 interface CropArea {

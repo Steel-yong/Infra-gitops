@@ -57,53 +57,47 @@
 
 ---
 
-## 4. Score threshold 그라디언트 재조정
+## 4. Score threshold — 보수적 값 유지 (40% 그라디언트 시도 후 되돌림)
 
-### 결정
-`minScoreForPhase` 함수를 페이즈별 이론 최대 score의 40%로 균일하게 재조정.
+### 최종 결정
+기존 공식 그대로 유지. `baseScore = 800`, `floor = 200`, 페이즈별 반경 비례.
 
-```
-이론 max score = 외곽선 픽셀 수 ≈ 2π × r × 두께(2px)
-                 단 페이즈 1~2는 maxPts=3000 cap에 걸림
-
-페이즈 1: max 3000 → threshold 1200
-페이즈 2: max 1822 → threshold 728
-페이즈 3: max 1005 → threshold 402
-페이즈 4: max 553  → threshold 221
-페이즈 5: max 277  → threshold 110
-페이즈 6: max 138  → floor 80
-페이즈 7: max 69   → floor 80
-페이즈 8: max 34   → floor 80 (이론 max보다 큼 → 사실상 차단)
-```
-
-코드:
 ```ts
 function minScoreForPhase(phase: number): number {
-  const maxScores = [3000, 1822, 1005, 553, 277, 138, 69, 34];
-  return Math.max(80, Math.floor(maxScores[phase - 1] * 0.4));
+  const baseScore = 800;
+  const ratio = PUBG_PHASE_RADII[phase - 1] / PUBG_PHASE_RADII[0];
+  return Math.max(200, Math.floor(baseScore * ratio));
 }
+// 결과: 800/440/242/200/200/200/200/200
 ```
 
-### 이유
-- 기존 threshold 800/440/242/200/200/200/200/200는 페이즈별 신뢰 비율이 불균일.
-  - 페이즈 1: 800/3000 = 27% (관대)
-  - 페이즈 4: 200/553 = 36% (보통)
-  - 페이즈 5~8: 200이 이론 max보다 크거나 비슷 → 정상 검출 사실상 불가능
-- 균일 40% 비율로 정리하면:
-  - 페이즈 1이 더 빡빡해져 가짜 검출 줄어듦.
-  - 페이즈 4~5도 합리적인 신뢰 수준 유지.
-  - 페이즈 6~8은 cold start 차단 + floor 80으로 이중 방어.
+### 시도 과정
+1. **40% 균일 그라디언트** (`maxScores × 0.4 + floor 80`) 시도 → 1200/728/402/221/110/80/80/80.
+2. **불안 요인 발견:** 페이즈 1 외곽선 두께가 1px(안티에일리어싱 환경)인 경우 진짜 자기장도 1200 못 넘을 위험.
+   - 두께 1px → 외곽선 픽셀 ~1659개 → 1200/1659 = 72% inlier 필요. 너무 빡빡.
+   - 두께 2px 환경에서만 안전. 사용자 환경 가변성 큼.
+3. **되돌림 결정:** 페이즈 5~8 잡음 차단은 [coldStartPhases](#3-cold-start-페이즈-후보를-1-2-3-4로-제한) 한 가지로 충분. Score 그라디언트는 실측 후 결정.
+
+### 이유 (왜 보수적이 옳은가)
+- 코드 변경 효과를 한 번에 둘(cold start + score) 적용하면 어느 쪽 효과인지 분리 측정 불가.
+- Cold start [1,2,3,4] 단독 효과 먼저 측정 → 잡음 검출 줄어들면 score는 안 건드려도 됨.
+- 줄어들지 않으면 그때 score 그라디언트 도입.
+
+### 다음 측정 항목
+- [ ] 화면공유로 페이즈 1 wait 동안 false detection 빈도 측정.
+- [ ] 실제 페이즈 1~3 검출 시 score 값 분포 로그 수집 (capture.service.log 이미 찍힘).
+- [ ] 외곽선 두께 실측 (PUBG raw 캡처 분석).
 
 ### 변수 정리
 - `r`: 자기장 반경 (px). PUBG 공식 페이즈 데이터로 결정.
 - `2πr`: 원 둘레.
-- 외곽선 두께: PUBG가 그리는 흰 라인이 보통 2px.
-- `tolerance`: RANSAC inlier 판정 거리 (±2.0px). 외곽선 두께와 같음.
+- 외곽선 두께: 1~2px (사용자 환경 가변).
+- `tolerance`: RANSAC inlier 판정 거리 (±2.0px).
 - `maxPts`: RANSAC 입력 점 상한 (3000). 페이즈 1~2만 cap에 걸림.
-- 잡음 매칭률: 작은 원일수록 ↑. 페이즈 6 이하는 무작위 픽셀로도 score 30~100 가능.
+- 잡음 매칭률: 작은 원일수록 ↑. 페이즈 6 이하는 무작위 픽셀로도 score 30~100 가능 → cold start 후보 제거로 차단.
 
 ### 적용
-- `apps/services/capture/src/capture/circle.service.ts` `minScoreForPhase` 함수 본체 교체.
+- `apps/services/capture/src/capture/circle.service.ts` `minScoreForPhase` 함수 — 기존 공식 유지.
 
 ---
 
