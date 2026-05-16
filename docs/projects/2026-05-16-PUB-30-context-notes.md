@@ -126,6 +126,66 @@ function minScoreForPhase(phase: number): number {
 
 ## 다음 세션 인계 사항
 
-- [ ] context-notes 결정 4건 코드 + 보고서 반영 (이번 세션).
-- [ ] 페이즈 OCR 재활성화는 사용자 raw 캡처 받은 뒤 별도 이슈.
-- [ ] 변경 후 검출 잡음 측정 — 잘못된 가짜 검출 빈도가 줄었는지 화면공유로 검증.
+- [x] context-notes 결정 4건 코드 + 보고서 반영 (이번 세션).
+- [x] 페이즈 OCR 재활성화 — UI 디버그 미리보기로 ROI 시각 보정 (y 0.700 → 0.695). `PHASE_OCR_ENABLED = true`.
+- [x] 변경 후 검출 잡음 측정 — 페이즈 1~4 실 게임 검증 통과.
+
+---
+
+## 6. 최종 아키텍처 — 이벤트 기반 OCR 게이트키퍼 (2026-05-17 추가)
+
+### 결정
+폴링 기반에서 이벤트 기반으로 전환. OCR 페이즈 인식을 게이트키퍼로 두고, 모든 락을 sticky로 만듦.
+
+### 핵심 룰
+1. **OCR 게이트키퍼:** `capture.gateway`가 `currentPhase` 없으면 RANSAC 호출 자체 안 함. 자기장 형성 = "페이즈 N" 표시.
+2. **OCR 페이즈 sticky:** `useOcrTimer`가 currentPhase 락 후 빈 결과로 절대 null 리셋 안 함. 다른 페이즈가 확정되어야 갱신.
+3. **자기장 락 sticky:** `useLockedCircle`이 자동 해제 로직 전부 제거. 페이즈 전환 또는 수동 unlock만.
+4. **parentCircle 제약:** `circle.service`가 이전 락된 원 안 픽셀만 RANSAC 후보. 검출 결과 중심도 안에 있어야 채택.
+5. **1초 OCR 폴링:** 페이즈 OCR 5초 → 1초로 단축, confirm 3 → 2.
+
+### 이유
+- 폴링 기반은 게임 준비 중에도 RANSAC 돌려 가짜 검출 발생.
+- 페이즈 추정이 검출 결과에 의존하면 첫 잘못된 검출이 페이즈도 망침.
+- 락 자동 해제는 맵 닫고 파밍 시 락 풀리는 사용자 불편 야기.
+- parentCircle 제약은 PUBG 룰(N+1 ⊂ N) 강제로 잡음 매칭 원천 차단.
+
+### 변경된 파일 (11개)
+**Backend:**
+- `apps/services/capture/src/capture/circle.service.ts` — OCR 게이트, parentCircle 필터링, 흰 임계값 220
+- `apps/services/capture/src/capture/capture.gateway.ts` — OCR 게이트키퍼, parentCircle 전달
+- `apps/services/capture/src/capture/capture.service.ts` — parentCircle 전달
+
+**Frontend:**
+- `apps/frontend/src/hooks/useOcrTimer.ts` — 1초 폴링, sticky, 디버그 미리보기
+- `apps/frontend/src/hooks/useLockedCircle.ts` — 자동 해제 제거, sticky
+- `apps/frontend/src/hooks/useCaptureSocket.ts` — setParentCircle 추가
+- `apps/frontend/src/app/page.tsx` — lockedCircle → parentCircle 연결
+- `apps/frontend/src/components/TimerPanel.tsx` — 페이즈 OCR 디버그 박스
+- `apps/frontend/src/workers/timer-ocr-utils.ts` — ROI y 0.700 → 0.695
+- `apps/frontend/src/hooks/playAlarmBeep.ts` — Web Audio 비프 → 사용자 음원 m4a 재생
+
+**Shared:**
+- `packages/shared/src/types/socket-events.ts` — parentCircle 필드 추가
+
+**Assets:**
+- `apps/frontend/public/audio/alarm.m4a` — 사용자 제공 알람 (87KB)
+
+### 검증
+페이즈 1~4 실 게임 테스트 정상 동작:
+- 풀맵 켠 후 ~2초 안에 페이즈 락
+- 자기장 검출 및 락 표시
+- 맵 닫고 파밍해도 락 유지
+- 페이즈 1 → 2 → 3 → 4 자동 갱신 (parentCircle 안에서 검색)
+
+---
+
+## 7. 향후 작업 (별도 이슈 권장)
+
+### 7.1 맵 확대 상태 자기장 인식
+현재 알고리즘은 풀맵 정사각형 전제. 사용자가 휠로 확대하면 디스크 bounding box가 어긋남.
+**방향:** 줌 레벨 추정 + 호(arc) fitting 또는 확대 시 OCR 게이트 강화.
+
+### 7.2 위치 추천 UI 우측 사이드바로 이동
+현재 위치 추천이 왼쪽 사이드바 아래에 있음. 우측 사이드바 신설해서 분리.
+**레이아웃:** 좌 280px (자기장 정보) + 중앙 가변 (맵) + 우 280px (위치 추천).

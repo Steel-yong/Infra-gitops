@@ -21,9 +21,14 @@ export class CaptureService {
   ) {}
 
   /**
-   * @param hintPhase 이전 검출 페이즈. gateway가 세션마다 추적해서 전달하면 검출 정확도 ↑.
+   * @param hintPhase OCR이 단정한 현재 페이즈. 없으면 검출 skip.
+   * @param parentCircle 이전 페이즈 락된 자기장 (정규화 0~1). 다음 페이즈는 이 원 안에서만 검색.
    */
-  async processFrame(base64: string, hintPhase?: number): Promise<CircleData | null> {
+  async processFrame(
+    base64: string,
+    hintPhase?: number,
+    parentCircle?: { x: number; y: number; r: number; phase?: number },
+  ): Promise<CircleData | null> {
     // 디버그: capture가 실제로 받는 첫 frame을 파일로 저장 (한 번만)
     if (!debugFrameSaved) {
       debugFrameSaved = true;
@@ -54,7 +59,7 @@ export class CaptureService {
       .toBuffer();
     const croppedBase64 = croppedBuffer.toString('base64');
 
-    const circle = await this.circleService.extractCircle(croppedBase64, hintPhase);
+    const circle = await this.circleService.extractCircle(croppedBase64, hintPhase, parentCircle);
 
     if (circle) {
       this.logger.log(`자기장 원 추출 완료: x=${circle.x.toFixed(3)}, y=${circle.y.toFixed(3)}, r=${circle.r.toFixed(3)}, phase=${circle.phase}`);

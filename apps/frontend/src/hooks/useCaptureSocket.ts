@@ -16,6 +16,8 @@ export interface UseCaptureSocketReturn {
   setIsShrinking: (v: boolean) => void;
   /** OCR이 인식한 현재 페이즈(1~8). frame upload payload에 동봉돼 capture hintPhase로 우선 사용. */
   setCurrentPhase: (v: number | null) => void;
+  /** 이전 페이즈 락 (parentCircle). 다음 페이즈는 이 원 안에서만 검색되도록 backend에 전달. */
+  setParentCircle: (v: CircleData | null) => void;
 }
 
 /**
@@ -28,8 +30,10 @@ export function useCaptureSocket(): UseCaptureSocketReturn {
   const socketRef = useRef<Socket | null>(null);
   const isShrinkingRef = useRef(false);
   const currentPhaseRef = useRef<number | null>(null);
+  const parentCircleRef = useRef<CircleData | null>(null);
   const setIsShrinking = useCallback((v: boolean) => { isShrinkingRef.current = v; }, []);
   const setCurrentPhase = useCallback((v: number | null) => { currentPhaseRef.current = v; }, []);
+  const setParentCircle = useCallback((v: CircleData | null) => { parentCircleRef.current = v; }, []);
 
   useEffect(() => {
     const socket = io(CAPTURE_SERVICE_URL, { transports: ['websocket'] });
@@ -47,13 +51,15 @@ export function useCaptureSocket(): UseCaptureSocketReturn {
   }, []);
 
   const sendFrame = useCallback((base64: string) => {
+    const parent = parentCircleRef.current;
     const payload: FrameUploadPayload = {
       base64,
       isShrinking: isShrinkingRef.current,
       ...(currentPhaseRef.current !== null && { currentPhase: currentPhaseRef.current }),
+      ...(parent && { parentCircle: { x: parent.x, y: parent.y, r: parent.r, phase: parent.phase } }),
     };
     socketRef.current?.emit(SocketEvents.FRAME_UPLOAD, payload);
   }, []);
 
-  return { circleData, connected, sendFrame, setIsShrinking, setCurrentPhase };
+  return { circleData, connected, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle };
 }

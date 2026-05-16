@@ -36,10 +36,11 @@ export function getTimerRegion(screenWidth: number, screenHeight: number): Timer
 }
 
 /** 페이즈 텍스트("페이즈 N") 영역 비율. 미니맵 타이머 띠 우측 끝.
- * 1917×1198 게임 화면 1페이즈 타이머 캡처 기준 측정 — "페이즈 1" 글자가 x≈0.943~0.982. */
+ * 1917×1198 게임 화면 1페이즈 타이머 캡처 기준 측정 — "페이즈 1" 글자가 x≈0.943~0.982.
+ * y=0.695: 사용자 화면 기준 미세 보정 (2026-05-17, 5px 위로). */
 const PHASE_REGION_RATIO = {
   x: 0.940,
-  y: 0.700,
+  y: 0.695,
   w: 0.050,
   h: 0.040,
 } as const;

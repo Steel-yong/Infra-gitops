@@ -27,6 +27,10 @@ export interface OcrTimerState {
   errorMessage: string | null;
   /** OCR이 화면 "페이즈 N" 영역에서 인식한 현재 페이즈 (1~8). null = 미인식. */
   currentPhase: number | null;
+  /** 페이즈 OCR 디버그 — ROI 보정용 미리보기 */
+  phaseRawText: string;
+  phaseCropDataUrl: string | null;
+  phaseRegion: TimerRegion | null;
 }
 
 const INITIAL_STATE: OcrTimerState = {
@@ -39,6 +43,9 @@ const INITIAL_STATE: OcrTimerState = {
   status: 'idle',
   errorMessage: null,
   currentPhase: null,
+  phaseRawText: '',
+  phaseCropDataUrl: null,
+  phaseRegion: null,
 };
 
 const OCR_REVERIFY_SECONDS = 3; // 락 후 3초마다 OCR 보정
@@ -56,15 +63,14 @@ export function useOcrTimer(
   const lockedAtRef = useRef<number | null>(null); // 락 시점 epoch ms
   const lockedSecondsRef = useRef<number | null>(null); // 락 시점 잔여 초
   const lastOcrTimeRef = useRef(0); // 마지막 OCR 시도 epoch ms
-  const lastPhaseOcrRef = useRef(0); // 마지막 페이즈 OCR 시도 epoch ms (페이즈는 5초 주기로만)
+  const lastPhaseOcrRef = useRef(0); // 마지막 페이즈 OCR 시도 epoch ms (1초 주기)
   // 페이즈 OCR 신뢰도 — N번 연속 같은 페이즈일 때만 currentPhase 갱신.
   // 한 번의 잘못된 OCR 결과(예: "1"을 "5"로 잘못 읽음)가 검출 망치지 않도록.
   const phaseHistoryRef = useRef<number[]>([]);
-  const PHASE_CONFIRM_COUNT = 3;
-  // 빈 결과 연속 카운트 — 게임 화면이 페이즈 글자를 잃은 상황 (게임 종료, 다른 창 전환 등) 감지.
-  // M번 연속 빈 결과면 currentPhase null로 리셋 → 다음 페이즈 OCR이 새로 잡을 때까지 hintPhase 없음.
-  const emptyPhaseCountRef = useRef(0);
-  const PHASE_EMPTY_RESET_COUNT = 4; // 5초 주기 × 4 = 20초간 페이즈 못 잡으면 리셋
+  const PHASE_CONFIRM_COUNT = 2; // 1초 주기 × 2 = 2초 안에 페이즈 락
+  // ※ Sticky 룰: 한번 락된 currentPhase는 다른 페이즈가 확정될 때까지 유지.
+  //   맵 닫힘/파밍 중 OCR이 빈 결과를 줘도 currentPhase 절대 null로 리셋 안 함.
+  //   리셋이 필요하면 사용자가 명시적으로 새 페이즈를 인식시켜야 함 (예: 다음 페이즈 형성).
 
   useEffect(() => {
     if (!video || !enabled) {
@@ -317,16 +323,30 @@ export function useOcrTimer(
               }));
             }
 
-            // 페이즈 OCR (5초 주기) — 미니맵 우상단 "페이즈 N" 글자에서 1~8 추출.
+            // 페이즈 OCR (1초 주기) — 미니맵 우상단 "페이즈 N" 글자에서 1~8 추출.
             // 잡히면 capture에 hintPhase로 전달돼 RANSAC이 그 페이즈 ±1만 검색.
-            // ⚠ 비활성화: ROI 좌표가 사용자 화면 페이즈 글자 위치와 어긋나 4/5/6 잘못 읽음.
-            //    raw 게임 캡처로 정확한 좌표 측정 후 재활성화 예정.
-            const PHASE_OCR_ENABLED = false;
+            // 디버그 미리보기: phaseCropDataUrl로 ROI 어디 잡는지 UI에서 시각 확인.
+            const PHASE_OCR_ENABLED = true;
             const phaseSinceLast = (now - lastPhaseOcrRef.current) / 1000;
-            if (PHASE_OCR_ENABLED && phaseSinceLast >= 5) {
+            if (PHASE_OCR_ENABLED && phaseSinceLast >= 1) {
               lastPhaseOcrRef.current = now;
               try {
                 const phaseRegion = getPhaseRegion(video.videoWidth, video.videoHeight);
+
+                // 미리보기 캡처 (원본 크롭, 전처리 없음) — UI 디버그용
+                const phasePreviewCanvas = document.createElement('canvas');
+                phasePreviewCanvas.width = phaseRegion.w;
+                phasePreviewCanvas.height = phaseRegion.h;
+                const phasePreviewCtx = phasePreviewCanvas.getContext('2d', { willReadFrequently: true });
+                let phaseCropDataUrl: string | null = null;
+                if (phasePreviewCtx) {
+                  phasePreviewCtx.drawImage(
+                    video, phaseRegion.x, phaseRegion.y, phaseRegion.w, phaseRegion.h,
+                    0, 0, phaseRegion.w, phaseRegion.h,
+                  );
+                  phaseCropDataUrl = phasePreviewCanvas.toDataURL('image/png');
+                }
+
                 const phaseCanvas = document.createElement('canvas');
                 phaseCanvas.width = phaseRegion.w * SCALE;
                 phaseCanvas.height = phaseRegion.h * SCALE;
@@ -348,19 +368,25 @@ export function useOcrTimer(
                   const phaseResult = await worker.recognize(phaseCanvas.toDataURL('image/png'));
                   const phaseText = phaseResult.data.text.trim();
                   const detected = parsePhaseString(phaseText);
-                  // 연속 PHASE_CONFIRM_COUNT번 같은 페이즈일 때만 currentPhase 갱신.
-                  // 다른 페이즈가 끼면 history 리셋 (잡음 무시 + 진짜 변경에만 반응).
+
+                  // 미리보기 + raw 텍스트 state에 저장 (ROI 보정용)
+                  setState((prev) => ({
+                    ...prev,
+                    phaseRawText: phaseText,
+                    phaseCropDataUrl,
+                    phaseRegion,
+                  }));
+                  // Sticky 룰: 같은 페이즈 PHASE_CONFIRM_COUNT번 연속이면 currentPhase 갱신.
+                  // 다른 페이즈가 들어오면 history 리셋. 빈 결과는 history 리셋만 하고
+                  // currentPhase는 절대 null로 안 바꿈 (이전 락 유지).
                   const hist = phaseHistoryRef.current;
                   if (detected !== null) {
-                    emptyPhaseCountRef.current = 0;
                     if (hist.length > 0 && hist[hist.length - 1] !== detected) {
                       phaseHistoryRef.current = [detected];
                     } else {
                       hist.push(detected);
                     }
                   } else {
-                    // 빈 결과 — history 리셋 + 빈 카운트 증가
-                    emptyPhaseCountRef.current += 1;
                     phaseHistoryRef.current = [];
                   }
                   const stable = phaseHistoryRef.current.length >= PHASE_CONFIRM_COUNT
@@ -368,19 +394,14 @@ export function useOcrTimer(
                     : null;
                   console.log(
                     `[OCR] 페이즈 OCR: text=${JSON.stringify(phaseText)} → ${detected} ` +
-                    `(history ${phaseHistoryRef.current.length}/${PHASE_CONFIRM_COUNT}, stable=${stable}, ` +
-                    `empty=${emptyPhaseCountRef.current}/${PHASE_EMPTY_RESET_COUNT})`,
+                    `(history ${phaseHistoryRef.current.length}/${PHASE_CONFIRM_COUNT}, stable=${stable})`,
                   );
                   if (stable !== null) {
                     setState((prev) =>
                       prev.currentPhase === stable ? prev : { ...prev, currentPhase: stable },
                     );
-                  } else if (emptyPhaseCountRef.current >= PHASE_EMPTY_RESET_COUNT) {
-                    // 페이즈 글자가 화면에서 사라진 지 충분히 오래됨 → 기존 페이즈도 무효.
-                    setState((prev) =>
-                      prev.currentPhase === null ? prev : { ...prev, currentPhase: null },
-                    );
                   }
+                  // ※ 빈 결과로 currentPhase null 리셋하는 분기 의도적 제거 (sticky 룰).
                 }
               } catch (e) {
                 console.warn('[OCR] 페이즈 인식 실패:', e);

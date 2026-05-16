@@ -88,11 +88,27 @@ export function TimerPanel({ state, isCapturing, phase = null }: TimerPanelProps
       {state.cropDataUrl && state.region && (
         <div className={styles.cropDebug}>
           <p className={styles.cropLabel}>
-            OCR 크롭 영역 ({state.region.w}×{state.region.h} @ {state.region.x},{state.region.y})
+            타이머 OCR 크롭 ({state.region.w}×{state.region.h} @ {state.region.x},{state.region.y})
           </p>
-          <img src={state.cropDataUrl} alt="OCR 크롭" className={styles.cropImg} />
+          <img src={state.cropDataUrl} alt="타이머 OCR 크롭" className={styles.cropImg} />
           <p className={styles.cropText}>
             인식: <code>{state.rawText || '(빈 문자열)'}</code>
+          </p>
+        </div>
+      )}
+
+      {/* 페이즈 OCR 디버그 — ROI 보정용 */}
+      {state.phaseCropDataUrl && state.phaseRegion && (
+        <div className={styles.cropDebug}>
+          <p className={styles.cropLabel}>
+            페이즈 OCR 크롭 ({state.phaseRegion.w}×{state.phaseRegion.h} @ {state.phaseRegion.x},{state.phaseRegion.y})
+          </p>
+          <img src={state.phaseCropDataUrl} alt="페이즈 OCR 크롭" className={styles.cropImg} />
+          <p className={styles.cropText}>
+            인식: <code>{state.phaseRawText || '(빈 문자열)'}</code>
+            {state.currentPhase !== null && (
+              <span> → <strong style={{ color: '#fbbf24' }}>페이즈 {state.currentPhase}</strong></span>
+            )}
           </p>
         </div>
       )}

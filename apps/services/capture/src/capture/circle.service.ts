@@ -62,10 +62,15 @@ export class CircleService {
   private readonly logger = new Logger(CircleService.name);
 
   /**
-   * @param hintPhase 이전 검출 페이즈 (gateway가 세션 추적). 있으면 그 페이즈와 ±1 후보만 검색.
-   *                  없으면(cold start) 페이즈 1~8 모두 후보.
+   * @param hintPhase OCR이 단정한 현재 페이즈. 없으면 검출 skip.
+   * @param parentCircle 이전 페이즈 락 (정규화 0~1). 있으면 흰/파란 픽셀 수집을 이 원 안으로 제한 +
+   *                     검출 결과 원의 중심이 parentCircle 안에 있어야만 채택.
    */
-  async extractCircle(base64: string, hintPhase?: number): Promise<CircleData | null> {
+  async extractCircle(
+    base64: string,
+    hintPhase?: number,
+    parentCircle?: { x: number; y: number; r: number; phase?: number },
+  ): Promise<CircleData | null> {
     const buffer = Buffer.from(base64, 'base64');
     const { data, info } = await sharp(buffer)
       .removeAlpha()
@@ -76,28 +81,38 @@ export class CircleService {
     const scale = 1.0;
     const blueRatio = this.measureBlueRatio(cropped.data, cropped.size);
 
-    // 페이즈 후보 — cold start는 [1,2,3,4]만 (화면공유 시작 타이밍 대부분 페이즈 1~4).
-    // 페이즈 5~8은 hintPhase ±1 확장으로만 진입 → 잡음 매칭 원천 차단.
-    const coldStartPhases = [1, 2, 3, 4];
-    const phaseCandidates = hintPhase
-      ? [
-          Math.max(1, hintPhase - 1),
-          hintPhase,
-          Math.min(8, hintPhase + 1),
-        ].filter((p, i, arr) => arr.indexOf(p) === i)
-      : coldStartPhases;
+    // 페이즈 후보 — OCR 게이트키퍼 아키텍처:
+    // hintPhase 없으면 검출 안 함 (OCR이 페이즈 단정 못 했음 = 자기장 형성 안 됨).
+    // hintPhase 있으면 그 페이즈 1개만 후보 (OCR 신뢰).
+    if (!hintPhase) {
+      this.logger.debug('hintPhase 없음 — OCR 미인식 상태. 검출 skip.');
+      return null;
+    }
+    const phaseCandidates = [hintPhase];
+
+    // parentCircle을 디스크 픽셀 좌표로 변환 (정규화 0~1 → 0~size).
+    // 다음 페이즈는 이 원 안에서만 검색돼 잡음 매칭 차단 + 자연스러운 페이즈 N+1 ⊂ 페이즈 N 룰 강제.
+    const parentInDisk = parentCircle
+      ? {
+          cx: parentCircle.x * cropped.size,
+          cy: parentCircle.y * cropped.size,
+          r: parentCircle.r * cropped.size,
+        }
+      : null;
+    if (parentInDisk) {
+      this.logger.debug(
+        `parentCircle 제약: 디스크 좌표 cx=${parentInDisk.cx.toFixed(0)} cy=${parentInDisk.cy.toFixed(0)} r=${parentInDisk.r.toFixed(0)}`,
+      );
+    }
 
     let detection: DetectionCandidate | null;
     if (blueRatio >= 0.05) {
-      // 외부 파란이 명확하면 blue-edge 우선 (페이즈 2~8 일반적)
-      detection = this.detectByBlueEdgeRANSAC(cropped.data, cropped.size, scale, phaseCandidates);
+      detection = this.detectByBlueEdgeRANSAC(cropped.data, cropped.size, scale, phaseCandidates, parentInDisk);
       if (!detection) {
-        detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phaseCandidates);
+        detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phaseCandidates, parentInDisk);
       }
     } else {
-      // mapDetection이 디스크 영역만 정확히 잘라내면 외부 파란이 안 들어와 blueRatio≈0.
-      // 이 경우에도 자기장 흰 원은 어느 페이즈든 보이므로 모든 페이즈 후보 검색.
-      detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phaseCandidates);
+      detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phaseCandidates, parentInDisk);
     }
 
     if (!detection) {
@@ -179,16 +194,23 @@ export class CircleService {
     return total ? blue / total : 0;
   }
 
-  /** 파란 외부 → 비파란 내부 전환 픽셀 RANSAC. 페이즈 후보 제한 가능 (hintPhase 지원). */
+  /** 파란 외부 → 비파란 내부 전환 픽셀 RANSAC. 페이즈 후보 제한 가능 (hintPhase 지원).
+   * parentCircle 있으면 그 안 픽셀만 수집. */
   private detectByBlueEdgeRANSAC(
     pixels: Buffer,
     size: number,
     scale: number,
     phasesAllowed: number[],
+    parentInDisk: { cx: number; cy: number; r: number } | null,
   ): DetectionCandidate | null {
+    const parentR2 = parentInDisk ? parentInDisk.r * parentInDisk.r : 0;
     const edgePoints: Array<[number, number]> = [];
     for (let y = 1; y < size - 1; y++) {
       for (let x = 1; x < size - 1; x++) {
+        if (parentInDisk) {
+          const dx = x - parentInDisk.cx, dy = y - parentInDisk.cy;
+          if (dx * dx + dy * dy > parentR2) continue;
+        }
         const i = (y * size + x) * 3;
         const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
         if (!this.isBluePixel(r, g, b)) continue;
@@ -202,37 +224,46 @@ export class CircleService {
       }
     }
     if (edgePoints.length < 20) return null;
-    return this.runRansac(edgePoints, size, scale, 'blue-edge', phasesAllowed);
+    return this.runRansac(edgePoints, size, scale, 'blue-edge', phasesAllowed, parentInDisk);
   }
 
-  /** 흰 픽셀 RANSAC. 페이즈 후보 제한 가능 (페이즈 1 cold start).
-   * 임계값 240: 그리드 라인(≈220-230)은 제외하고 자기장 외곽 라인(≈240+)만 선별. */
+  /** 흰 픽셀 RANSAC. 페이즈 후보는 OCR이 단정한 단일 페이즈.
+   * 임계값 220: 자기장 외곽선이 안티에일리어싱으로 220~240 범위. 그리드 라인 잡음은 OCR이 페이즈 1개로 좁혀줘 무력화.
+   * parentCircle 있으면 그 안 픽셀만 수집. */
   private detectByWhitePixelRANSAC(
     pixels: Buffer,
     size: number,
     scale: number,
     phasesAllowed: number[],
+    parentInDisk: { cx: number; cy: number; r: number } | null,
   ): DetectionCandidate | null {
+    const parentR2 = parentInDisk ? parentInDisk.r * parentInDisk.r : 0;
     const whitePoints: Array<[number, number]> = [];
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
+        if (parentInDisk) {
+          const dx = x - parentInDisk.cx, dy = y - parentInDisk.cy;
+          if (dx * dx + dy * dy > parentR2) continue;
+        }
         const i = (y * size + x) * 3;
-        if (pixels[i] >= 240 && pixels[i + 1] >= 240 && pixels[i + 2] >= 240) {
+        if (pixels[i] >= 220 && pixels[i + 1] >= 220 && pixels[i + 2] >= 220) {
           whitePoints.push([x, y]);
         }
       }
     }
     if (whitePoints.length < 20) return null;
-    return this.runRansac(whitePoints, size, scale, 'white', phasesAllowed);
+    return this.runRansac(whitePoints, size, scale, 'white', phasesAllowed, parentInDisk);
   }
 
-  /** 공통 RANSAC 루프. 입력 점들 위에서 페이즈 후보 반경 중 가장 점수 높은 원 채택. */
+  /** 공통 RANSAC 루프. 입력 점들 위에서 페이즈 후보 반경 중 가장 점수 높은 원 채택.
+   * parentCircle 있으면 검출 결과 원의 중심도 parentCircle 안에 있어야 채택. */
   private runRansac(
     points: Array<[number, number]>,
     size: number,
     scale: number,
     mode: 'white' | 'blue-edge',
     phasesAllowed: number[],
+    parentInDisk: { cx: number; cy: number; r: number } | null,
   ): DetectionCandidate | null {
     const maxPts = 3000;
     let pts = points;
@@ -289,6 +320,18 @@ export class CircleService {
     }
     if (!best) return null;
     if (best.score < minScoreForPhase(best.phase)) return null;
+    // parentCircle 제약: 검출 결과 원의 중심도 parentCircle 안에 있어야 채택.
+    // 다음 페이즈는 무조건 이전 페이즈 자기장 안에 형성됨 (PUBG 룰).
+    if (parentInDisk) {
+      const dx = best.cx - parentInDisk.cx, dy = best.cy - parentInDisk.cy;
+      if (dx * dx + dy * dy > parentInDisk.r * parentInDisk.r) {
+        this.logger.debug(
+          `검출 결과 중심이 parentCircle 밖 → 폐기. ` +
+          `결과 (${best.cx.toFixed(0)},${best.cy.toFixed(0)}) parent (${parentInDisk.cx.toFixed(0)},${parentInDisk.cy.toFixed(0)} r=${parentInDisk.r.toFixed(0)})`,
+        );
+        return null;
+      }
+    }
     return best;
   }
 

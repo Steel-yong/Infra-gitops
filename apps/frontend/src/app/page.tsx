@@ -40,7 +40,7 @@ export default function Page() {
   const [alertEnabled, setAlertEnabled] = useState<number[]>([30, 20, 10]);
   const [captureError, setCaptureError] = useState<string | null>(null);
 
-  const { circleData, sendFrame, setIsShrinking, setCurrentPhase } = useCaptureSocket();
+  const { circleData, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle } = useCaptureSocket();
   const { isCapturing, stream, start, stop } = useScreenCapture({
     onFrame: sendFrame,
     onError: (msg) => setCaptureError(msg),
@@ -52,10 +52,12 @@ export default function Page() {
   const ocrTimer = useOcrTimer(videoRef.current, isCapturing);
 
   // 위치 락: 한 번 잡으면 고정. 잘못 잡히면 사용자가 "다시 잡기" 버튼으로 unlock.
-  const { circle: lockedCircle, unlock: unlockCircle } = useLockedCircle(
-    circleData,
-    ocrTimer.isShrinking,
-  );
+  const { circle: lockedCircle, unlock: unlockCircle } = useLockedCircle(circleData);
+
+  // lockedCircle을 backend에 parentCircle로 전달 — 다음 페이즈가 이 원 안에서만 검색됨.
+  useEffect(() => {
+    setParentCircle(lockedCircle);
+  }, [lockedCircle, setParentCircle]);
 
   // 위치 추천도 락된 원 기준으로 (락 안 됐으면 동작 안 함)
   const { locations, error: locationError } = useLocations(lockedCircle, mapType);
