@@ -29,3 +29,9 @@ Thumbs.db
 # Claude Code 로컬 자산 (이미지/세션 설정은 사용자별)
 .claude/images/
 .claude/settings.json
+
+# TypeScript 빌드 캐시
+*.tsbuildinfo
+
+# 검증 스크립트 산출물 (이미지 오버레이 등)
+scripts-output/

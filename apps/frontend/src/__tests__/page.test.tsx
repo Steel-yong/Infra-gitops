@@ -35,6 +35,23 @@ vi.mock('../hooks/useWebNotifications', () => ({
   })),
 }));
 
+vi.mock('../hooks/useOcrTimer', () => ({
+  useOcrTimer: vi.fn(() => ({
+    rawText: '',
+    remainingSeconds: null,
+    isShrinking: false,
+    cropDataUrl: null,
+    region: null,
+    attempts: 0,
+    status: 'idle',
+    errorMessage: null,
+  })),
+}));
+
+vi.mock('../hooks/useStashLocations', () => ({
+  useStashLocations: vi.fn(() => []),
+}));
+
 vi.mock('react-leaflet', () => ({
   Circle: () => null,
   CircleMarker: () => null,

@@ -24,5 +24,5 @@ RUN apk add --no-cache openssl
 RUN pnpm exec prisma generate
 
 EXPOSE 3002
-# 컨테이너 시작 시 마이그레이션 적용 후 서버 기동
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && pnpm exec ts-node --transpile-only -r tsconfig-paths/register src/main.ts"]
+# 컨테이너 시작 시: 마이그레이션 → 시드(upsert로 안전) → 서버 기동
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && pnpm exec ts-node --transpile-only -r tsconfig-paths/register prisma/seed.ts && pnpm exec ts-node --transpile-only -r tsconfig-paths/register src/main.ts"]

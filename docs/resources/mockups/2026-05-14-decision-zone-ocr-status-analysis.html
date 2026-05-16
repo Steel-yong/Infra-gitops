@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>자기장 + OCR 현재 상태 분석 — 2026-05-14</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d14;color:#e2e8f0;font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;font-size:13px;line-height:1.6}
+.header{background:linear-gradient(135deg,#1a1f2e,#0d1117);padding:32px;border-bottom:1px solid #2d3748}
+.header h1{font-size:22px;color:#fff;margin-bottom:6px}
+.header p{color:#718096;font-size:13px}
+.container{max-width:1100px;margin:0 auto;padding:32px}
+.section{margin-bottom:36px}
+.section h2{font-size:15px;color:#63b3ed;border-bottom:1px solid #2d3748;padding-bottom:8px;margin-bottom:18px;text-transform:uppercase;letter-spacing:.05em}
+.card{background:#1a2236;border:1px solid #2d3748;border-radius:8px;padding:18px;margin-bottom:14px}
+.card.bad{border-left:4px solid #ef4444}
+.card.warn{border-left:4px solid #f6ad55}
+.card.ok{border-left:4px solid #38a169}
+.card.info{border-left:4px solid #3182ce}
+.card h3{font-size:13px;color:#90cdf4;margin-bottom:8px}
+.card ul{font-size:12px;color:#a0aec0;padding-left:16px}
+.card ul li{margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th{background:#1a2236;color:#90cdf4;padding:10px 12px;text-align:left;border-bottom:1px solid #2d3748;font-size:11px;text-transform:uppercase}
+td{padding:10px 12px;border-bottom:1px solid #1a2236;color:#a0aec0;vertical-align:top}
+code{background:#0d1117;padding:1px 6px;border-radius:3px;font-size:11px;color:#a3e635}
+.log{background:#08080f;border:1px solid #2d3748;border-radius:4px;padding:10px 14px;font-family:Consolas,monospace;font-size:11px;color:#cbd5e1;margin:8px 0;white-space:pre-wrap;overflow-x:auto}
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;margin-right:4px}
+.tag.bad{background:#742a2a;color:#fc8181}
+.tag.warn{background:#744210;color:#f6ad55}
+.tag.ok{background:#22543d;color:#9ae6b4}
+.tag.info{background:#1a365d;color:#63b3ed}
+.question-block{background:linear-gradient(135deg,#1a2236,#13131f);border:1px solid #3182ce;border-radius:8px;padding:20px;margin-top:24px}
+.question-block h3{color:#63b3ed;margin-bottom:14px}
+.q{padding:10px 0;border-bottom:1px solid #1a2236;font-size:13px}
+.q:last-child{border-bottom:none}
+.q strong{color:#fff}
+.flow{display:flex;gap:0;margin:14px 0}
+.flow-step{flex:1;background:#1a2236;border:1px solid #2d3748;border-right:none;padding:10px 12px;font-size:11px}
+.flow-step:last-child{border-right:1px solid #2d3748}
+.flow-step strong{display:block;color:#e2e8f0;font-size:12px;margin-bottom:3px}
+.flow-step.fail{background:#1f1015;border-color:#742a2a}
+.flow-step.pass{background:#0f1f15;border-color:#22543d}
+.flow-step.unknown{background:#1a1810;border-color:#744210}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>현재 상태 분석 — 자기장 + OCR</h1>
+  <p>2026-05-14 · capture-service 로그 + docker 상태 기반 / 추측 아닌 실측</p>
+</div>
+
+<div class="container">
+
+  <div class="section">
+    <h2>1. 자기장 검출 — 측정된 동작</h2>
+
+    <div class="card bad">
+      <h3>증상: 매 프레임 검출 시도 → 전부 거부됨</h3>
+      <p>capture-service 로그가 1초마다 같은 패턴 반복.</p>
+      <div class="log">전체맵 열림 감지 — 자기장 원 추출 시작
+잔차 초과: avg=161.1px (허용 137.1px)
+자기장 원 추출 실패
+전체맵 열림 감지 — 자기장 원 추출 시작
+잔차 초과: avg=153.1px (허용 134.9px)
+자기장 원 추출 실패
+... (계속 반복)</div>
+    </div>
+
+    <div class="card info">
+      <h3>해석</h3>
+      <div class="flow">
+        <div class="flow-step pass">
+          <strong>① 청록 검출</strong>
+          전체맵 열림 = TRUE
+          (3% 임계 통과)
+        </div>
+        <div class="flow-step unknown">
+          <strong>② 엣지 픽셀 수집</strong>
+          50개 이상 통과
+          (개수는 충분)
+        </div>
+        <div class="flow-step pass">
+          <strong>③ Kasa 원 피팅</strong>
+          중심+반경 계산됨
+        </div>
+        <div class="flow-step fail">
+          <strong>④ 잔차 검증</strong>
+          평균 잔차 152~163px
+          (허용 134~140px)
+          → REJECT
+        </div>
+      </div>
+      <p><strong>잔차가 반경의 15% 초과 = 점들이 진짜 원을 안 이룸.</strong></p>
+    </div>
+
+    <div class="card warn">
+      <h3>가능한 원인 (확인 필요)</h3>
+      <ul>
+        <li><strong>가설 A:</strong> 사용자가 PUBG 전체맵을 안 열고 있음 (Tab 키 안 누름). 그래서 in-game 화면의 노이즈 픽셀만 들어옴.</li>
+        <li><strong>가설 B:</strong> 청록 임계값 3%가 너무 관대 — 일반 in-game 하늘/물도 통과해서 잘못 "맵 열림" 판단.</li>
+        <li><strong>가설 C:</strong> 사용자가 정말 전체맵 열었는데, JPEG 압축으로 얇은 자기장 외곽선이 손상되어 픽셀 분포가 흩어짐.</li>
+        <li><strong>가설 D:</strong> 자기장 외곽선이 매우 얇아서 4픽셀 간격 샘플링이 외곽선을 거의 못 잡음.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>2. OCR 타이머 — 알 수 없음</h2>
+
+    <div class="card warn">
+      <h3>증상: 브라우저 사이드 동작 미확인</h3>
+      <p>OCR은 사용자 브라우저에서 실행됨. 서버 로그에 안 잡힘.</p>
+      <p>가능한 상태:</p>
+      <table>
+        <thead><tr><th>패널 표시</th><th>의미</th><th>대응</th></tr></thead>
+        <tbody>
+          <tr><td><code>화면공유 시작 후...</code></td><td>isCapturing=false (공유 시작 안 함)</td><td>"공유 시작" 클릭</td></tr>
+          <tr><td><code>OCR 엔진 다운로드 중...</code></td><td>Tesseract.js 다운로드 진행</td><td>30초~1분 대기</td></tr>
+          <tr><td><code>OCR 실패: [에러]</code></td><td>Worker 초기화 실패</td><td>에러 메시지 보고</td></tr>
+          <tr><td><code>--:--</code></td><td>OCR 동작 중이지만 인식 못 함</td><td>좌표 어긋남, 또는 타이머 안 보임</td></tr>
+          <tr><td><code>1:38</code> 같은 값</td><td>정상 동작</td><td>완료</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>3. 근본 해결 방향</h2>
+
+    <div class="card info">
+      <h3>지금 같은 방식의 한계</h3>
+      <p>흰 픽셀 → Kasa 원 피팅 방식의 본질적 문제:</p>
+      <ul>
+        <li>지명 텍스트, 도로, 그리드선, UI도 흰 픽셀 → 노이즈</li>
+        <li>엣지 필터로 일부 거름 → 자기장 외곽선도 같이 거름 (얇아서)</li>
+        <li>잔차 임계로 노이즈 거름 → 실제 자기장도 노이즈와 섞여 거름</li>
+        <li><strong>"모든 흰 픽셀을 하나의 원으로 피팅"은 PUBG에선 작동 어려움</strong></li>
+      </ul>
+    </div>
+
+    <div class="card ok">
+      <h3>제안: 페이즈 기반 검출 (이전에 합의했던 안)</h3>
+      <p>핵심 전환: <strong>반경은 페이즈에서 + 중심만 검출</strong></p>
+      <ul>
+        <li>페이즈 1 → 반경 0.1875 (공식 데이터)</li>
+        <li>페이즈 2 → 0.1375, 페이즈 3 → 0.0825, ...</li>
+        <li>중심점만 찾기 — 흰 픽셀들의 무게중심 또는 클러스터 중심</li>
+        <li>전체 원이 아닌 점을 찾는 거라 훨씬 안정적</li>
+      </ul>
+      <p><strong>필요한 것:</strong> 현재 페이즈 번호를 알아야 함 → OCR 타이머가 동작해야 함.</p>
+    </div>
+
+    <div class="card warn">
+      <h3>의존성 체인</h3>
+      <div class="flow">
+        <div class="flow-step"><strong>① OCR 동작 확인</strong>먼저 해야 할 것</div>
+        <div class="flow-step"><strong>② 페이즈 추정 로직</strong>OCR + 누적 시간</div>
+        <div class="flow-step"><strong>③ 자기장 중심 검출</strong>알고리즘 재작성</div>
+        <div class="flow-step"><strong>④ 페이즈 반경 사용</strong>DB에서 조회</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question-block">
+    <h3>🎯 사용자 확인 요청 (가장 빠른 디버깅)</h3>
+    <div class="q">
+      <strong>Q1.</strong> 지금 PUBG에서 <strong>Tab 키 눌러 전체맵을 연 상태</strong>로 화면공유하고 있나요? (in-game 화면이 아니라 전체맵 보이는 상태)
+    </div>
+    <div class="q">
+      <strong>Q2.</strong> 사이드바 <strong>"자기장 타이머" 섹션</strong>에 지금 정확히 어떤 텍스트가 보이나요?
+      <ul style="margin:6px 0 0 18px;font-size:12px;color:#a0aec0">
+        <li><code>화면공유 시작 후 OCR 인식이 시작됩니다.</code></li>
+        <li><code>OCR 엔진 다운로드 중...</code></li>
+        <li><code>OCR 실패: [메시지]</code></li>
+        <li><code>--:--</code> (회색)</li>
+        <li><code>X:XX</code> (숫자 시간)</li>
+      </ul>
+    </div>
+    <div class="q">
+      <strong>Q3.</strong> 사용자 PUBG 게임 해상도가 뭔가요? (1920×1080 / 2560×1440 / 그 외)
+    </div>
+    <div class="q">
+      <strong>Q4.</strong> 브라우저 F12 → 콘솔 탭에 <strong>빨간색 에러 메시지</strong> 있나요? 있으면 첫 줄만이라도 알려주세요.
+    </div>
+    <p style="margin-top:14px;color:#9ae6b4;font-size:12px">위 4개 답 받으면 정확히 어디가 문제인지 짚을 수 있습니다.</p>
+  </div>
+
+</div>
+</body>
+</html>

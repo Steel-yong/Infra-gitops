@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PUB-30 결정 — OCR 타이머 검증 패널</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d14;color:#e2e8f0;font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif;font-size:13px;line-height:1.6}
+.header{background:linear-gradient(135deg,#1a1f2e,#0d1117);padding:32px;border-bottom:1px solid #2d3748}
+.header h1{font-size:22px;color:#fff;margin-bottom:6px}
+.header p{color:#718096;font-size:13px}
+.container{max-width:1100px;margin:0 auto;padding:32px}
+.section{margin-bottom:36px}
+.section h2{font-size:15px;color:#63b3ed;border-bottom:1px solid #2d3748;padding-bottom:8px;margin-bottom:18px;text-transform:uppercase;letter-spacing:.05em}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:#1a2236;border:1px solid #2d3748;border-radius:8px;padding:18px}
+.card h3{font-size:13px;color:#90cdf4;margin-bottom:10px}
+.card ul{font-size:12px;color:#a0aec0;padding-left:16px}
+.card ul li{margin-bottom:5px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#1a2236;color:#90cdf4;padding:10px 12px;text-align:left;border-bottom:1px solid #2d3748;font-size:11px;text-transform:uppercase}
+td{padding:10px 12px;border-bottom:1px solid #1a2236;color:#a0aec0;vertical-align:top}
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700}
+.tag.ok{background:#22543d;color:#9ae6b4}
+.tag.warn{background:#744210;color:#f6ad55}
+.tag.no{background:#742a2a;color:#fc8181}
+
+/* 사이드바 미리보기 */
+.preview-frame{background:#08080f;border:1px solid #2d3748;border-radius:10px;padding:20px;display:flex;gap:20px;min-height:400px}
+.sidebar-mock{width:240px;background:#13131f;border-radius:6px;border:1px solid #1e1e30;overflow:hidden}
+.side-section{padding:14px 16px;border-bottom:1px solid #1e1e30}
+.side-label{font-size:0.6rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#4b5563;margin-bottom:0.6rem}
+.map-btns{display:flex;gap:0.4rem}
+.map-btn{flex:1;padding:0.4rem 0;border-radius:6px;border:1px solid #2a2a3e;background:#1c1c2e;color:#94a3b8;font-size:0.75rem}
+.map-btn.active{background:#1d3a5e;border-color:#3b82f6;color:#93c5fd}
+
+/* 신규 타이머 패널 */
+.timer-panel{padding:14px 16px;border-bottom:1px solid #1e1e30;background:rgba(124,58,237,0.05)}
+.timer-panel-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.new-badge{background:#7c3aed;color:#ede9fe;font-size:0.55rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.4rem;border-radius:4px;text-transform:uppercase}
+.state-badge-row{margin-bottom:8px}
+.state-badge{padding:3px 8px;border-radius:4px;font-weight:600;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.06em;background:#7f1d1d;color:#fca5a5}
+.timer-display{display:flex;align-items:center;gap:0.75rem;background:#0f0f1a;border:1px solid #1e1e30;border-radius:8px;padding:10px 14px;margin-bottom:8px}
+.timer-icon{font-size:1.1rem}
+.timer-time{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;color:#ef4444;letter-spacing:0.04em;line-height:1;animation:pulse 0.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.timer-sublabel{font-size:0.65rem;color:#4b5563;margin-top:0.2rem}
+
+.ocr-debug{background:#08080f;border:1px dashed #2a2a3e;border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.ocr-row{display:flex;justify-content:space-between;font-size:0.65rem}
+.ocr-label{color:#6b7280}
+.ocr-value{color:#cbd5e1;font-family:ui-monospace,Consolas,monospace}
+.crop-img-wrap{display:flex;flex-direction:column;gap:0.25rem;margin-top:4px}
+.crop-img{width:100%;height:30px;background:#1c1c2e;border:1px solid #2a2a3e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;font-weight:700;color:#fbbf24;letter-spacing:0.05em}
+
+/* 흐름도 */
+.flow-box{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-bottom:20px}
+.flow-step{background:#1a2236;border:1px solid #2d3748;border-right:none;padding:12px 14px;flex:1;min-width:120px}
+.flow-step:last-child{border-right:1px solid #2d3748}
+.flow-step .step-label{font-size:10px;color:#4a5568;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+.flow-step .step-name{font-size:12px;color:#e2e8f0;font-weight:600}
+.flow-step .step-desc{font-size:11px;color:#718096;margin-top:4px}
+
+.decision-block{background:linear-gradient(135deg,#0f2e1a,#0a1f12);border:1px solid #38a169;border-radius:8px;padding:20px;margin-top:20px}
+.decision-block h3{color:#68d391;margin-bottom:10px}
+.decision-block ol{counter-reset:step;padding-left:0;list-style:none}
+.decision-block ol li{counter-increment:step;padding:8px 0 8px 32px;position:relative;color:#a0aec0;font-size:13px;border-bottom:1px solid #1a3a25}
+.decision-block ol li:last-child{border-bottom:none}
+.decision-block ol li::before{content:counter(step);position:absolute;left:0;top:8px;background:#38a169;color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.warning{background:#744210;color:#f6ad55;padding:8px 12px;border-radius:4px;font-size:12px;margin-top:10px}
+code{background:#0d1117;padding:1px 4px;border-radius:3px;font-size:11px;color:#a3e635}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>PUB-30 결정 — OCR 타이머 검증 패널</h1>
+  <p>2026-05-14 · 자기장 알림 자동화의 선행 단계 · Linear PUB-30</p>
+</div>
+
+<div class="container">
+
+  <div class="section">
+    <h2>왜 이 작업이 우선인가</h2>
+    <div class="card">
+      <p>자기장 알림 자동화의 핵심은 OCR. <strong>현재 OCR이 동작하는지 검증된 적 없음.</strong></p>
+      <ul style="margin-top:8px">
+        <li><code>ocrWorker.ts</code>에 파싱 로직만 있고 Tesseract.js 통합 + video crop 흐름이 끊겨 있음</li>
+        <li>알림 자동 발송 구현 전에 사용자가 OCR 결과를 시각적으로 확인할 수 있어야 함</li>
+        <li>크롭 영역이 잘못 잡히면 해상도별 좌표 조정 필요 → 디버깅 패널 필수</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>데이터 흐름</h2>
+    <div class="flow-box">
+      <div class="flow-step"><div class="step-label">1</div><div class="step-name">video element</div><div class="step-desc">화면공유 스트림 표시 중</div></div>
+      <div class="flow-step"><div class="step-label">2</div><div class="step-name">useOcrTimer 훅</div><div class="step-desc">1초마다 canvas로 타이머 영역 크롭</div></div>
+      <div class="flow-step"><div class="step-label">3</div><div class="step-name">Tesseract.js</div><div class="step-desc">whitelist: 0123456789:<br>worker.recognize()</div></div>
+      <div class="flow-step"><div class="step-label">4</div><div class="step-name">parseTimerString</div><div class="step-desc">"1:38" → 98초</div></div>
+      <div class="flow-step"><div class="step-label">5</div><div class="step-name">TimerPanel</div><div class="step-desc">사이드바에 결과 표시</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>UI 미리보기 (사이드바 통합)</h2>
+    <div class="preview-frame">
+      <div class="sidebar-mock">
+        <div class="side-section">
+          <p class="side-label">맵 선택</p>
+          <div class="map-btns">
+            <button class="map-btn active">에란겔</button>
+            <button class="map-btn">태이고</button>
+          </div>
+        </div>
+
+        <!-- 신규 타이머 패널 -->
+        <div class="timer-panel">
+          <div class="timer-panel-label">
+            <p class="side-label" style="margin:0">자기장 타이머</p>
+            <span class="new-badge">신규</span>
+          </div>
+          <div class="state-badge-row">
+            <span class="state-badge">⚡ 줄어드는 중</span>
+          </div>
+          <div class="timer-display">
+            <span class="timer-icon">⏱</span>
+            <div>
+              <div class="timer-time">0:23</div>
+              <div class="timer-sublabel">다음 자기장까지</div>
+            </div>
+          </div>
+          <div class="ocr-debug">
+            <div class="ocr-row"><span class="ocr-label">OCR 인식:</span><span class="ocr-value">"0:23"</span></div>
+            <div class="ocr-row"><span class="ocr-label">크롭 영역:</span><span class="ocr-value">180×35 @(1680,820)</span></div>
+            <div class="ocr-row"><span class="ocr-label">시도 횟수:</span><span class="ocr-value">42회</span></div>
+            <div class="crop-img-wrap">
+              <span class="ocr-label">크롭 이미지:</span>
+              <div class="crop-img">0:23</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-section">
+          <p class="side-label">자기장 알림</p>
+          <div style="display:flex;flex-direction:column;gap:0.4rem">
+            <label style="font-size:0.7rem;color:#cbd5e1"><input type="checkbox" checked> 30초 전</label>
+            <label style="font-size:0.7rem;color:#cbd5e1"><input type="checkbox" checked> 20초 전</label>
+            <label style="font-size:0.7rem;color:#cbd5e1"><input type="checkbox" checked> 10초 전</label>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;color:#718096;font-size:13px;line-height:1.7">
+        <p><strong style="color:#90cdf4">위치:</strong> 맵 선택 바로 아래 (자기장 알림 위)</p>
+        <p style="margin-top:12px"><strong style="color:#90cdf4">색상 규칙:</strong></p>
+        <ul style="margin-left:18px;margin-top:4px;font-size:12px">
+          <li>잔여 30초 이하 → 빨강 + 펄스</li>
+          <li>잔여 60초 이하 → 주황</li>
+          <li>그 외 → 노랑</li>
+          <li>인식 실패 → 회색 --:--</li>
+        </ul>
+        <p style="margin-top:12px"><strong style="color:#90cdf4">상태 배지:</strong></p>
+        <ul style="margin-left:18px;margin-top:4px;font-size:12px">
+          <li>빨간 느낌표 5%↑ → "⚡ 줄어드는 중"</li>
+          <li>그 외 → "⌛ 대기 중"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>검증 항목 비교</h2>
+    <table>
+      <thead><tr><th>항목</th><th>목적</th><th>표시 위치</th></tr></thead>
+      <tbody>
+        <tr><td>잔여 초 (M:SS)</td><td>파싱 성공 여부, 색상으로 긴급도</td><td>타이머 디스플레이 큰 글씨</td></tr>
+        <tr><td>상태 배지</td><td>빨간 느낌표 감지 결과</td><td>타이머 위</td></tr>
+        <tr><td>OCR 원본 텍스트</td><td>Tesseract가 무엇을 읽었는지 그대로</td><td>디버깅 박스</td></tr>
+        <tr><td>크롭 영역 좌표</td><td>해상도 디버깅 — 어디서 크롭했나</td><td>디버깅 박스</td></tr>
+        <tr><td>시도 횟수</td><td>OCR이 도는지 살아있는지 확인</td><td>디버깅 박스</td></tr>
+        <tr><td><strong>크롭 이미지 미리보기</strong></td><td><strong>가장 중요 — 영역이 정확한지 시각 확인</strong></td><td>디버깅 박스 맨 아래</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>예상 실패 시나리오 & 대응</h2>
+    <table>
+      <thead><tr><th>실패 시나리오</th><th>원인 후보</th><th>대응</th></tr></thead>
+      <tbody>
+        <tr><td>크롭 이미지가 빈 화면</td><td>video 로딩 안 됨</td><td>videoWidth=0 가드</td></tr>
+        <tr><td>크롭 영역이 타이머와 안 맞음</td><td>해상도별 좌표 부정확</td><td>TIMER_REGIONS 재측정 후 조정</td></tr>
+        <tr><td>OCR 텍스트 항상 빈 문자열</td><td>Tesseract 모델 미로드</td><td><code>await createWorker('eng')</code> 완료 확인</td></tr>
+        <tr><td>인식되지만 숫자가 이상함</td><td>폰트 인식률 낮음</td><td>전처리(대비 증가, 확대) 추가</td></tr>
+        <tr><td>빨간 느낌표 항상 false</td><td>좌측 영역 좌표 또는 RGB 임계</td><td>픽셀 비율도 디버깅 패널에 표시</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>이번 작업 범위 / 다음 작업</h2>
+    <div class="split">
+      <div class="card" style="border-left:3px solid #38a169">
+        <h3>✅ 이번 (PUB-30)</h3>
+        <ul>
+          <li>Tesseract.js 통합 + useOcrTimer 훅</li>
+          <li>TimerPanel 디버깅 UI</li>
+          <li>화면공유 안내 문구 제거</li>
+          <li>테스트 + 커버리지 95%</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid #4a5568">
+        <h3>⏭️ 다음 (별도 이슈)</h3>
+        <ul>
+          <li>OCR 신뢰성 검증 후 알림 통합</li>
+          <li>30/20/10초 Web Notification</li>
+          <li>페이즈 자동 감지 (OCR + 누적 시간)</li>
+          <li>CirclePhase.zoneRadiusRatio 시드</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <h3>✅ 사용자 결정 (2026-05-14)</h3>
+    <ol>
+      <li><strong>위치:</strong> 사이드바 맵 선택 바로 아래 — <span style="color:#9ae6b4">OK</span></li>
+      <li><strong>디버깅 박스 (OCR 텍스트/좌표/시도횟수/크롭 이미지):</strong> <span style="color:#fc8181">전부 제거</span> — 깔끔하게</li>
+      <li><strong>"신규" 배지:</strong> <span style="color:#fc8181">제거</span></li>
+      <li><strong>상태 배지:</strong> <span style="color:#9ae6b4">유지</span> — isShrinking 값에 따라 "⚡ 줄어드는 중" ↔ "⌛ 대기 중" 자동 전환</li>
+      <li><strong>알림 통합 미포함:</strong> <span style="color:#9ae6b4">OK</span> — OCR 신뢰성 확인 후 별도 이슈</li>
+      <li><strong>화면공유 안내 문구 제거:</strong> <span style="color:#9ae6b4">OK</span> — 같이 처리</li>
+      <li><strong>해상도 호환성:</strong> <span style="color:#f6ad55">제쳐둠</span> — OCR 동작 확인 후 다시 다룸</li>
+    </ol>
+    <div class="warning" style="background:#22543d;color:#9ae6b4">✅ 결정 완료. 단순화된 디자인으로 테스트 먼저 작성 후 구현 시작.</div>
+    <h3 style="margin-top:18px;color:#68d391">최종 패널 구성</h3>
+    <ul style="margin-left:20px;margin-top:8px;font-size:13px">
+      <li>섹션 라벨: "자기장 타이머"</li>
+      <li>상태 배지: 줄어드는 중 (빨강) / 대기 중 (파랑)</li>
+      <li>타이머 디스플레이: ⏱ + 잔여 시간 (M:SS) + "다음 자기장까지"</li>
+      <li>색상: 30초↓ 빨강 펄스, 60초↓ 주황, 그 외 노랑, 인식 실패 회색</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>
