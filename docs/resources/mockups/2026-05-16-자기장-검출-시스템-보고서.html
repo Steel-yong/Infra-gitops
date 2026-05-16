@@ -244,21 +244,19 @@
   </div>
 </div>
 
-<h3>PUBG 공식 페이즈 반경 + Score 임계값 (2026-05-16 재조정)</h3>
+<h3>PUBG 공식 페이즈 반경 + Score 임계값</h3>
 <p style="color: var(--muted); font-size: 13px;">
-  Score = 외곽선 ±2px 이내 inlier 점 개수. 이론 max ≈ 2π × r × 두께(2px), 페이즈 1~2는 maxPts=3000 cap 적용.<br>
-  새 임계값 = 이론 max × 40% (페이즈별 균일 신뢰 비율), floor 80.
+  Score = 외곽선 ±2px 이내 inlier 점 개수. 이론 max ≈ 2π × r × 두께, 페이즈 1~2는 maxPts=3000 cap 적용.<br>
+  Threshold = 기존 보수적 값 유지 (<code>baseScore=800 × 반경비례, floor 200</code>). 페이즈 5~8 잡음 차단은 coldStartPhases [1,2,3,4]로 1차 방어.<br>
+  ※ 40% 균일 그라디언트(1200/728/402/221) 시도했으나 외곽선 두께 1px 환경에서 진짜 자기장도 못 넘을 위험으로 되돌림. 실측 후 재조정 예정.
 </p>
 <table>
-  <tr><th>페이즈</th><th>실제 반경 (m)</th><th>1080px 기준 px</th><th>이론 max score</th><th>새 임계값 (40%)</th><th>이전</th></tr>
-  <tr><td>1</td><td>1997</td><td>264</td><td>3000 (cap)</td><td><strong>1200</strong></td><td>800</td></tr>
-  <tr><td>2</td><td>1098</td><td>145</td><td>1822</td><td><strong>728</strong></td><td>440</td></tr>
-  <tr><td>3</td><td>604</td><td>80</td><td>1005</td><td><strong>402</strong></td><td>242</td></tr>
-  <tr><td>4</td><td>332</td><td>44</td><td>553</td><td><strong>221</strong></td><td>200</td></tr>
-  <tr><td>5</td><td>166</td><td>22</td><td>277</td><td><strong>110</strong></td><td>200</td></tr>
-  <tr><td>6</td><td>83</td><td>11</td><td>138</td><td><strong>80 (floor)</strong></td><td>200</td></tr>
-  <tr><td>7</td><td>42</td><td>5.5</td><td>69</td><td><strong>80 (floor, 사실상 차단)</strong></td><td>200</td></tr>
-  <tr><td>8</td><td>21</td><td>2.7</td><td>34</td><td><strong>80 (floor, 차단)</strong></td><td>200</td></tr>
+  <tr><th>페이즈</th><th>실제 반경 (m)</th><th>1080px 기준 px</th><th>이론 max score</th><th>Threshold</th></tr>
+  <tr><td>1</td><td>1997</td><td>264</td><td>3000 (cap)</td><td><strong>800</strong></td></tr>
+  <tr><td>2</td><td>1098</td><td>145</td><td>1822</td><td><strong>440</strong></td></tr>
+  <tr><td>3</td><td>604</td><td>80</td><td>1005</td><td><strong>242</strong></td></tr>
+  <tr><td>4</td><td>332</td><td>44</td><td>553</td><td><strong>200 (floor)</strong></td></tr>
+  <tr><td>5~8</td><td>166~21</td><td>22~2.7</td><td>277~34</td><td><strong>200 (floor) — cold start 후보 아님</strong></td></tr>
 </table>
 
 <h2 id="sec3">3. 색깔 신호의 의미</h2>
@@ -351,7 +349,7 @@
   <tr><td>흰 픽셀 임계값</td><td>R/G/B ≥ <strong>240</strong></td><td>그리드 라인(약 220) 제거</td><td>circle.service</td></tr>
   <tr><td>RANSAC tolerance</td><td><strong>±12%</strong></td><td>다른 페이즈와 안 겹침</td><td>circle.service</td></tr>
   <tr><td>RANSAC iteration</td><td><strong>2000</strong></td><td>작은 페이즈도 정확히</td><td>circle.service</td></tr>
-  <tr><td>Score threshold</td><td>이론 max × <strong>40%</strong>, floor 80</td><td>페이즈별 균일 신뢰 비율 + 페이즈 6~8 차단</td><td>circle.service</td></tr>
+  <tr><td>Score threshold</td><td>baseScore <strong>800</strong> × 반경비례, floor <strong>200</strong></td><td>잡음 매칭(score 100~150) 차단. 페이즈 6~8 차단은 cold start로 1차 방어</td><td>circle.service</td></tr>
   <tr><td>Cold start 후보</td><td><strong>[1, 2, 3, 4]</strong>만</td><td>화면공유 시작 타이밍 페이즈 7~8 잡음 매칭 원천 차단</td><td>circle.service</td></tr>
   <tr><td>hintPhase 확장</td><td><code>[hintPhase-1, hintPhase, hintPhase+1]</code></td><td>락 잡힌 후 페이즈 5~8 진입 가능</td><td>circle.service</td></tr>
   <tr><td>노란 마커 보정</td><td>blue-edge 모드만</td><td>페이즈 1 false 보정 차단</td><td>circle.service</td></tr>
@@ -395,18 +393,20 @@
   <p><strong>트레이드오프:</strong> 화면공유 도중 페이즈 7~8에서 첫 시작하는 케이스(1% 미만) 미검출. 허용.</p>
 </div>
 
-<div class="panel good">
-  <h3 style="margin-top:0">7.3 Score threshold 그라디언트 재조정</h3>
-  <p><strong>변경:</strong> <code>minScoreForPhase</code>를 이론 max score의 40% 균일 비율로 재계산. floor 80.</p>
-  <p><strong>이유:</strong> 기존 800/440/242/200/200/200/200/200은 페이즈별 신뢰 비율이 불균일.</p>
+<div class="panel warn">
+  <h3 style="margin-top:0">7.3 Score threshold — 보수적 값 유지 (40% 그라디언트 시도 후 되돌림)</h3>
+  <p><strong>최종:</strong> 기존 공식 그대로. <code>baseScore=800 × 반경비례, floor 200</code>.</p>
+  <p><strong>시도 후 되돌린 이유:</strong> 40% 균일 그라디언트(1200/728/402/221)는 외곽선 두께가 1px(안티에일리어싱 환경)인 사용자에서 진짜 자기장도 threshold 못 넘을 위험.</p>
   <ul>
-    <li>페이즈 1: 800/3000 = 27% (관대) → <strong>1200</strong> (40%)</li>
-    <li>페이즈 4: 200/553 = 36% (보통) → <strong>221</strong> (40%)</li>
-    <li>페이즈 6~8: 200이 이론 max보다 큼 (정상 검출 불가능) → floor 80 (cold start 차단 + 이중 방어)</li>
+    <li>두께 1px → 외곽선 픽셀 ~1659개 → 1200/1659 = 72% inlier 필요. 너무 빡빡.</li>
+    <li>두께 2px 환경에서만 안전. 사용자 환경 가변성 큼.</li>
+    <li>페이즈 5~8 잡음 차단은 cold start [1,2,3,4]로 이미 1차 방어됨 → score 그라디언트 변경 효과 불필요.</li>
   </ul>
+  <p><strong>다음:</strong> Cold start 단독 효과 실측 후 score 그라디언트 재조정 여부 결정.</p>
   <pre>function minScoreForPhase(phase: number): number {
-  const maxScores = [3000, 1822, 1005, 553, 277, 138, 69, 34];
-  return Math.max(80, Math.floor(maxScores[phase - 1] * 0.4));
+  const baseScore = 800;
+  const ratio = PUBG_PHASE_RADII[phase - 1] / PUBG_PHASE_RADII[0];
+  return Math.max(200, Math.floor(baseScore * ratio));
 }</pre>
 </div>
 
