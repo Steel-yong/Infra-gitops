@@ -14,6 +14,8 @@ export interface UseCaptureSocketReturn {
   sendFrame: (base64: string) => void;
   /** ocrTimer.isShrinking 변화 시 호출. frame upload payload에 동봉된다. */
   setIsShrinking: (v: boolean) => void;
+  /** OCR이 인식한 현재 페이즈(1~8). frame upload payload에 동봉돼 capture hintPhase로 우선 사용. */
+  setCurrentPhase: (v: number | null) => void;
 }
 
 /**
@@ -25,7 +27,9 @@ export function useCaptureSocket(): UseCaptureSocketReturn {
   const [connected, setConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const isShrinkingRef = useRef(false);
+  const currentPhaseRef = useRef<number | null>(null);
   const setIsShrinking = useCallback((v: boolean) => { isShrinkingRef.current = v; }, []);
+  const setCurrentPhase = useCallback((v: number | null) => { currentPhaseRef.current = v; }, []);
 
   useEffect(() => {
     const socket = io(CAPTURE_SERVICE_URL, { transports: ['websocket'] });
@@ -46,9 +50,10 @@ export function useCaptureSocket(): UseCaptureSocketReturn {
     const payload: FrameUploadPayload = {
       base64,
       isShrinking: isShrinkingRef.current,
+      ...(currentPhaseRef.current !== null && { currentPhase: currentPhaseRef.current }),
     };
     socketRef.current?.emit(SocketEvents.FRAME_UPLOAD, payload);
   }, []);
 
-  return { circleData, connected, sendFrame, setIsShrinking };
+  return { circleData, connected, sendFrame, setIsShrinking, setCurrentPhase };
 }

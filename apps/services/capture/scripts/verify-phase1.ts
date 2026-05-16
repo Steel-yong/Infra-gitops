@@ -14,8 +14,7 @@ const CENTER_TOLERANCE = 0.08; // 시각 중심 ±8% 허용 (자기장 외곽 �
 // ─── 입력 사진 경로 ────────────────────────────────────────────────────
 const IMAGE_DIR = '/mnt/d/infra project/Infra-gitops/.claude/images';
 const IMAGES = [
-  { name: '1페이즈', file: '1페이즈.png' },
-  { name: '배그 맵화면', file: '배그 맵화면.png' },
+  { name: 'raw_너가', file: '너가.png' },
 ] as const;
 
 // ─── 결과 출력 ─────────────────────────────────────────────────────────
@@ -70,7 +69,7 @@ function detectHypothesisA_WhitePixelRANSAC(
     for (let x = 0; x < size; x += 1) {
       const i = (y * size + x) * 3;
       const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
-      if (r >= 220 && g >= 220 && b >= 220) {
+      if (r >= 240 && g >= 240 && b >= 240) {
         whitePoints.push([x, y]);
       }
     }

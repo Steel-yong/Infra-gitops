@@ -35,6 +35,34 @@ export function getTimerRegion(screenWidth: number, screenHeight: number): Timer
   };
 }
 
+/** 페이즈 텍스트("페이즈 N") 영역 비율. 미니맵 타이머 띠 우측 끝.
+ * 1917×1198 게임 화면 1페이즈 타이머 캡처 기준 측정 — "페이즈 1" 글자가 x≈0.943~0.982. */
+const PHASE_REGION_RATIO = {
+  x: 0.940,
+  y: 0.700,
+  w: 0.050,
+  h: 0.040,
+} as const;
+
+/** 페이즈 글자 영역 좌표 (시간 영역과 별도 OCR). */
+export function getPhaseRegion(screenWidth: number, screenHeight: number): TimerRegion {
+  return {
+    x: Math.floor(screenWidth * PHASE_REGION_RATIO.x),
+    y: Math.floor(screenHeight * PHASE_REGION_RATIO.y),
+    w: Math.floor(screenWidth * PHASE_REGION_RATIO.w),
+    h: Math.floor(screenHeight * PHASE_REGION_RATIO.h),
+  };
+}
+
+/** OCR이 페이즈 영역에서 인식한 텍스트에서 단독 숫자(1~8) 추출.
+ * 한글 "페이즈"는 whitelist에 없어 무시됨, 결과 텍스트는 보통 숫자 + 잡음 문자.
+ * 두 자리 이상이면 자기장 검출 신호로 사용하기 부적절 → null. */
+export function parsePhaseString(text: string): number | null {
+  const match = text.match(/[1-8]/);
+  if (!match) return null;
+  return parseInt(match[0], 10);
+}
+
 /**
  * 텍스트 어디서든 "M:SS" 패턴을 찾아 총 초로 변환.
  * OCR이 페이즈 숫자나 다른 글자를 같이 인식해도 타이머만 추출하기 위해 앵커(^$) 제거.

@@ -5,11 +5,12 @@
 //     색 전환(파란 ↔ 비파란) 픽셀이 자기장 둘레 = 가장 robust한 단서. 흰 색 의존 없음.
 // 알고리즘:
 //   1) 맵 영역(화면 중앙 정사각형) crop.
-//   2) 격자선 검출 → 확대 비율 추정 (실패 시 1.0).
-//   3) 파란 비율 측정 → 모드 분기.
-//      - 파란 비율 < 5%: 페이즈 1 모드 (흰 픽셀 RANSAC, 페이즈 1 반경 한정)
-//      - 파란 비율 ≥ 5%: 페이즈 2~8 모드 (파란 경계 RANSAC, 모든 페이즈 후보)
-//   4) 흰 원 안 노란 점 마커가 있으면 정밀 중심 보정.
+//   2) 파란 비율 측정 → 모드 분기.
+//      - 파란 비율 < 5%: 흰 픽셀 RANSAC (페이즈 1 형성 직후 또는 wait 상태)
+//      - 파란 비율 ≥ 5%: blue-edge RANSAC 우선, 실패 시 흰 픽셀 RANSAC 폴백
+//      ※ 페이즈 1은 줄어들면서 파란이 0% → 누적되는 특수 상태. 5% 근처 진동 가능.
+//   3) Cold start 후보는 [1,2,3,4]만. 페이즈 5~8은 hintPhase ±1로만 진입.
+//   4) 흰 원 안 노란 점 마커가 있으면(blue-edge 모드) 정밀 중심 보정.
 //   5) 정규화 좌표는 맵 영역 한 변 기준.
 import { Injectable, Logger } from '@nestjs/common';
 import sharp from 'sharp';
@@ -29,11 +30,13 @@ const PUBG_PHASE_RADII = [
   0.00254, // phase 8: 20.75m
 ] as const;
 
-/** 페이즈별 최소 점수 — 반경 비례. 너무 작은 페이즈는 false positive 방지 floor 12점. */
+/** 페이즈별 최소 점수 — 이론 max score의 40% 균일 비율 + floor 80.
+ * 이론 max score = 외곽선 픽셀 수 ≈ 2π × r × 두께(2px), 페이즈 1~2는 maxPts=3000 cap에 걸림.
+ * 40% 비율: 페이즈 1 가짜 검출은 빡빡하게 차단, 페이즈 4~5도 합리적 신뢰 유지.
+ * floor 80: 페이즈 6~8 이론 max가 너무 작아 cold start에서 사실상 차단 (이중 방어). */
 function minScoreForPhase(phase: number): number {
-  const baseScore = 200;
-  const ratio = PUBG_PHASE_RADII[phase - 1] / PUBG_PHASE_RADII[0];
-  return Math.max(12, Math.floor(baseScore * ratio));
+  const maxScores = [3000, 1822, 1005, 553, 277, 138, 69, 34];
+  return Math.max(80, Math.floor(maxScores[phase - 1] * 0.4));
 }
 
 interface CropArea {
@@ -72,28 +75,28 @@ export class CircleService {
     const scale = 1.0;
     const blueRatio = this.measureBlueRatio(cropped.data, cropped.size);
 
-    // 페이즈 후보 — hintPhase가 있으면 ±1, 없으면 모드별 기본
-    const allPhasesForBlueEdge = [1, 2, 3, 4, 5, 6, 7, 8];
+    // 페이즈 후보 — cold start는 [1,2,3,4]만 (화면공유 시작 타이밍 대부분 페이즈 1~4).
+    // 페이즈 5~8은 hintPhase ±1 확장으로만 진입 → 잡음 매칭 원천 차단.
+    const coldStartPhases = [1, 2, 3, 4];
     const phaseCandidates = hintPhase
       ? [
           Math.max(1, hintPhase - 1),
           hintPhase,
           Math.min(8, hintPhase + 1),
         ].filter((p, i, arr) => arr.indexOf(p) === i)
-      : allPhasesForBlueEdge;
+      : coldStartPhases;
 
     let detection: DetectionCandidate | null;
     if (blueRatio >= 0.05) {
-      // 페이즈 2~8 모드 — 외부 파란 있음
+      // 외부 파란이 명확하면 blue-edge 우선 (페이즈 2~8 일반적)
       detection = this.detectByBlueEdgeRANSAC(cropped.data, cropped.size, scale, phaseCandidates);
       if (!detection) {
-        // 페이즈 1 fallback (줄어드는 중에 외부 파란 일부)
-        detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, [1]);
+        detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phaseCandidates);
       }
     } else {
-      // 페이즈 1 모드 — 외부 파란 없음 또는 매우 적음
-      const phase1Candidates = phaseCandidates.includes(1) ? [1] : phaseCandidates;
-      detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phase1Candidates);
+      // mapDetection이 디스크 영역만 정확히 잘라내면 외부 파란이 안 들어와 blueRatio≈0.
+      // 이 경우에도 자기장 흰 원은 어느 페이즈든 보이므로 모든 페이즈 후보 검색.
+      detection = this.detectByWhitePixelRANSAC(cropped.data, cropped.size, scale, phaseCandidates);
     }
 
     if (!detection) {
@@ -103,11 +106,14 @@ export class CircleService {
       return null;
     }
 
-    // 노란 점 마커가 자기장 안에 있으면 정밀 중심 보정
-    const yellow = this.detectYellowMarkerInside(
-      cropped.data, cropped.size,
-      detection.cx, detection.cy, detection.r,
-    );
+    // 노란 점 마커는 페이즈 2~8(blue-edge 모드)에만 적용.
+    // 페이즈 1은 외곽 자기장이라 그 안의 노란 마커가 잘못된 위치 끌어당김 (false positive 강화).
+    const yellow = detection.mode === 'blue-edge'
+      ? this.detectYellowMarkerInside(
+          cropped.data, cropped.size,
+          detection.cx, detection.cy, detection.r,
+        )
+      : null;
     const cx = yellow ? yellow.cx : detection.cx;
     const cy = yellow ? yellow.cy : detection.cy;
     const rNorm = PUBG_PHASE_RADII[detection.phase - 1];
@@ -198,7 +204,8 @@ export class CircleService {
     return this.runRansac(edgePoints, size, scale, 'blue-edge', phasesAllowed);
   }
 
-  /** 흰 픽셀 RANSAC. 페이즈 후보 제한 가능 (페이즈 1 cold start). */
+  /** 흰 픽셀 RANSAC. 페이즈 후보 제한 가능 (페이즈 1 cold start).
+   * 임계값 240: 그리드 라인(≈220-230)은 제외하고 자기장 외곽 라인(≈240+)만 선별. */
   private detectByWhitePixelRANSAC(
     pixels: Buffer,
     size: number,
@@ -209,7 +216,7 @@ export class CircleService {
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const i = (y * size + x) * 3;
-        if (pixels[i] >= 220 && pixels[i + 1] >= 220 && pixels[i + 2] >= 220) {
+        if (pixels[i] >= 240 && pixels[i + 1] >= 240 && pixels[i + 2] >= 240) {
           whitePoints.push([x, y]);
         }
       }
@@ -234,17 +241,20 @@ export class CircleService {
       for (let i = 0; i < points.length; i += stride) pts.push(points[i]);
     }
 
+    // tolerance ±12% — ±20%는 너무 헐거워 다른 페이즈와 겹치고 잡음 매칭 허용함.
+    // PUBG 자기장은 정해진 r에서 정밀하게 표시되므로 ±12%면 충분.
     const phaseExpects = phasesAllowed.map((p) => {
       const rExpected = PUBG_PHASE_RADII[p - 1] * size * scale;
       return {
         phase: p,
         rExpected,
-        rMin: rExpected * 0.80,
-        rMax: rExpected * 1.20,
+        rMin: rExpected * 0.88,
+        rMax: rExpected * 1.12,
       };
     });
 
-    const ITER = 800;
+    // ITER 2000 — 800은 페이즈 2~3 작은 원 (자기장 픽셀 적음)에서 진짜 3점 못 뽑힘.
+    const ITER = 2000;
     let best: DetectionCandidate | null = null;
     for (let t = 0; t < ITER; t++) {
       const p1 = pts[Math.floor(Math.random() * pts.length)];

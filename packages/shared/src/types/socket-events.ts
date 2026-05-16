@@ -13,8 +13,10 @@ export const SocketEvents = {
 
 export type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];
 
-/** frame:upload payload — frontend가 isShrinking 신호 동봉. 후방 호환: 문자열도 허용. */
+/** frame:upload payload — frontend가 isShrinking 신호 동봉. 후방 호환: 문자열도 허용.
+ * currentPhase: OCR이 게임 화면 "페이즈 N" 글자에서 인식한 현재 페이즈 (1~8). 검출 hintPhase 우선 사용. */
 export interface FrameUploadPayload {
   base64: string;
   isShrinking: boolean;
+  currentPhase?: number;
 }

@@ -18,8 +18,8 @@ import { LocationPanel } from '../components/LocationPanel';
 import { TimerPanel } from '../components/TimerPanel';
 import styles from './page.module.css';
 
-/** 알람 lead — 표시 타이머가 게임과 sync되어 있으므로 0초 (정확한 시점에 알림). */
-const CAPTURE_LAG_LEAD_SECONDS = 0;
+/** 알람 lead — 사용자 요청: 1초 더 빨리 알림 (반응 시간 확보). */
+const CAPTURE_LAG_LEAD_SECONDS = 1;
 
 const MapCanvas = dynamic(() => import('../components/MapCanvas'), { ssr: false });
 const CircleOverlay = dynamic(
@@ -40,7 +40,7 @@ export default function Page() {
   const [alertEnabled, setAlertEnabled] = useState<number[]>([30, 20, 10]);
   const [captureError, setCaptureError] = useState<string | null>(null);
 
-  const { circleData, sendFrame, setIsShrinking } = useCaptureSocket();
+  const { circleData, sendFrame, setIsShrinking, setCurrentPhase } = useCaptureSocket();
   const { isCapturing, stream, start, stop } = useScreenCapture({
     onFrame: sendFrame,
     onError: (msg) => setCaptureError(msg),
@@ -51,8 +51,11 @@ export default function Page() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const ocrTimer = useOcrTimer(videoRef.current, isCapturing);
 
-  // 위치 락: "줄어듦 → 대기" 전환 시점에만 위치 갱신, 그 외 고정.
-  const lockedCircle = useLockedCircle(circleData, ocrTimer.isShrinking);
+  // 위치 락: 한 번 잡으면 고정. 잘못 잡히면 사용자가 "다시 잡기" 버튼으로 unlock.
+  const { circle: lockedCircle, unlock: unlockCircle } = useLockedCircle(
+    circleData,
+    ocrTimer.isShrinking,
+  );
 
   // 위치 추천도 락된 원 기준으로 (락 안 됐으면 동작 안 함)
   const { locations, error: locationError } = useLocations(lockedCircle, mapType);
@@ -88,6 +91,11 @@ export default function Page() {
     setIsShrinking(ocrTimer.isShrinking);
   }, [ocrTimer.isShrinking, setIsShrinking]);
 
+  // OCR이 화면에서 직접 읽은 페이즈를 capture에 전달 — hintPhase 우선 사용
+  useEffect(() => {
+    setCurrentPhase(ocrTimer.currentPhase);
+  }, [ocrTimer.currentPhase, setCurrentPhase]);
+
   return (
     <main className={styles.root}>
       <header className={styles.header}>
@@ -119,7 +127,7 @@ export default function Page() {
           <TimerPanel
             state={ocrTimer}
             isCapturing={isCapturing}
-            phase={lockedCircle?.phase ?? circleData?.phase ?? null}
+            phase={ocrTimer.currentPhase ?? lockedCircle?.phase ?? circleData?.phase ?? null}
           />
 
           <div className={styles.sideSection}>
@@ -178,6 +186,24 @@ export default function Page() {
             </button>
             {captureError && (
               <p className={styles.captureError}>{captureError}</p>
+            )}
+            {isCapturing && lockedCircle && (
+              <button
+                type="button"
+                onClick={unlockCircle}
+                aria-label="자기장 위치 다시 잡기"
+                style={{
+                  padding: '6px 12px',
+                  background: 'rgba(255, 170, 60, 0.18)',
+                  color: '#ffb547',
+                  border: '1px solid rgba(255, 170, 60, 0.45)',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                }}
+              >
+                자기장 다시 잡기
+              </button>
             )}
           </div>
 

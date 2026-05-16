@@ -38,24 +38,32 @@ export class CaptureGateway {
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     // 후방 호환 — 옛 frontend가 base64 string으로 보낼 수도 있음
-    const { base64, isShrinking } =
+    const { base64, isShrinking, currentPhase } =
       typeof payload === 'string'
-        ? { base64: payload, isShrinking: false }
+        ? { base64: payload, isShrinking: false, currentPhase: undefined }
         : payload;
 
     const sess = this.sessions.get(client.id);
 
-    // 자기장 줄어드는 중이면 새 검출 안 함, 마지막 결과 그대로 재전송 (사용자 제안 반영)
-    if (isShrinking && sess?.lastResult) {
-      client.emit(SocketEvents.CIRCLE_RESULT, sess.lastResult);
-      return;
-    }
-
-    const hintPhase = sess && Date.now() - sess.lastDetectionTime < HINT_VALIDITY_MS
-      ? sess.lastPhase
-      : undefined;
+    // OCR이 화면에서 직접 읽은 페이즈가 있으면 그 신호 우선 (가장 정확).
+    // 없으면 세션 추적 lastPhase 사용 (이전 검출 기반 추정).
+    const hintPhase =
+      currentPhase ??
+      (sess && Date.now() - sess.lastDetectionTime < HINT_VALIDITY_MS
+        ? sess.lastPhase
+        : undefined);
 
     const result = await this.captureService.processFrame(base64, hintPhase);
+
+    // isShrinking 중에는 검출 결과가 같은 페이즈면 lastResult 그대로 재전송 (UI 깜빡임 방지).
+    // 그러나 검출이 다른 페이즈(=페이즈 전환)면 즉시 새 결과 emit — 자기장이 다음 페이즈로 줄었음을 의미.
+    if (isShrinking && sess?.lastResult) {
+      if (!result || result.phase === sess.lastResult.phase) {
+        client.emit(SocketEvents.CIRCLE_RESULT, sess.lastResult);
+        return;
+      }
+      // 페이즈 전환 감지 — 그대로 진행해 새 결과 emit + 세션 갱신
+    }
 
     if (result) {
       this.sessions.set(client.id, {
