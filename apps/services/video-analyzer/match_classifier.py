@@ -5,15 +5,19 @@ from pathlib import Path
 
 def is_intro(img) -> bool:
     """프레임 좌측 5% 영역 평균 RGB로 인트로 판정.
-    PWS 인트로 보라색 배경 — G 채널 매우 낮음 (12 부근)."""
+    PWS 인트로 보라색 배경 — B > R > G, G 매우 낮음.
+    다양한 PWS 영상 인트로 색조에 robust한 임계값."""
     h, w = img.shape[:2]
     edge = img[:, 0:int(w*0.05)]
-    b, g, _ = edge.mean(axis=(0,1))
-    return g < 25 and b > 40
+    b, g, r = edge.mean(axis=(0,1))
+    # 보라색 특징: B 우세 + G 매우 낮음, R도 G보다 약간 큼
+    # 매치 화면 좌측은 검은 팀 순위 박스 (R≈G≈B) 또는 바다 (B 우세이지만 G 큼)
+    is_purple = (b > r + 5) and (b > g + 25) and (g < 45)
+    return is_purple
 
 
 def find_matches(frame_paths: list[str], interval_sec: int = 30,
-                 gap_tolerance: int = 2, min_match_minutes: int = 3) -> list[tuple[int, int]]:
+                 gap_tolerance: int = 2, min_match_minutes: int = 10) -> list[tuple[int, int]]:
     """프레임 시퀀스 → 매치 시작/끝 시간(분) 튜플 리스트.
     매치 사이 인트로 ≥1프레임으로 분리. 짧은 노이즈는 머지."""
     classified = []
