@@ -28,7 +28,6 @@ export function LocationPanel({ locations, circleData, error }: LocationPanelPro
 
   return (
     <aside className={styles.panel} aria-label="추천 위치 목록">
-      <h2 className={styles.title}>추천 위치</h2>
       {error && (
         <p className={styles.error} role="alert">
           {error}

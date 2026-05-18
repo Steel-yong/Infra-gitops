@@ -49,7 +49,7 @@ export function CircleOverlay({ circleData }: CircleOverlayProps) {
         r={r}
         fill="none"
         stroke="white"
-        strokeWidth="0.003"
+        strokeWidth="0.0015"
         strokeOpacity={0.95}
       />
     </SVGOverlay>

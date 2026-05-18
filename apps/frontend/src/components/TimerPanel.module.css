@@ -6,12 +6,13 @@
   gap: 0.6rem;
 }
 
+/* 섹션 제목 — 키운 사이즈 유지 (page.module.css의 sideSectionLabel과 통일) */
 .sectionLabel {
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #4b5563;
+  color: #93a3b8;
 }
 
 .idleMsg {
