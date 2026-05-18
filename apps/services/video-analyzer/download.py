@@ -25,11 +25,16 @@ def video_info(url: str) -> dict:
 
 
 def download(url: str, out_path: str, purpose: str = 'detect') -> bool:
-    """purpose별 형식으로 다운로드. video-only이라 ffmpeg 후처리 안 함."""
+    """purpose별 형식으로 다운로드. video-only이라 ffmpeg 후처리 안 함.
+    fallback: 134 (360p mp4) → 18 (360p mp4+audio) → best[height<=480]"""
     fmt = FORMAT_BY_PURPOSE.get(purpose, 134)
-    cmd = ['python3', '-m', 'yt_dlp', '-f', str(fmt), '-o', out_path, url]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-    return result.returncode == 0 and Path(out_path.replace('%(ext)s', 'mp4')).exists()
+    # 첫 시도: 정확한 format
+    for try_fmt in [str(fmt), '18', 'best[height<=480][ext=mp4]', 'best[height<=480]']:
+        cmd = ['python3', '-m', 'yt_dlp', '-f', try_fmt, '-o', out_path, url]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        if result.returncode == 0 and Path(out_path.replace('%(ext)s', 'mp4')).exists():
+            return True
+    return False
 
 
 def channel_map_videos(channel_url: str, limit: int = 100) -> list[dict]:
