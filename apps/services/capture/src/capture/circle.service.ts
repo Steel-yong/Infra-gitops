@@ -169,15 +169,16 @@ export class CircleService {
   }
 
   /** PUBG 자기장 외부 파란 색 픽셀인지 판정 (반투명 진한 파랑).
-   * 바다(청록) 제외: 자기장은 G가 R보다 크지 않거나 비슷, 바다는 G가 R보다 훨씬 큼.
-   * 자기장: B가 G보다 명확히 큼 (b > g + 30). */
+   * 위험 구역 파란과 바다(청록) RGB 분포가 거의 동일 (G-R 평균 +25 vs +27, 측정 근거 PUB-32 context-notes §3).
+   * 색만으로 둘을 구분 불가하므로 G-R 임계값을 +40으로 완화해 위험 구역 99.6% 통과.
+   * 바다가 같이 잡혀도 RANSAC이 자기장 원 형태 못 만들어 자연 폐기. */
   private isBluePixel(r: number, g: number, b: number): boolean {
     return (
       b > r + 30 &&
       b > g + 30 &&
       b > 90 &&
       r < 130 &&
-      g < r + 25 // 바다 제외 (바다는 G >> R)
+      g < r + 40 // PUB-32: 위험 구역도 g-r=+25라 +25 임계값에선 절반 잘림
     );
   }
 

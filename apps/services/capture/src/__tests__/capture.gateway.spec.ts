@@ -32,11 +32,15 @@ describe('CaptureGateway', () => {
   });
 
   it('processFrame이 CircleData를 반환하면 CIRCLE_RESULT를 emit한다', async () => {
-    const circle: CircleData = { x: 0.5, y: 0.5, r: 0.2 };
+    const circle: CircleData = { x: 0.5, y: 0.5, r: 0.2, phase: 1 };
     processFrameMock.mockResolvedValue(circle);
 
     const client = makeMockClient();
-    await gateway.handleFrame('base64data', client as unknown as Socket);
+    client.id = 'test-client-1';
+    await gateway.handleFrame(
+      { base64: 'base64data', isShrinking: false, currentPhase: 1, parentCircle: undefined },
+      client as unknown as Socket,
+    );
 
     expect(client.emit).toHaveBeenCalledWith(SocketEvents.CIRCLE_RESULT, circle);
   });
@@ -45,8 +49,24 @@ describe('CaptureGateway', () => {
     processFrameMock.mockResolvedValue(null);
 
     const client = makeMockClient();
-    await gateway.handleFrame('base64data', client as unknown as Socket);
+    client.id = 'test-client-2';
+    await gateway.handleFrame(
+      { base64: 'base64data', isShrinking: false, currentPhase: 1, parentCircle: undefined },
+      client as unknown as Socket,
+    );
 
     expect(client.emit).toHaveBeenCalledWith(SocketEvents.NO_MAP);
+  });
+
+  it('OCR 게이트키퍼 — currentPhase 없으면 NO_MAP emit하고 processFrame 호출 안 함', async () => {
+    const client = makeMockClient();
+    client.id = 'test-client-3';
+    await gateway.handleFrame(
+      { base64: 'base64data', isShrinking: false, currentPhase: null, parentCircle: undefined },
+      client as unknown as Socket,
+    );
+
+    expect(client.emit).toHaveBeenCalledWith(SocketEvents.NO_MAP);
+    expect(processFrameMock).not.toHaveBeenCalled();
   });
 });
