@@ -15,6 +15,7 @@ import zone_detector
 import marker_extractor
 import grid_ocr
 import clustering
+import match_map_assigner
 
 
 def is_phase1(sec: int, match_start_minute: int, window_min: int = 3) -> bool:
@@ -41,8 +42,14 @@ def analyze_video(url: str, work_dir: str, transform=grid_ocr.DEFAULT_TRANSFORM_
 
     frame_paths = sorted(glob.glob(f"{frames_dir}/f_*.jpg"))
 
-    # 3. 매치 식별
+    # 3. 매치 식별 — v2 인트로 색 분류 우선, 실패(매치 0) 시 v4 자기장 기반 fallback
     matches = match_classifier.find_matches(frame_paths)
+    if not matches:
+        # 위클리 영상 등 인트로 색조 차이 큰 영상: 자기장 검출 기반 fallback
+        matches = match_classifier.find_matches_by_zone(frame_paths)
+
+    # 3.5. 매치별 맵 자동 식별 (에란겔/태이고/미라마/론도 분류)
+    match_maps = match_map_assigner.assign_match_maps(frame_paths, matches)
 
     # 4. 각 프레임 분석 (페이즈 1만 변환)
     x_t, y_t = transform
@@ -91,6 +98,7 @@ def analyze_video(url: str, work_dir: str, transform=grid_ocr.DEFAULT_TRANSFORM_
     result = {
         'url': url,
         'matches': matches,
+        'match_maps': match_maps,
         'markers_game': markers_game,
         'zones_game': zones_game,
         'hotspots': hotspots,

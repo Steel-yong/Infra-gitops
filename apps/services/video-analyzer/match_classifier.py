@@ -15,6 +15,34 @@ def is_intro(img) -> bool:
     return is_purple
 
 
+def find_matches_by_zone(frame_paths: list[str], interval_sec: int = 30,
+                          gap_tolerance: int = 4, min_match_minutes: int = 10) -> list[tuple[int, int]]:
+    """v4: 자기장 검출 기반 매치 식별.
+    인트로 색조 차이가 큰 영상에 robust.
+    - 자기장 검출됨 = 매치 진행 (페이즈 2+)
+    - 자기장 안 보임 = 인트로/wait/페이즈 1 wait
+    - 연속 자기장 검출 그룹 = 한 매치 (gap_tolerance 프레임 이내 끊김 허용)"""
+    import zone_detector
+    detected_minutes = []
+    for i, fp in enumerate(frame_paths):
+        img = cv2.imread(fp)
+        if img is None: continue
+        zone = zone_detector.detect_zone(img)
+        if zone and 0.05 <= zone['r_screen'] <= 0.5:
+            detected_minutes.append((i + 1) * interval_sec // 60)
+
+    if not detected_minutes: return []
+
+    # 연속 그룹화
+    segments = [[detected_minutes[0], detected_minutes[0]]]
+    for m in detected_minutes[1:]:
+        if m - segments[-1][1] <= gap_tolerance:
+            segments[-1][1] = m
+        else:
+            segments.append([m, m])
+    return [(s, e) for s, e in segments if e - s >= min_match_minutes]
+
+
 def find_matches(frame_paths: list[str], interval_sec: int = 30,
                  gap_tolerance: int = 2, min_match_minutes: int = 10) -> list[tuple[int, int]]:
     """프레임 시퀀스 → 매치 시작/끝 시간(분) 튜플 리스트.
