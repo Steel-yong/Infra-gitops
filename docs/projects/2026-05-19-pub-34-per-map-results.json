@@ -1,0 +1,515 @@
+{
+  "erangel": {
+    "n_markers": 321,
+    "n_clusters": 21,
+    "hotspots": [
+      {
+        "gx": 0.7214,
+        "gy": 0.6023,
+        "count": 37,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7709,
+        "gy": 0.4133,
+        "count": 30,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5122,
+        "gy": 0.7511,
+        "count": 18,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5856,
+        "gy": 0.1517,
+        "count": 13,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.6106,
+        "gy": 0.7038,
+        "count": 10,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.6755,
+        "gy": 0.8977,
+        "count": 8,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5123,
+        "gy": 0.8038,
+        "count": 7,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5298,
+        "gy": 0.6932,
+        "count": 6,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.4645,
+        "gy": 0.1804,
+        "count": 5,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7888,
+        "gy": 0.5056,
+        "count": 5,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.3572,
+        "gy": 0.7555,
+        "count": 5,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.4342,
+        "gy": 0.7655,
+        "count": 5,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7489,
+        "gy": 0.5559,
+        "count": 5,
+        "matches": [
+          1,
+          6
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.6955,
+        "gy": 0.3651,
+        "count": 21,
+        "matches": [
+          1
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.7464,
+        "gy": 0.2711,
+        "count": 9,
+        "matches": [
+          1
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.3903,
+        "gy": 0.6117,
+        "count": 6,
+        "matches": [
+          6
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.7433,
+        "gy": 0.0909,
+        "count": 5,
+        "matches": [
+          1
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.6864,
+        "gy": 0.0766,
+        "count": 5,
+        "matches": [
+          1
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.7832,
+        "gy": 0.1323,
+        "count": 5,
+        "matches": [
+          1
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.756,
+        "gy": 0.1895,
+        "count": 5,
+        "matches": [
+          1
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.7724,
+        "gy": 0.2286,
+        "count": 5,
+        "matches": [
+          1
+        ],
+        "tier": "A"
+      }
+    ]
+  },
+  "miramar": {
+    "n_markers": 231,
+    "n_clusters": 17,
+    "hotspots": [
+      {
+        "gx": 0.7123,
+        "gy": 0.1811,
+        "count": 28,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5346,
+        "gy": 0.1756,
+        "count": 11,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.6015,
+        "gy": 0.2173,
+        "count": 11,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7306,
+        "gy": 0.8445,
+        "count": 11,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7497,
+        "gy": 0.7807,
+        "count": 10,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.3753,
+        "gy": 0.2047,
+        "count": 10,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.8174,
+        "gy": 0.6333,
+        "count": 9,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.3095,
+        "gy": 0.823,
+        "count": 9,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7998,
+        "gy": 0.6055,
+        "count": 8,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.8153,
+        "gy": 0.6981,
+        "count": 8,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7637,
+        "gy": 0.2491,
+        "count": 7,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5781,
+        "gy": 0.2687,
+        "count": 7,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.7599,
+        "gy": 0.7182,
+        "count": 6,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.2942,
+        "gy": 0.7817,
+        "count": 5,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.8077,
+        "gy": 0.5101,
+        "count": 5,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5231,
+        "gy": 0.2484,
+        "count": 5,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      },
+      {
+        "gx": 0.5627,
+        "gy": 0.4531,
+        "count": 5,
+        "matches": [
+          2,
+          5
+        ],
+        "tier": "S"
+      }
+    ]
+  },
+  "rondo": {
+    "n_markers": 211,
+    "n_clusters": 8,
+    "hotspots": [
+      {
+        "gx": 0.3301,
+        "gy": 0.5434,
+        "count": 11,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.4787,
+        "gy": 0.61,
+        "count": 10,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.371,
+        "gy": 0.314,
+        "count": 6,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.4933,
+        "gy": 0.397,
+        "count": 5,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.6318,
+        "gy": 0.394,
+        "count": 5,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.3656,
+        "gy": 0.6269,
+        "count": 5,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.5286,
+        "gy": 0.8063,
+        "count": 5,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.3851,
+        "gy": 0.7741,
+        "count": 5,
+        "matches": [
+          3
+        ],
+        "tier": "A"
+      }
+    ]
+  },
+  "taego": {
+    "n_markers": 144,
+    "n_clusters": 5,
+    "hotspots": [
+      {
+        "gx": 0.5448,
+        "gy": 0.5717,
+        "count": 8,
+        "matches": [
+          4
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.3823,
+        "gy": 0.2809,
+        "count": 7,
+        "matches": [
+          4
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.6636,
+        "gy": 0.5672,
+        "count": 6,
+        "matches": [
+          4
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.5775,
+        "gy": 0.6554,
+        "count": 6,
+        "matches": [
+          4
+        ],
+        "tier": "A"
+      },
+      {
+        "gx": 0.4942,
+        "gy": 0.3916,
+        "count": 5,
+        "matches": [
+          4
+        ],
+        "tier": "A"
+      }
+    ]
+  }
+}

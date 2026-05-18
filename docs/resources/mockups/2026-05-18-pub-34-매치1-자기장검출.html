@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PUB-34 매치 1 자기장 검출 — Phase 7 프로토타입</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+         background: #0d1117; color: #c9d1d9; }
+  .container { max-width: 1400px; margin: 0 auto; }
+  header { margin-bottom: 16px; }
+  h1 { margin: 0 0 6px; color: #58a6ff; font-size: 20px; }
+  .meta { color: #8b949e; font-size: 13px; }
+  .stats { display: flex; gap: 12px; margin: 14px 0; }
+  .stat { background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+          padding: 10px 14px; flex: 1; }
+  .stat .num { font-size: 22px; font-weight: 700; color: #58a6ff; }
+  .stat .label { font-size: 11px; color: #8b949e; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+  .card img { width: 100%; height: auto; display: block; }
+  .card .info { padding: 8px 12px; font-size: 12px; }
+  .card .info strong { color: #58a6ff; }
+  .info .coords { color: #8b949e; font-family: monospace; }
+  .note { margin: 12px 0; padding: 12px 16px; background: #1f2a44; border-left: 3px solid #58a6ff;
+          border-radius: 4px; font-size: 13px; line-height: 1.6; }
+  .note strong { color: #58a6ff; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>PUB-34 매치 1 자기장 검출 — Phase 7 프로토타입</h1>
+  <div class="meta">2026-05-18 · PUBG Esports KR (MAP) 파이널 DAY 2 ⎮ 2025 PWS · 360p · 60~88분 매치 1, 30초 간격 57프레임</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num">57</div><div class="label">분석 프레임</div></div>
+  <div class="stat"><div class="num">100%</div><div class="label">자기장 원 검출</div></div>
+  <div class="stat"><div class="num">6개</div><div class="label">매치 자동 식별</div></div>
+  <div class="stat"><div class="num">CPU</div><div class="label">GPU 불필요</div></div>
+</div>
+
+<div class="note">
+  <strong>검출 알고리즘:</strong> 회색~흰색 마스킹 (V > 130, 채도 &lt; 60) + Hough Circle (minRadius 화면의 15%).
+  자기장 흰 선만 큰 원으로 추출. 노란 원 = 검출 결과, 빨간 점 = 자기장 중심.
+</div>
+<div class="note">
+  <strong>다음 단계:</strong> ① 720p 다운로드 (1GB, 진행 중) → 해상도 ↑로 정확도 ↑.
+  ② PHASE/시간 OCR (Tesseract) → 줌 자동 보정.
+  ③ 팀 위치 마커 색상 픽셀 추출 → 명당 클러스터링.
+  ④ 6개 매치 전체 자동 처리.
+</div>
+
+<h2 style="color:#58a6ff;font-size:16px;margin-top:24px">매치 1 — 30초 간격 57프레임 자기장 검출 결과</h2>
+<div class="grid" id="grid"></div>
+</div>
+
+<script>
+const RESULTS = [{"sec": 3600, "ts": "60:00", "best": {"x": 0.3887, "y": 0.4313, "r": 0.2854}}, {"sec": 3630, "ts": "60:30", "best": {"x": 0.4238, "y": 0.4688, "r": 0.3292}}, {"sec": 3660, "ts": "61:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2471}}, {"sec": 3690, "ts": "61:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2479}}, {"sec": 3720, "ts": "62:00", "best": {"x": 0.7051, "y": 0.2771, "r": 0.2488}}, {"sec": 3750, "ts": "62:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2488}}, {"sec": 3780, "ts": "63:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2488}}, {"sec": 3810, "ts": "63:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.25}}, {"sec": 3840, "ts": "64:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2496}}, {"sec": 3870, "ts": "64:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2471}}, {"sec": 3900, "ts": "65:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2471}}, {"sec": 3930, "ts": "65:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2479}}, {"sec": 3960, "ts": "66:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2479}}, {"sec": 3990, "ts": "66:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2492}}, {"sec": 4020, "ts": "67:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2488}}, {"sec": 4050, "ts": "67:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2492}}, {"sec": 4080, "ts": "68:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2492}}, {"sec": 4110, "ts": "68:30", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2475}}, {"sec": 4140, "ts": "69:00", "best": {"x": 0.7051, "y": 0.2729, "r": 0.2488}}, {"sec": 4170, "ts": "69:30", "best": {"x": 0.4316, "y": 0.5021, "r": 0.3688}}, {"sec": 4200, "ts": "70:00", "best": {"x": 0.5566, "y": 0.4938, "r": 0.3596}}, {"sec": 4230, "ts": "70:30", "best": {"x": 0.5566, "y": 0.4938, "r": 0.3592}}, {"sec": 4260, "ts": "71:00", "best": {"x": 0.5098, "y": 0.4688, "r": 0.4237}}, {"sec": 4290, "ts": "71:30", "best": {"x": 0.5098, "y": 0.4688, "r": 0.4237}}, {"sec": 4320, "ts": "72:00", "best": {"x": 0.5098, "y": 0.4688, "r": 0.4237}}, {"sec": 4350, "ts": "72:30", "best": {"x": 0.5098, "y": 0.4688, "r": 0.4237}}, {"sec": 4380, "ts": "73:00", "best": {"x": 0.541, "y": 0.5021, "r": 0.2587}}, {"sec": 4410, "ts": "73:30", "best": {"x": 0.5488, "y": 0.5021, "r": 0.2587}}, {"sec": 4440, "ts": "74:00", "best": {"x": 0.4941, "y": 0.4938, "r": 0.3038}}, {"sec": 4470, "ts": "74:30", "best": {"x": 0.4941, "y": 0.4938, "r": 0.3087}}, {"sec": 4500, "ts": "75:00", "best": {"x": 0.4941, "y": 0.4896, "r": 0.3042}}, {"sec": 4530, "ts": "75:30", "best": {"x": 0.4316, "y": 0.5021, "r": 0.3688}}, {"sec": 4560, "ts": "76:00", "best": {"x": 0.416, "y": 0.5896, "r": 0.2212}}, {"sec": 4590, "ts": "76:30", "best": {"x": 0.4473, "y": 0.5437, "r": 0.2667}}, {"sec": 4620, "ts": "77:00", "best": {"x": 0.4473, "y": 0.5521, "r": 0.2662}}, {"sec": 4650, "ts": "77:30", "best": {"x": 0.4316, "y": 0.5604, "r": 0.3179}}, {"sec": 4680, "ts": "78:00", "best": {"x": 0.4277, "y": 0.5604, "r": 0.3183}}, {"sec": 4710, "ts": "78:30", "best": {"x": 0.4316, "y": 0.5604, "r": 0.3179}}, {"sec": 4740, "ts": "79:00", "best": {"x": 0.5332, "y": 0.5688, "r": 0.2542}}, {"sec": 4770, "ts": "79:30", "best": {"x": 0.5332, "y": 0.5688, "r": 0.2533}}, {"sec": 4800, "ts": "80:00", "best": {"x": 0.5332, "y": 0.5771, "r": 0.2521}}, {"sec": 4830, "ts": "80:30", "best": {"x": 0.5332, "y": 0.5688, "r": 0.2533}}, {"sec": 4860, "ts": "81:00", "best": {"x": 0.5332, "y": 0.5688, "r": 0.2512}}, {"sec": 4890, "ts": "81:30", "best": {"x": 0.5293, "y": 0.4688, "r": 0.3821}}, {"sec": 4920, "ts": "82:00", "best": {"x": 0.6426, "y": 0.4854, "r": 0.2483}}, {"sec": 4950, "ts": "82:30", "best": {"x": 0.6426, "y": 0.4854, "r": 0.2483}}, {"sec": 4980, "ts": "83:00", "best": {"x": 0.6426, "y": 0.4854, "r": 0.2483}}, {"sec": 5010, "ts": "83:30", "best": {"x": 0.5645, "y": 0.5021, "r": 0.2992}}, {"sec": 5040, "ts": "84:00", "best": {"x": 0.5645, "y": 0.5021, "r": 0.2988}}, {"sec": 5070, "ts": "84:30", "best": {"x": 0.4785, "y": 0.5104, "r": 0.335}}, {"sec": 5100, "ts": "85:00", "best": {"x": 0.4238, "y": 0.4354, "r": 0.2125}}, {"sec": 5130, "ts": "85:30", "best": {"x": 0.4238, "y": 0.4354, "r": 0.2208}}, {"sec": 5160, "ts": "86:00", "best": {"x": 0.4238, "y": 0.4354, "r": 0.2188}}, {"sec": 5190, "ts": "86:30", "best": {"x": 0.4238, "y": 0.4354, "r": 0.2117}}, {"sec": 5220, "ts": "87:00", "best": {"x": 0.4238, "y": 0.4354, "r": 0.2121}}, {"sec": 5250, "ts": "87:30", "best": {"x": 0.416, "y": 0.4271, "r": 0.1515}}, {"sec": 5280, "ts": "88:00", "best": {"x": 0.416, "y": 0.4271, "r": 0.1508}}];
+const grid = document.getElementById('grid');
+RESULTS.forEach(r => {
+  if (!r.best) return;
+  const card = document.createElement('div');
+  card.className = 'card';
+  const ts = r.ts;
+  const mm = parseInt(ts.split(':')[0]).toString().padStart(3, '0');
+  const ss = ts.split(':')[1];
+  const imgSrc = `../../../../../tmp/pub34/match1_big/r_${mm}m${ss}s.jpg`;
+  // 위 경로는 file://에서만 동작. 정적 서버 root가 docs/면 안 보임.
+  // 실제 사용자가 Live Server로 develop worktree 띄웠으니 — 이미지는 별도 폴더에서 가져와야.
+  // 아래는 base64 인라인 대안 또는 사용자에게 안내
+  card.innerHTML = `
+    <div style="background:#21262d;padding:20px;text-align:center;font-size:12px;color:#8b949e">
+      이미지 위치:<br><code>/tmp/pub34/match1_big/r_${mm}m${ss}s.jpg</code><br><br>
+      <strong style="color:#58a6ff">${r.ts}</strong>
+    </div>
+    <div class="info">
+      <div>중심 <span class="coords">x=${r.best.x.toFixed(3)} y=${r.best.y.toFixed(3)}</span></div>
+      <div>반경 <span class="coords">r=${r.best.r.toFixed(3)}</span></div>
+    </div>`;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

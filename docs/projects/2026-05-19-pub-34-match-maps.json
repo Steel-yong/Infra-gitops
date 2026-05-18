@@ -1,0 +1,86 @@
+[
+  {
+    "match": 1,
+    "minute": 60,
+    "map": "erangel",
+    "land_ratio": 0.517,
+    "aspect": 1.09,
+    "avg_rgb": [
+      61,
+      64,
+      53
+    ],
+    "south_island_ratio": 0.107,
+    "east_south_ratio": 0.0
+  },
+  {
+    "match": 2,
+    "minute": 93,
+    "map": "unknown",
+    "land_ratio": 0.414,
+    "aspect": 1.362,
+    "avg_rgb": [
+      123,
+      121,
+      127
+    ],
+    "south_island_ratio": 0.086,
+    "east_south_ratio": 0.008
+  },
+  {
+    "match": 3,
+    "minute": 140,
+    "map": "unknown",
+    "land_ratio": 0.415,
+    "aspect": 1.362,
+    "avg_rgb": [
+      123,
+      121,
+      127
+    ],
+    "south_island_ratio": 0.086,
+    "east_south_ratio": 0.008
+  },
+  {
+    "match": 4,
+    "minute": 182,
+    "map": "unknown",
+    "land_ratio": 0.413,
+    "aspect": 1.362,
+    "avg_rgb": [
+      123,
+      122,
+      127
+    ],
+    "south_island_ratio": 0.086,
+    "east_south_ratio": 0.008
+  },
+  {
+    "match": 5,
+    "minute": 221,
+    "map": "unknown",
+    "land_ratio": 0.414,
+    "aspect": 1.362,
+    "avg_rgb": [
+      123,
+      121,
+      127
+    ],
+    "south_island_ratio": 0.086,
+    "east_south_ratio": 0.008
+  },
+  {
+    "match": 6,
+    "minute": 256,
+    "map": "erangel",
+    "land_ratio": 0.479,
+    "aspect": 1.06,
+    "avg_rgb": [
+      59,
+      61,
+      50
+    ],
+    "south_island_ratio": 0.106,
+    "east_south_ratio": 0.0
+  }
+]
