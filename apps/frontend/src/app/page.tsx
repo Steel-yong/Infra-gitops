@@ -108,7 +108,7 @@ export default function Page() {
 
       <div className={styles.body}>
         {/* ── 왼쪽 사이드바: 맵 선택 + 알림 설정 ── */}
-        <aside className={styles.sidebar}>
+        <aside className={styles.sidebar} aria-label="설정 사이드바">
           <div className={styles.sideSection}>
             <p className={styles.sideSectionLabel}>맵 선택</p>
             <div className={styles.mapButtons} role="group" aria-label="맵 선택">
@@ -166,13 +166,6 @@ export default function Page() {
             )}
           </div>
 
-          <div className={styles.sideSection} style={{ flex: 1, overflowY: 'auto' }}>
-            <LocationPanel
-              locations={locations}
-              circleData={circleData}
-              error={locationError}
-            />
-          </div>
         </aside>
 
         {/* ── 가운데: 화면공유 섹션 (3.5) ── */}
@@ -189,10 +182,11 @@ export default function Page() {
             {captureError && (
               <p className={styles.captureError}>{captureError}</p>
             )}
-            {isCapturing && lockedCircle && (
+            {isCapturing && (
               <button
                 type="button"
                 onClick={unlockCircle}
+                disabled={!lockedCircle}
                 aria-label="자기장 위치 다시 잡기"
                 style={{
                   padding: '6px 12px',
@@ -201,7 +195,8 @@ export default function Page() {
                   border: '1px solid rgba(255, 170, 60, 0.45)',
                   borderRadius: '6px',
                   fontSize: '0.85rem',
-                  cursor: 'pointer',
+                  cursor: lockedCircle ? 'pointer' : 'not-allowed',
+                  opacity: lockedCircle ? 1 : 0.5,
                 }}
               >
                 자기장 다시 잡기
@@ -226,14 +221,33 @@ export default function Page() {
           </div>
         </div>
 
-        {/* ── 오른쪽: 맵 영역 (6.5) ── */}
+        {/* ── 맵 영역 (6.5) ── */}
         <div className={styles.mapArea}>
-          <MapCanvas mapType={mapType}>
-            <StashMarkers stashes={stashes} />
-            <CircleOverlay circleData={lockedCircle} />
-            <LocationMarkers locations={locations} />
-          </MapCanvas>
+          <div className={styles.mapAreaHeader}>
+            <p className={styles.sideSectionLabel}>지도</p>
+          </div>
+          <div className={styles.mapAreaCanvas}>
+            <MapCanvas mapType={mapType}>
+              <StashMarkers stashes={stashes} />
+              <CircleOverlay circleData={lockedCircle} />
+              <LocationMarkers locations={locations} />
+            </MapCanvas>
+          </div>
         </div>
+
+        {/* ── 오른쪽 사이드바: 위치 추천 ── */}
+        <aside className={styles.rightSidebar} aria-label="위치 추천 사이드바">
+          <div className={styles.sideSection}>
+            <p className={styles.sideSectionLabel}>추천 위치</p>
+          </div>
+          <div className={styles.sideSection} style={{ flex: 1, overflowY: 'auto' }}>
+            <LocationPanel
+              locations={locations}
+              circleData={circleData}
+              error={locationError}
+            />
+          </div>
+        </aside>
       </div>
     </main>
   );

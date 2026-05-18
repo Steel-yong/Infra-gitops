@@ -15,8 +15,20 @@ vi.mock('next/dynamic', () => ({
 
 vi.mock('socket.io-client', () => ({ io: vi.fn(() => ({ on: vi.fn(), emit: vi.fn(), disconnect: vi.fn() })) }));
 
+// setter들을 stable 인스턴스로 유지 — 매 호출마다 새 vi.fn() 생성 시
+// useEffect dep가 매 render 변경되어 무한 루프 발생함.
+const stableCaptureSocketMock = {
+  sendFrame: vi.fn(),
+  setIsShrinking: vi.fn(),
+  setCurrentPhase: vi.fn(),
+  setParentCircle: vi.fn(),
+};
 vi.mock('../hooks/useCaptureSocket', () => ({
-  useCaptureSocket: vi.fn(() => ({ circleData: null, sendFrame: vi.fn(), connected: false })),
+  useCaptureSocket: vi.fn(() => ({
+    circleData: null,
+    ...stableCaptureSocketMock,
+    connected: false,
+  })),
 }));
 
 vi.mock('../hooks/useScreenCapture', () => ({
@@ -40,6 +52,7 @@ vi.mock('../hooks/useOcrTimer', () => ({
     rawText: '',
     remainingSeconds: null,
     isShrinking: false,
+    currentPhase: null,
     cropDataUrl: null,
     region: null,
     attempts: 0,
@@ -87,9 +100,10 @@ describe('Page', () => {
     expect(screen.getByRole('button', { name: '알림 권한 허용' })).toBeInTheDocument();
   });
 
-  it('사이드바와 맵 영역이 렌더링된다', () => {
+  it('좌·우 사이드바와 맵 영역이 렌더링된다', () => {
     render(<Page />);
-    expect(screen.getByRole('complementary')).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: '설정 사이드바' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: '위치 추천 사이드바' })).toBeInTheDocument();
     expect(screen.getByTestId('map-canvas')).toBeInTheDocument();
   });
 

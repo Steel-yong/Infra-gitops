@@ -18,13 +18,14 @@ function MapUpdater({ mapType }: { mapType: MapType }) {
   const map = useMap();
   useEffect(() => {
     map.fitBounds(BOUNDS, { padding: [0, 0] });
-    // 컨테이너 폭 기준으로 지도가 꽉 차도록 줌 보정
     const size = map.getSize();
     if (size.x > size.y) {
       const currentZoom = map.getZoom();
       const ratio = size.x / size.y;
       map.setZoom(currentZoom + Math.log2(ratio), { animate: false });
     }
+    // 보정된 줌을 최소 줌으로 고정 — 사용자가 더 축소해서 맵이 작아지지 않게.
+    map.setMinZoom(map.getZoom());
   }, [mapType, map]);
   return null;
 }
@@ -45,6 +46,8 @@ export default function MapCanvas({ mapType, children }: MapCanvasProps) {
       <MapContainer
         crs={CRS.Simple}
         bounds={BOUNDS}
+        maxBounds={BOUNDS}
+        maxBoundsViscosity={1.0}
         className={styles.map}
         zoomControl
         attributionControl={false}

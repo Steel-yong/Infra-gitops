@@ -30,7 +30,6 @@ export function TimerPanel({ state, isCapturing, phase = null }: TimerPanelProps
     return (
       <div className={styles.panel}>
         <p className={styles.sectionLabel}>자기장 타이머</p>
-        <p className={styles.idleMsg}>화면공유 시작 후 OCR 인식이 시작됩니다.</p>
       </div>
     );
   }
