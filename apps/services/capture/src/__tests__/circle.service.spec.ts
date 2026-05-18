@@ -55,9 +55,10 @@ describe('CircleService', () => {
 
   it('원 중심 좌표를 0~1 정규화해서 반환', async () => {
     const w = 400, h = 400;
-    const cx = 200, cy = 200, r = 80;
+    // 페이즈 1 기대 반경 = PUBG_PHASE_RADII[0] * size = 0.24474 * 400 ≈ 98
+    const cx = 200, cy = 200, r = 98;
     const base64 = await makeImageWithCircle(w, h, cx, cy, r);
-    const result = await service.extractCircle(base64);
+    const result = await service.extractCircle(base64, 1);
 
     expect(result).not.toBeNull();
     // 중심이 이미지 중앙(0.5) 근처여야 함 (±0.1 허용)
@@ -70,13 +71,14 @@ describe('CircleService', () => {
 
   it('원이 오프셋된 경우 좌표 반환', async () => {
     const w = 400, h = 400;
-    // 원 중심 (100, 300), 반경 60
-    const base64 = await makeImageWithCircle(w, h, 100, 300, 60);
-    const result = await service.extractCircle(base64);
+    // 페이즈 1 기대 반경 98 — 원 중심 (150, 250)
+    const base64 = await makeImageWithCircle(w, h, 150, 250, 98);
+    const result = await service.extractCircle(base64, 1);
 
     expect(result).not.toBeNull();
-    expect(result!.x).toBeCloseTo(100 / w, 0);
-    expect(result!.y).toBeCloseTo(300 / h, 0);
+    // cropMapArea가 height 기준 정사각형 crop (offsetX=0). 0~1은 size=400 기준
+    expect(result!.x).toBeCloseTo(150 / w, 0);
+    expect(result!.y).toBeCloseTo(250 / h, 0);
   });
 
   it('흰색 픽셀이 일직선(수평)이면 null 반환 (원 피팅 불가)', async () => {
