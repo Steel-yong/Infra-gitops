@@ -73,8 +73,32 @@ def apply_transform(px: float, py: float,
     return x_t[0]*px + x_t[1], y_t[0]*py + y_t[1]
 
 
-# PUB-34 매치 1 OCR로 도출된 기본 변환식 (페이즈 1 시점 기준)
-DEFAULT_TRANSFORM_ERANGEL = ((1.0657, 0.0475), (1.0000, 0.0416))
+# PUB-35: 사용자 calibration 기반 1:1 변환
+# (MAP) 뷰 영역 측정: 사용자 4모서리 점 → x 0.219~0.782 (너비 0.563), y 0.001~0.998
+# zone_detector가 이미 0.219~0.782 영역으로 정규화 → 그 결과 = 게임 좌표 (1:1)
+DEFAULT_TRANSFORM_ERANGEL = ((1.0, 0.0), (1.0, 0.0))
+
+
+def to_grid_cell(gx: float, gy: float) -> str:
+    """게임 좌표 (0~1) → PUBG 8×8 격자 셀 (AI~HP).
+    A~H = 동서 column (0~7), I~P = 남북 row (0~7) — PUBG 인게임 표기.
+    한 셀 = 0.125 정규화 = 1km × 1km.
+    예: 포친키 = DM (D column, M row).
+    """
+    if not (0 <= gx <= 1 and 0 <= gy <= 1):
+        return '?'
+    col = min(int(gx * 8), 7)
+    row = min(int(gy * 8), 7)
+    return f"{'ABCDEFGH'[col]}{'IJKLMNOP'[row]}"
+
+
+def cell_to_coord(cell: str) -> tuple[float, float] | None:
+    """격자 셀 (예: DM) → 셀 중심 게임 좌표."""
+    if len(cell) != 2: return None
+    if cell[0] not in 'ABCDEFGH' or cell[1] not in 'IJKLMNOP': return None
+    col = ord(cell[0]) - ord('A')
+    row = ord(cell[1]) - ord('I')
+    return (col * 0.125 + 0.0625, row * 0.125 + 0.0625)
 
 
 def derive_transform_from_zone(zone: dict, prev_transform: tuple, phase: int):

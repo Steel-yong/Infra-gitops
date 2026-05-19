@@ -170,80 +170,51 @@ async function main(): Promise<void> {
   console.log(`에란겔 비밀창고 ${ERANGEL_STASHES.length}개 완료`);
   console.log(`태이고 비밀창고 ${TAEGO_STASHES.length}개 완료`);
 
-  // ── 에란겔 명당 — PUB-35 영상 분석 v2 (대도시 제외 + 매치 다양성) ──
-  // 알고리즘: 페이즈 1 마커 → 대도시 자동 검출 → 도시 외 클러스터링 + 매치 다양성 가중
-  // 대도시 18곳 자동 검출 + 진짜 명당 67곳 (도시 안 제외)
-  // 사용자 통찰 반영: 대도시 드롭=시작위치(제외), 외곽 작은마을/능선/호=진짜 명당
-  // tier: S=10+매치, A=5~9매치, B=3~4매치 (매치 다양성 기준)
+  // ── 에란겔 명당 — PUB-35 v6 격자 셀 (PUBG 인게임 표기 AI~HP) ──
+  // 53 영상, 마커 44,297, 8×8 격자, 사용자 calibration 1~2px 정확
+  // 검증: 포친키=DM, 야스나야=EJ, 학교=EL, 군사기지=DO, 미타=GM 5/6 ✓
+  // 39곳 (매치 ≥3, 마커 ≥10), tier: S=50+매치 / A=20~49 / B=3~19
   type Tier = 'S' | 'A' | 'B';
   const ERANGEL_PRO: { id: string; coordX: number; coordY: number; tier: Tier; teams: string[] }[] = [
-    { id: 'er-pws-001', coordX: 0.5354, coordY: 0.7266, tier: 'S', teams: ['프로팀 19매치'] },  // 외곽 작은 마을 (186마커, 도시영향 0.41)
-    { id: 'er-pws-002', coordX: 0.4930, coordY: 0.5198, tier: 'S', teams: ['프로팀 16매치'] },  // 능선/호 (87마커, 도시영향 0.10)
-    { id: 'er-pws-003', coordX: 0.6106, coordY: 0.6987, tier: 'S', teams: ['프로팀 18매치'] },  // 외곽 작은 마을 (113마커, 도시영향 0.34)
-    { id: 'er-pws-004', coordX: 0.4315, coordY: 0.7889, tier: 'S', teams: ['프로팀 14매치'] },  // 능선/호 (70마커, 도시영향 0.15)
-    { id: 'er-pws-005', coordX: 0.4893, coordY: 0.5975, tier: 'S', teams: ['프로팀 10매치'] },  // 능선/호 (47마커, 도시영향 0.08)
-    { id: 'er-pws-006', coordX: 0.4693, coordY: 0.9215, tier: 'A', teams: ['프로팀 9매치'] },  // 능선/호 (56마커, 도시영향 0.14)
-    { id: 'er-pws-007', coordX: 0.3243, coordY: 0.5353, tier: 'S', teams: ['프로팀 11매치'] },  // 능선/호 (37마커, 도시영향 0.11)
-    { id: 'er-pws-008', coordX: 0.4428, coordY: 0.4534, tier: 'S', teams: ['프로팀 10매치'] },  // 능선/호 (35마커, 도시영향 0.07)
-    { id: 'er-pws-009', coordX: 0.6253, coordY: 0.5883, tier: 'S', teams: ['프로팀 14매치'] },  // 외곽 작은 마을 (39마커, 도시영향 0.24)
-    { id: 'er-pws-010', coordX: 0.4663, coordY: 0.3687, tier: 'S', teams: ['프로팀 11매치'] },  // 외곽 작은 마을 (43마커, 도시영향 0.23)
-    { id: 'er-pws-011', coordX: 0.6219, coordY: 0.2212, tier: 'S', teams: ['프로팀 11매치'] },  // 능선/호 (32마커, 도시영향 0.18)
-    { id: 'er-pws-012', coordX: 0.6622, coordY: 0.3664, tier: 'A', teams: ['프로팀 6매치'] },  // 능선/호 (33마커, 도시영향 0.03)
-    { id: 'er-pws-013', coordX: 0.7158, coordY: 0.8938, tier: 'A', teams: ['프로팀 6매치'] },  // 능선/호 (29마커, 도시영향 0.02)
-    { id: 'er-pws-014', coordX: 0.6958, coordY: 0.5043, tier: 'A', teams: ['프로팀 8매치'] },  // 능선/호 (25마커, 도시영향 0.09)
-    { id: 'er-pws-015', coordX: 0.4266, coordY: 0.2557, tier: 'A', teams: ['프로팀 7매치'] },  // 능선/호 (31마커, 도시영향 0.14)
-    { id: 'er-pws-016', coordX: 0.4812, coordY: 0.7537, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (26마커, 도시영향 0.10)
-    { id: 'er-pws-017', coordX: 0.5990, coordY: 0.9860, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (36마커, 도시영향 0.01)
-    { id: 'er-pws-018', coordX: 0.7195, coordY: 0.6561, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (32마커, 도시영향 0.19)
-    { id: 'er-pws-019', coordX: 0.8349, coordY: 0.7270, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (36마커, 도시영향 0.03)
-    { id: 'er-pws-020', coordX: 0.8654, coordY: 0.0854, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (34마커, 도시영향 0.00)
-    { id: 'er-pws-021', coordX: 0.8428, coordY: 0.2136, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (26마커, 도시영향 0.03)
-    { id: 'er-pws-022', coordX: 0.3860, coordY: 0.2807, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (18마커, 도시영향 0.05)
-    { id: 'er-pws-023', coordX: 0.5105, coordY: 0.6950, tier: 'A', teams: ['프로팀 8매치'] },  // 외곽 작은 마을 (25마커, 도시영향 0.34)
-    { id: 'er-pws-024', coordX: 0.5768, coordY: 0.3727, tier: 'A', teams: ['프로팀 9매치'] },  // 외곽 작은 마을 (15마커, 도시영향 0.25)
-    { id: 'er-pws-025', coordX: 0.5699, coordY: 0.6055, tier: 'A', teams: ['프로팀 7매치'] },  // 외곽 작은 마을 (19마커, 도시영향 0.27)
-    { id: 'er-pws-026', coordX: 0.4006, coordY: 0.6352, tier: 'A', teams: ['프로팀 9매치'] },  // 외곽 작은 마을 (22마커, 도시영향 0.39)
-    { id: 'er-pws-027', coordX: 0.4405, coordY: 0.2110, tier: 'A', teams: ['프로팀 7매치'] },  // 능선/호 (14마커, 도시영향 0.16)
-    { id: 'er-pws-028', coordX: 0.4617, coordY: 0.1702, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (16마커, 도시영향 0.11)
-    { id: 'er-pws-029', coordX: 0.7269, coordY: 0.8501, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (17마커, 도시영향 0.04)
-    { id: 'er-pws-030', coordX: 0.9059, coordY: 0.8389, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (20마커, 도시영향 0.00)
-    { id: 'er-pws-031', coordX: 0.5574, coordY: 0.8164, tier: 'A', teams: ['프로팀 6매치'] },  // 능선/호 (15마커, 도시영향 0.18)
-    { id: 'er-pws-032', coordX: 0.6939, coordY: 0.5989, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (15마커, 도시영향 0.11)
-    { id: 'er-pws-033', coordX: 0.5161, coordY: 0.5102, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (16마커, 도시영향 0.15)
-    { id: 'er-pws-034', coordX: 0.6434, coordY: 0.8706, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (15마커, 도시영향 0.04)
-    { id: 'er-pws-035', coordX: 0.5990, coordY: 0.3439, tier: 'A', teams: ['프로팀 6매치'] },  // 능선/호 (12마커, 도시영향 0.12)
-    { id: 'er-pws-036', coordX: 0.7385, coordY: 0.3403, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (15마커, 도시영향 0.05)
-    { id: 'er-pws-037', coordX: 0.4253, coordY: 0.4096, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (16마커, 도시영향 0.08)
-    { id: 'er-pws-038', coordX: 0.8209, coordY: 0.6839, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (16마커, 도시영향 0.08)
-    { id: 'er-pws-039', coordX: 0.4436, coordY: 0.5588, tier: 'A', teams: ['프로팀 6매치'] },  // 능선/호 (13마커, 도시영향 0.17)
-    { id: 'er-pws-040', coordX: 0.5281, coordY: 0.4757, tier: 'A', teams: ['프로팀 8매치'] },  // 외곽 작은 마을 (11마커, 도시영향 0.22)
-    { id: 'er-pws-041', coordX: 0.6050, coordY: 0.8371, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (19마커, 도시영향 0.07)
-    { id: 'er-pws-042', coordX: 0.6443, coordY: 0.5455, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (25마커, 도시영향 0.20)
-    { id: 'er-pws-043', coordX: 0.7634, coordY: 0.2051, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (23마커, 도시영향 0.18)
-    { id: 'er-pws-044', coordX: 0.4182, coordY: 0.4947, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (10마커, 도시영향 0.06)
-    { id: 'er-pws-045', coordX: 0.7537, coordY: 0.1497, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (13마커, 도시영향 0.09)
-    { id: 'er-pws-046', coordX: 0.5450, coordY: 0.9331, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (15마커, 도시영향 0.09)
-    { id: 'er-pws-047', coordX: 0.7750, coordY: 0.3107, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (14마커, 도시영향 0.06)
-    { id: 'er-pws-048', coordX: 0.8067, coordY: 0.2979, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (10마커, 도시영향 0.05)
-    { id: 'er-pws-049', coordX: 0.9007, coordY: 0.5584, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (13마커, 도시영향 0.05)
-    { id: 'er-pws-050', coordX: 0.4462, coordY: 0.7159, tier: 'A', teams: ['프로팀 5매치'] },  // 외곽 작은 마을 (11마커, 도시영향 0.21)
-    { id: 'er-pws-051', coordX: 0.5851, coordY: 0.2461, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (9마커, 도시영향 0.13)
-    { id: 'er-pws-052', coordX: 0.3521, coordY: 0.7575, tier: 'A', teams: ['프로팀 6매치'] },  // 외곽 작은 마을 (13마커, 도시영향 0.34)
-    { id: 'er-pws-053', coordX: 0.6920, coordY: 0.1614, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (12마커, 도시영향 0.19)
-    { id: 'er-pws-054', coordX: 0.5853, coordY: 0.9108, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (12마커, 도시영향 0.07)
-    { id: 'er-pws-055', coordX: 0.8129, coordY: 0.6367, tier: 'A', teams: ['프로팀 5매치'] },  // 외곽 작은 마을 (11마커, 도시영향 0.26)
-    { id: 'er-pws-056', coordX: 0.7212, coordY: 0.7758, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (14마커, 도시영향 0.20)
-    { id: 'er-pws-057', coordX: 0.4047, coordY: 0.5342, tier: 'A', teams: ['프로팀 5매치'] },  // 능선/호 (8마커, 도시영향 0.18)
-    { id: 'er-pws-058', coordX: 0.5508, coordY: 0.4432, tier: 'A', teams: ['프로팀 5매치'] },  // 외곽 작은 마을 (10마커, 도시영향 0.27)
-    { id: 'er-pws-059', coordX: 0.7774, coordY: 0.6653, tier: 'B', teams: ['프로팀 4매치'] },  // 능선/호 (9마커, 도시영향 0.16)
-    { id: 'er-pws-060', coordX: 0.5441, coordY: 0.8964, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (12마커, 도시영향 0.19)
-    { id: 'er-pws-061', coordX: 0.3072, coordY: 0.7201, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (10마커, 도시영향 0.14)
-    { id: 'er-pws-062', coordX: 0.6432, coordY: 0.7946, tier: 'B', teams: ['프로팀 3매치'] },  // 외곽 작은 마을 (13마커, 도시영향 0.26)
-    { id: 'er-pws-063', coordX: 0.4001, coordY: 0.8911, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (8마커, 도시영향 0.07)
-    { id: 'er-pws-064', coordX: 0.7652, coordY: 0.7032, tier: 'B', teams: ['프로팀 3매치'] },  // 능선/호 (9마커, 도시영향 0.16)
-    { id: 'er-pws-065', coordX: 0.3917, coordY: 0.5572, tier: 'B', teams: ['프로팀 4매치'] },  // 외곽 작은 마을 (10마커, 도시영향 0.34)
-    { id: 'er-pws-066', coordX: 0.6867, coordY: 0.6853, tier: 'B', teams: ['프로팀 3매치'] },  // 외곽 작은 마을 (12마커, 도시영향 0.45)
-    { id: 'er-pws-067', coordX: 0.7244, coordY: 0.2576, tier: 'B', teams: ['프로팀 3매치'] },  // 외곽 작은 마을 (8마커, 도시영향 0.37)
+    { id: 'er-pws-001', coordX: 0.4260, coordY: 0.6918, tier: 'S', teams: ['DN 능선/외각 127매치'] },
+    { id: 'er-pws-002', coordX: 0.3275, coordY: 0.6745, tier: 'S', teams: ['CN 능선/외각 88매치'] },
+    { id: 'er-pws-003', coordX: 0.5587, coordY: 0.6825, tier: 'S', teams: ['EN 능선/외각 113매치'] },
+    { id: 'er-pws-004', coordX: 0.5616, coordY: 0.5592, tier: 'S', teams: ['EM 외곽 작은마을 109매치'] },
+    { id: 'er-pws-005', coordX: 0.6841, coordY: 0.5780, tier: 'S', teams: ['FM 능선/외각 85매치'] },
+    { id: 'er-pws-006', coordX: 0.4394, coordY: 0.4378, tier: 'S', teams: ['DL 능선/외각 97매치'] },
+    { id: 'er-pws-007', coordX: 0.5531, coordY: 0.4424, tier: 'S', teams: ['EL 능선/외각 97매치'] },
+    { id: 'er-pws-008', coordX: 0.4425, coordY: 0.3240, tier: 'S', teams: ['DK 능선/외각 85매치'] },
+    { id: 'er-pws-009', coordX: 0.4371, coordY: 0.5530, tier: 'S', teams: ['DM 외곽 작은마을 100매치'] },
+    { id: 'er-pws-010', coordX: 0.6649, coordY: 0.6946, tier: 'S', teams: ['FN 외곽 작은마을 93매치'] },
+    { id: 'er-pws-011', coordX: 0.3299, coordY: 0.5674, tier: 'S', teams: ['CM 능선/외각 90매치'] },
+    { id: 'er-pws-012', coordX: 0.4602, coordY: 0.8135, tier: 'S', teams: ['DO 능선/외각 75매치'] },
+    { id: 'er-pws-013', coordX: 0.5649, coordY: 0.3159, tier: 'S', teams: ['EK 외곽 작은마을 88매치'] },
+    { id: 'er-pws-014', coordX: 0.3472, coordY: 0.7861, tier: 'S', teams: ['CO 능선/외각 64매치'] },
+    { id: 'er-pws-015', coordX: 0.6938, coordY: 0.4375, tier: 'S', teams: ['FL 외곽 작은마을 83매치'] },
+    { id: 'er-pws-016', coordX: 0.7881, coordY: 0.5688, tier: 'S', teams: ['GM 능선/외각 55매치'] },
+    { id: 'er-pws-017', coordX: 0.5581, coordY: 0.1833, tier: 'S', teams: ['EJ 외곽 작은마을 64매치'] },
+    { id: 'er-pws-018', coordX: 0.3377, coordY: 0.3243, tier: 'S', teams: ['CK 능선/외각 50매치'] },
+    { id: 'er-pws-019', coordX: 0.5725, coordY: 0.8160, tier: 'S', teams: ['EO 대도시 74매치'] },
+    { id: 'er-pws-020', coordX: 0.6922, coordY: 0.8227, tier: 'S', teams: ['FO 대도시 93매치'] },
+    { id: 'er-pws-021', coordX: 0.6909, coordY: 0.1951, tier: 'S', teams: ['FJ 외곽 작은마을 56매치'] },
+    { id: 'er-pws-022', coordX: 0.3236, coordY: 0.2001, tier: 'A', teams: ['CJ 능선/외각 39매치'] },
+    { id: 'er-pws-023', coordX: 0.4366, coordY: 0.1994, tier: 'S', teams: ['DJ 대도시 62매치'] },
+    { id: 'er-pws-024', coordX: 0.3295, coordY: 0.4489, tier: 'S', teams: ['CL 대도시 71매치'] },
+    { id: 'er-pws-025', coordX: 0.6828, coordY: 0.3142, tier: 'S', teams: ['FK 대도시 61매치'] },
+    { id: 'er-pws-026', coordX: 0.7756, coordY: 0.4371, tier: 'A', teams: ['GL 외곽 작은마을 37매치'] },
+    { id: 'er-pws-027', coordX: 0.5439, coordY: 0.0984, tier: 'A', teams: ['EI 외곽 작은마을 41매치'] },
+    { id: 'er-pws-028', coordX: 0.8026, coordY: 0.7942, tier: 'A', teams: ['GO 외곽 작은마을 37매치'] },
+    { id: 'er-pws-029', coordX: 0.5523, coordY: 0.9222, tier: 'A', teams: ['EP 대도시 42매치'] },
+    { id: 'er-pws-030', coordX: 0.7870, coordY: 0.3231, tier: 'B', teams: ['GK 외곽 작은마을 19매치'] },
+    { id: 'er-pws-031', coordX: 0.7862, coordY: 0.6799, tier: 'A', teams: ['GN 대도시 36매치'] },
+    { id: 'er-pws-032', coordX: 0.4326, coordY: 0.8976, tier: 'A', teams: ['DP 대도시 37매치'] },
+    { id: 'er-pws-033', coordX: 0.4678, coordY: 0.1006, tier: 'A', teams: ['DI 능선/외각 27매치'] },
+    { id: 'er-pws-034', coordX: 0.6899, coordY: 0.0719, tier: 'A', teams: ['FI 대도시 32매치'] },
+    { id: 'er-pws-035', coordX: 0.7939, coordY: 0.2059, tier: 'B', teams: ['GJ 외곽 작은마을 16매치'] },
+    { id: 'er-pws-036', coordX: 0.8107, coordY: 0.0454, tier: 'B', teams: ['GI 능선/외각 15매치'] },
+    { id: 'er-pws-037', coordX: 0.3322, coordY: 0.9079, tier: 'B', teams: ['CP 능선/외각 10매치'] },
+    { id: 'er-pws-038', coordX: 0.6699, coordY: 0.8978, tier: 'B', teams: ['FP 외곽 작은마을 8매치'] },
+    { id: 'er-pws-039', coordX: 0.3218, coordY: 0.0963, tier: 'B', teams: ['CI 능선/외각 4매치'] },
   ];
 
   // ── 태이고 명당 — PUB-35 영상 분석 후속 작업 (PUB-36) ──

@@ -9,7 +9,7 @@ PUBG_PHASE_RADII = [
 ]
 
 
-def detect_zone(img, map_left_ratio: float = 0.22, map_right_ratio: float = 0.82) -> dict | None:
+def detect_zone(img, map_left_ratio: float = 0.219, map_right_ratio: float = 0.782) -> dict | None:
     """프레임에서 자기장 원 검출. 반환: 정규화 좌표 + 픽셀 좌표.
     map_left/right_ratio: 팀 순위/사이드바 제외 비율."""
     h, w = img.shape[:2]
