@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PUB-35 페이즈별 핫스팟 — v1 — 2026-05-19</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2028;
+    --border: #2c3441;
+    --text: #e1e7ee;
+    --muted: #8b97a7;
+    --accent: #4cc9f0;
+    --p1: #f0c75e; --p2: #6dd47e; --p3: #4cc9f0; --p4: #c084fc; --p5: #f06464;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; }
+  .container { max-width: 1600px; margin: 0 auto; padding: 24px; }
+  header { border-bottom: 2px solid var(--accent); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { margin: 0 0 6px; font-size: 24px; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: 800px 1fr; gap: 24px; }
+  .map-wrapper { position: relative; width: 800px; height: 800px; background: #0d1117; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .map-wrapper img { width: 100%; height: 100%; display: block; opacity: 0.6; }
+  .marker { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: auto; cursor: pointer; }
+  .marker.p1 { background: var(--p1); }
+  .marker.p2 { background: var(--p2); }
+  .marker.p3 { background: var(--p3); }
+  .marker.p4 { background: var(--p4); }
+  .marker.p5 { background: var(--p5); }
+  .marker.s { width: 20px; height: 20px; box-shadow: 0 0 8px currentColor; }
+  .marker.a { width: 14px; height: 14px; opacity: 0.85; }
+  .marker.b { width: 10px; height: 10px; opacity: 0.7; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .panel h2 { margin: 0 0 12px; font-size: 16px; color: var(--accent); border-left: 3px solid var(--accent); padding-left: 10px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat { background: rgba(255,255,255,0.04); padding: 10px; border-radius: 6px; text-align: center; }
+  .stat .num { font-size: 22px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat.p1 .num { color: var(--p1); }
+  .stat.p2 .num { color: var(--p2); }
+  .stat.p3 .num { color: var(--p3); }
+  .stat.p4 .num { color: var(--p4); }
+  .stat.p5 .num { color: var(--p5); }
+  .legend { display: flex; gap: 10px; margin: 10px 0 18px; font-size: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-color { width: 14px; height: 14px; border-radius: 50%; }
+  .filter-buttons { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-btn { padding: 6px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 12px; }
+  .filter-btn.active { background: var(--accent); color: var(--bg); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { background: rgba(255,255,255,0.03); color: var(--accent); font-weight: 600; }
+  .tier-S { color: var(--p1); font-weight: 700; }
+  .tier-A { color: #c0c0c0; }
+  .tier-B { color: #cd7f32; }
+  code { font-family: "JetBrains Mono", Menlo, Consolas, monospace; background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>PUB-35 페이즈별 핫스팟 — v2 (정밀화 0.015)</h1>
+  <p class="subtitle">2026-05-19 · 14 영상 · 마커 6795 · eps=0.015 (120m, 능선/건물군 단위) · batch 일부 진행 중</p>
+</header>
+
+<div class="stat-grid">
+  <div class="stat p1"><div class="num" id="n_p1">-</div><div class="lbl">P1 마커</div></div>
+  <div class="stat p2"><div class="num" id="n_p2">-</div><div class="lbl">P2 마커</div></div>
+  <div class="stat p3"><div class="num" id="n_p3">-</div><div class="lbl">P3 마커</div></div>
+  <div class="stat p4"><div class="num" id="n_p4">-</div><div class="lbl">P4 마커</div></div>
+  <div class="stat p5"><div class="num" id="n_p5">-</div><div class="lbl">P5 마커</div></div>
+</div>
+
+<div class="legend">
+  <span class="legend-item"><span class="legend-color" style="background:var(--p1)"></span> 페이즈 1 (진짜 명당)</span>
+  <span class="legend-item"><span class="legend-color" style="background:var(--p2)"></span> 페이즈 2</span>
+  <span class="legend-item"><span class="legend-color" style="background:var(--p3)"></span> 페이즈 3</span>
+  <span class="legend-item"><span class="legend-color" style="background:var(--p4)"></span> 페이즈 4</span>
+  <span class="legend-item"><span class="legend-color" style="background:var(--p5)"></span> 페이즈 5 (자기장 강제)</span>
+  &nbsp;&nbsp;<span class="legend-item">크기: S(큼) / A(중) / B(작음)</span>
+</div>
+
+<div class="filter-buttons">
+  <button class="filter-btn active" data-phase="all">전체</button>
+  <button class="filter-btn" data-phase="1">P1만</button>
+  <button class="filter-btn" data-phase="2">P2</button>
+  <button class="filter-btn" data-phase="3">P3</button>
+  <button class="filter-btn" data-phase="4">P4</button>
+  <button class="filter-btn" data-phase="5">P5</button>
+</div>
+
+<div class="grid">
+  <div class="map-wrapper" id="map">
+    <!-- 에란겔 맵 이미지 (없어도 OK, 박스만) -->
+    <img src="../../../apps/frontend/public/maps/erangel.jpg" onerror="this.style.display='none'" alt="erangel">
+    <!-- 마커 동적 추가 -->
+  </div>
+
+  <div class="panel">
+    <h2>핫스팟 리스트 (페이즈 1 — 진짜 명당)</h2>
+    <table>
+      <thead><tr><th>#</th><th>위치 (gx, gy)</th><th>Tier</th><th>마커</th><th>매치</th></tr></thead>
+      <tbody id="hotspot_table"></tbody>
+    </table>
+    <p class="subtitle" style="margin-top:14px">
+      P1은 자기장 형성 직후 팀이 자유롭게 선택한 위치 — 진짜 명당 학습 가치 큼.<br>
+      P2~P5는 자기장 안 강제 위치 — 자기장 분포 학습용으로 가치 다름.
+    </p>
+    <h2 style="margin-top:20px">영상별 통계</h2>
+    <table>
+      <thead><tr><th>영상</th><th>마커</th></tr></thead>
+      <tbody>
+                <tr><td>yETU_v2</td><td>1381</td></tr>
+        <tr><td>sanity</td><td>1014</td></tr>
+        <tr><td>v03_4EvDyQxXzME</td><td>1006</td></tr>
+        <tr><td>v02_ZKc3gs-ZOEs</td><td>960</td></tr>
+        <tr><td>weekly_test</td><td>845</td></tr>
+        <tr><td>v01_87nxIt1BIz0</td><td>845</td></tr>
+        <tr><td>v01_RMcQHKwMwwg</td><td>416</td></tr>
+        <tr><td>v02_LrokJG_bUqY</td><td>328</td></tr>
+        <tr><td><strong>합계</strong></td><td><strong>6795</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="subtitle" style="margin-top:14px">
+      <strong>어제 vs 오늘 비교</strong><br>
+      어제 페이즈 1만 변환: 영상별 평균 ~200 마커<br>
+      오늘 페이즈 1~5 체인 변환: 영상별 평균 ~785 마커 (<strong>약 4배</strong>)
+    </p>
+  </div>
+</div>
+
+<script>
+const DATA = {"metadata": {"target_map": "erangel", "n_videos": 14, "n_markers": 6795, "markers_by_phase": {"1": 2127, "2": 1591, "3": 1366, "4": 992, "5": 719}, "hotspots_by_phase_count": {"1": 75, "2": 46, "3": 24, "4": 16, "5": 16}, "markers_by_video": {"sanity": 1014, "yETU_v2": 1381, "weekly_test": 845, "v02_LrokJG_bUqY": 328, "v01_RMcQHKwMwwg": 416, "v01_87nxIt1BIz0": 845, "v02_ZKc3gs-ZOEs": 960, "v03_4EvDyQxXzME": 1006}}, "hotspots_by_phase": {"1": [{"gx": 0.4306, "gy": 0.7946, "count": 53, "matches": ["v01_87nxIt1BIz0_m1", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "yETU_v2_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5261, "gy": 0.3841, "count": 53, "matches": ["v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m2", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "weekly_test_m2", "weekly_test_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.6215, "gy": 0.2209, "count": 31, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m5", "v01_RMcQHKwMwwg_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m1", "weekly_test_m5", "yETU_v2_m2", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.4894, "gy": 0.5975, "count": 46, "matches": ["v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "weekly_test_m2", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.8053, "gy": 0.5151, "count": 31, "matches": ["v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m2", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m1", "weekly_test_m2", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.5388, "gy": 0.1634, "count": 13, "matches": ["v01_87nxIt1BIz0_m2", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m2", "weekly_test_m5", "yETU_v2_m2", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.4685, "gy": 0.9213, "count": 55, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.6223, "gy": 0.6781, "count": 50, "matches": ["v01_87nxIt1BIz0_m1", "v01_RMcQHKwMwwg_m1", "v02_ZKc3gs-ZOEs_m4", "v03_4EvDyQxXzME_m1", "v03_4EvDyQxXzME_m2", "weekly_test_m1", "yETU_v2_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.7855, "gy": 0.5932, "count": 48, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.5662, "gy": 0.6916, "count": 40, "matches": ["v01_RMcQHKwMwwg_m1", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m2", "v02_ZKc3gs-ZOEs_m4", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m5", "yETU_v2_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5753, "gy": 0.1565, "count": 37, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m1", "v03_4EvDyQxXzME_m1", "weekly_test_m1", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.6137, "gy": 0.1599, "count": 34, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m5", "weekly_test_m5", "yETU_v2_m1", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.3229, "gy": 0.5353, "count": 32, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m2", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m5", "weekly_test_m2", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.4806, "gy": 0.5221, "count": 29, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m2", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m2", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5365, "gy": 0.7352, "count": 24, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m2", "v02_ZKc3gs-ZOEs_m4", "v03_4EvDyQxXzME_m1", "weekly_test_m1", "yETU_v2_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.4014, "gy": 0.6349, "count": 20, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m2", "yETU_v2_m2", "yETU_v2_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.598, "gy": 0.4732, "count": 19, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "weekly_test_m2", "yETU_v2_m1", "yETU_v2_m2", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5757, "gy": 0.3734, "count": 14, "matches": ["v01_87nxIt1BIz0_m2", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m2", "weekly_test_m5", "yETU_v2_m1", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.5827, "gy": 0.5537, "count": 41, "matches": ["v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m5"], "tier": "S"}, {"gx": 0.3856, "gy": 0.6, "count": 40, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m2"], "tier": "S"}, {"gx": 0.4646, "gy": 0.2562, "count": 18, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m2", "weekly_test_m2", "yETU_v2_m2", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.499, "gy": 0.8521, "count": 36, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_RMcQHKwMwwg_m1", "v03_4EvDyQxXzME_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5013, "gy": 0.2415, "count": 28, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_RMcQHKwMwwg_m1", "v02_LrokJG_bUqY_m1", "v03_4EvDyQxXzME_m1"], "tier": "S"}, {"gx": 0.5574, "gy": 0.8164, "count": 15, "matches": ["v01_87nxIt1BIz0_m1", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m4", "weekly_test_m1", "yETU_v2_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.4345, "gy": 0.4636, "count": 14, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.3521, "gy": 0.7575, "count": 13, "matches": ["v01_87nxIt1BIz0_m1", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m1"], "tier": "S"}, {"gx": 0.4812, "gy": 0.7537, "count": 26, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m2", "weekly_test_m1", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5565, "gy": 0.6453, "count": 19, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m5", "weekly_test_m1"], "tier": "S"}, {"gx": 0.8338, "gy": 0.423, "count": 18, "matches": ["v01_87nxIt1BIz0_m2", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m2", "weekly_test_m5"], "tier": "S"}, {"gx": 0.6359, "gy": 0.5907, "count": 18, "matches": ["v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m1", "weekly_test_m5"], "tier": "S"}, {"gx": 0.6003, "gy": 0.345, "count": 11, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m2", "yETU_v2_m1", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.4409, "gy": 0.5553, "count": 10, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m2", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m2"], "tier": "S"}, {"gx": 0.4041, "gy": 0.5352, "count": 9, "matches": ["v01_87nxIt1BIz0_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m2", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.5267, "gy": 0.4838, "count": 8, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m1", "v03_4EvDyQxXzME_m2", "weekly_test_m2"], "tier": "S"}, {"gx": 0.4282, "gy": 0.2575, "count": 20, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m2"], "tier": "S"}, {"gx": 0.5116, "gy": 0.7045, "count": 18, "matches": ["v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m2", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.3852, "gy": 0.2811, "count": 17, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m4", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m2"], "tier": "S"}, {"gx": 0.4253, "gy": 0.4096, "count": 16, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m2", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m1"], "tier": "S"}, {"gx": 0.5153, "gy": 0.5095, "count": 15, "matches": ["v01_RMcQHKwMwwg_m1", "v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m3"], "tier": "S"}, {"gx": 0.4688, "gy": 0.3647, "count": 14, "matches": ["v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m1", "v03_4EvDyQxXzME_m5", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.7774, "gy": 0.6653, "count": 9, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v02_LrokJG_bUqY_m1"], "tier": "S"}, {"gx": 0.6972, "gy": 0.5117, "count": 9, "matches": ["v01_87nxIt1BIz0_m1", "v02_LrokJG_bUqY_m1", "weekly_test_m1", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.5038, "gy": 0.7588, "count": 9, "matches": ["v01_87nxIt1BIz0_m1", "v01_RMcQHKwMwwg_m1", "weekly_test_m1", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5794, "gy": 0.7564, "count": 8, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.4194, "gy": 0.4937, "count": 8, "matches": ["v02_ZKc3gs-ZOEs_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5"], "tier": "S"}, {"gx": 0.381, "gy": 0.7267, "count": 36, "matches": ["sanity_m1", "sanity_m2", "sanity_m3"], "tier": "S"}, {"gx": 0.8349, "gy": 0.727, "count": 36, "matches": ["sanity_m1", "sanity_m2", "sanity_m3"], "tier": "S"}, {"gx": 0.599, "gy": 0.986, "count": 36, "matches": ["sanity_m1", "sanity_m2", "sanity_m3"], "tier": "S"}, {"gx": 0.9059, "gy": 0.8388, "count": 20, "matches": ["sanity_m1", "sanity_m2", "sanity_m3"], "tier": "S"}, {"gx": 0.605, "gy": 0.8371, "count": 19, "matches": ["v01_87nxIt1BIz0_m1", "weekly_test_m1", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.3987, "gy": 0.7446, "count": 14, "matches": ["v03_4EvDyQxXzME_m5", "yETU_v2_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.9007, "gy": 0.5584, "count": 13, "matches": ["sanity_m1", "sanity_m2", "sanity_m3"], "tier": "S"}, {"gx": 0.6932, "gy": 0.6007, "count": 13, "matches": ["v01_RMcQHKwMwwg_m1", "v03_4EvDyQxXzME_m2", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.3668, "gy": 0.617, "count": 11, "matches": ["v01_87nxIt1BIz0_m2", "v03_4EvDyQxXzME_m3", "weekly_test_m2"], "tier": "S"}, {"gx": 0.7652, "gy": 0.7032, "count": 9, "matches": ["sanity_m2", "sanity_m3", "v02_LrokJG_bUqY_m1"], "tier": "S"}, {"gx": 0.8083, "gy": 0.2982, "count": 9, "matches": ["v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m5"], "tier": "S"}, {"gx": 0.5229, "gy": 0.4416, "count": 9, "matches": ["v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3"], "tier": "S"}, {"gx": 0.4001, "gy": 0.8911, "count": 8, "matches": ["v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.7641, "gy": 0.2065, "count": 22, "matches": ["v03_4EvDyQxXzME_m1", "yETU_v2_m1"], "tier": "A"}, {"gx": 0.7482, "gy": 0.0891, "count": 21, "matches": ["v03_4EvDyQxXzME_m1", "yETU_v2_m1"], "tier": "A"}, {"gx": 0.7852, "gy": 0.2347, "count": 21, "matches": ["v01_RMcQHKwMwwg_m1", "v02_LrokJG_bUqY_m1"], "tier": "A"}, {"gx": 0.7171, "gy": 0.6541, "count": 16, "matches": ["v01_87nxIt1BIz0_m1", "weekly_test_m1"], "tier": "A"}, {"gx": 0.318, "gy": 0.2575, "count": 16, "matches": ["v01_87nxIt1BIz0_m2", "weekly_test_m2"], "tier": "A"}, {"gx": 0.7223, "gy": 0.7746, "count": 13, "matches": ["v01_RMcQHKwMwwg_m1", "yETU_v2_m6"], "tier": "A"}, {"gx": 0.6555, "gy": 0.6302, "count": 13, "matches": ["v01_RMcQHKwMwwg_m1", "yETU_v2_m6"], "tier": "A"}, {"gx": 0.5217, "gy": 0.7792, "count": 13, "matches": ["v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m1"], "tier": "A"}, {"gx": 0.5656, "gy": 0.2784, "count": 10, "matches": ["v01_87nxIt1BIz0_m5", "weekly_test_m5"], "tier": "A"}, {"gx": 0.6007, "gy": 0.7251, "count": 9, "matches": ["v02_LrokJG_bUqY_m1", "yETU_v2_m6"], "tier": "A"}, {"gx": 0.3674, "gy": 0.6748, "count": 8, "matches": ["v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5"], "tier": "A"}, {"gx": 0.8926, "gy": 0.5986, "count": 12, "matches": ["v01_RMcQHKwMwwg_m1"], "tier": "B"}, {"gx": 0.7127, "gy": 0.7054, "count": 12, "matches": ["v01_RMcQHKwMwwg_m1"], "tier": "B"}, {"gx": 0.8483, "gy": 0.6294, "count": 11, "matches": ["v02_LrokJG_bUqY_m1"], "tier": "B"}, {"gx": 0.357, "gy": 0.3744, "count": 9, "matches": ["v03_4EvDyQxXzME_m5"], "tier": "B"}, {"gx": 0.3063, "gy": 0.7232, "count": 8, "matches": ["v03_4EvDyQxXzME_m5"], "tier": "B"}, {"gx": 0.3544, "gy": 0.7387, "count": 4, "matches": ["v03_4EvDyQxXzME_m5"], "tier": "B"}], "2": [{"gx": 0.5415, "gy": 0.452, "count": 104, "matches": ["sanity_m3", "v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m2", "v01_87nxIt1BIz0_m5", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "weekly_test_m2", "weekly_test_m5", "yETU_v2_m2", "yETU_v2_m3", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5575, "gy": 0.5592, "count": 80, "matches": ["sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m5", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m2", "v02_ZKc3gs-ZOEs_m4", "weekly_test_m1", "weekly_test_m5", "yETU_v2_m3", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.4701, "gy": 0.5688, "count": 51, "matches": ["v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m2", "v02_LrokJG_bUqY_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "weekly_test_m2", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.6585, "gy": 0.4474, "count": 112, "matches": ["sanity_m2", "v01_87nxIt1BIz0_m5", "v01_RMcQHKwMwwg_m1", "v02_ZKc3gs-ZOEs_m4", "v03_4EvDyQxXzME_m1", "v03_4EvDyQxXzME_m2", "weekly_test_m5", "yETU_v2_m1", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.6142, "gy": 0.6529, "count": 37, "matches": ["sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m2", "weekly_test_m1", "weekly_test_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.5004, "gy": 0.6428, "count": 35, "matches": ["v01_87nxIt1BIz0_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "yETU_v2_m3", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.4658, "gy": 0.4258, "count": 22, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.485, "gy": 0.683, "count": 22, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.4842, "gy": 0.5282, "count": 20, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.4898, "gy": 0.4611, "count": 17, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.6171, "gy": 0.4172, "count": 30, "matches": ["sanity_m3", "v01_87nxIt1BIz0_m5", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m5", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.5743, "gy": 0.675, "count": 23, "matches": ["sanity_m1", "sanity_m3", "v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m2", "weekly_test_m1", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.6122, "gy": 0.7238, "count": 38, "matches": ["sanity_m1", "sanity_m3", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m2", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.7164, "gy": 0.614, "count": 35, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v02_ZKc3gs-ZOEs_m4", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.7073, "gy": 0.6388, "count": 19, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m5", "weekly_test_m5"], "tier": "S"}, {"gx": 0.7386, "gy": 0.5619, "count": 16, "matches": ["sanity_m2", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m4", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.5454, "gy": 0.6087, "count": 15, "matches": ["sanity_m3", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m5", "yETU_v2_m5", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.6225, "gy": 0.3568, "count": 15, "matches": ["v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m2", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.3636, "gy": 0.5144, "count": 13, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m5", "weekly_test_m2", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.4603, "gy": 0.6545, "count": 8, "matches": ["v01_87nxIt1BIz0_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1"], "tier": "S"}, {"gx": 0.6272, "gy": 0.5383, "count": 22, "matches": ["v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m2", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.5819, "gy": 0.643, "count": 19, "matches": ["sanity_m1", "sanity_m3", "v01_87nxIt1BIz0_m5", "weekly_test_m5"], "tier": "S"}, {"gx": 0.3808, "gy": 0.5652, "count": 13, "matches": ["v01_87nxIt1BIz0_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m2", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.5189, "gy": 0.7047, "count": 10, "matches": ["v01_87nxIt1BIz0_m1", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m1"], "tier": "S"}, {"gx": 0.4228, "gy": 0.4075, "count": 9, "matches": ["v01_87nxIt1BIz0_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m2", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.5591, "gy": 0.5921, "count": 9, "matches": ["v01_87nxIt1BIz0_m1", "v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m2", "weekly_test_m1"], "tier": "S"}, {"gx": 0.6426, "gy": 0.7666, "count": 15, "matches": ["sanity_m1", "v03_4EvDyQxXzME_m2", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.591, "gy": 0.6079, "count": 14, "matches": ["sanity_m2", "v02_ZKc3gs-ZOEs_m2", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.6488, "gy": 0.6919, "count": 12, "matches": ["sanity_m1", "sanity_m2", "v02_ZKc3gs-ZOEs_m4"], "tier": "S"}, {"gx": 0.7062, "gy": 0.5717, "count": 12, "matches": ["sanity_m2", "sanity_m3", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.7722, "gy": 0.4334, "count": 11, "matches": ["v01_87nxIt1BIz0_m5", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.6512, "gy": 0.352, "count": 9, "matches": ["v01_87nxIt1BIz0_m5", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.6771, "gy": 0.5818, "count": 8, "matches": ["sanity_m3", "v01_87nxIt1BIz0_m5", "weekly_test_m5"], "tier": "S"}, {"gx": 0.3845, "gy": 0.4936, "count": 8, "matches": ["v01_87nxIt1BIz0_m2", "v03_4EvDyQxXzME_m5", "weekly_test_m2"], "tier": "S"}, {"gx": 0.3339, "gy": 0.414, "count": 8, "matches": ["v01_87nxIt1BIz0_m2", "v02_ZKc3gs-ZOEs_m1", "weekly_test_m2"], "tier": "S"}, {"gx": 0.3613, "gy": 0.5466, "count": 6, "matches": ["v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m5", "yETU_v2_m3"], "tier": "S"}, {"gx": 0.5127, "gy": 0.3598, "count": 16, "matches": ["v02_ZKc3gs-ZOEs_m5", "yETU_v2_m2"], "tier": "A"}, {"gx": 0.6947, "gy": 0.3074, "count": 15, "matches": ["v01_RMcQHKwMwwg_m1", "v03_4EvDyQxXzME_m1"], "tier": "A"}, {"gx": 0.72, "gy": 0.6779, "count": 11, "matches": ["sanity_m1", "yETU_v2_m6"], "tier": "A"}, {"gx": 0.6417, "gy": 0.4912, "count": 10, "matches": ["sanity_m1", "v02_ZKc3gs-ZOEs_m4"], "tier": "A"}, {"gx": 0.6775, "gy": 0.5606, "count": 10, "matches": ["sanity_m3", "v03_4EvDyQxXzME_m2"], "tier": "A"}, {"gx": 0.5185, "gy": 0.5843, "count": 10, "matches": ["v02_LrokJG_bUqY_m1", "v02_ZKc3gs-ZOEs_m2"], "tier": "A"}, {"gx": 0.7056, "gy": 0.3764, "count": 8, "matches": ["v03_4EvDyQxXzME_m1", "yETU_v2_m1"], "tier": "A"}, {"gx": 0.2939, "gy": 0.6849, "count": 8, "matches": ["v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m5"], "tier": "A"}, {"gx": 0.6226, "gy": 0.3907, "count": 9, "matches": ["v01_RMcQHKwMwwg_m1"], "tier": "B"}, {"gx": 0.7303, "gy": 0.4174, "count": 9, "matches": ["v01_RMcQHKwMwwg_m1"], "tier": "B"}], "3": [{"gx": 0.4903, "gy": 0.5407, "count": 273, "matches": ["v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m2", "v02_LrokJG_bUqY_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "v03_4EvDyQxXzME_m5", "weekly_test_m1", "weekly_test_m2", "yETU_v2_m2", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.6617, "gy": 0.4394, "count": 323, "matches": ["sanity_m2", "sanity_m3", "v01_87nxIt1BIz0_m5", "v01_RMcQHKwMwwg_m1", "v02_LrokJG_bUqY_m1", "v03_4EvDyQxXzME_m1", "v03_4EvDyQxXzME_m2", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.6496, "gy": 0.5535, "count": 21, "matches": ["sanity_m1", "sanity_m3", "v01_87nxIt1BIz0_m5", "v02_ZKc3gs-ZOEs_m2", "weekly_test_m5"], "tier": "S"}, {"gx": 0.6154, "gy": 0.6619, "count": 88, "matches": ["sanity_m1", "sanity_m3", "v02_ZKc3gs-ZOEs_m2", "yETU_v2_m6"], "tier": "S"}, {"gx": 0.6907, "gy": 0.632, "count": 31, "matches": ["sanity_m1", "sanity_m2", "sanity_m3", "v02_ZKc3gs-ZOEs_m4"], "tier": "S"}, {"gx": 0.4722, "gy": 0.4396, "count": 15, "matches": ["v01_87nxIt1BIz0_m2", "weekly_test_m2", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.4616, "gy": 0.4796, "count": 13, "matches": ["v01_87nxIt1BIz0_m2", "weekly_test_m2", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.6362, "gy": 0.3305, "count": 9, "matches": ["v01_87nxIt1BIz0_m5", "v01_RMcQHKwMwwg_m1", "v03_4EvDyQxXzME_m1", "weekly_test_m5"], "tier": "S"}, {"gx": 0.598, "gy": 0.522, "count": 21, "matches": ["sanity_m3", "v02_LrokJG_bUqY_m1", "v03_4EvDyQxXzME_m2"], "tier": "S"}, {"gx": 0.6192, "gy": 0.5924, "count": 19, "matches": ["sanity_m2", "sanity_m3", "v02_ZKc3gs-ZOEs_m2"], "tier": "S"}, {"gx": 0.5902, "gy": 0.5796, "count": 15, "matches": ["sanity_m3", "v02_ZKc3gs-ZOEs_m2", "v03_4EvDyQxXzME_m2"], "tier": "S"}, {"gx": 0.6441, "gy": 0.3695, "count": 12, "matches": ["v01_87nxIt1BIz0_m5", "v01_RMcQHKwMwwg_m1", "weekly_test_m5"], "tier": "S"}, {"gx": 0.5927, "gy": 0.408, "count": 10, "matches": ["v01_87nxIt1BIz0_m5", "v03_4EvDyQxXzME_m1", "weekly_test_m5"], "tier": "S"}, {"gx": 0.5189, "gy": 0.3467, "count": 77, "matches": ["v02_ZKc3gs-ZOEs_m5", "v03_4EvDyQxXzME_m1"], "tier": "A"}, {"gx": 0.4261, "gy": 0.4155, "count": 70, "matches": ["v01_87nxIt1BIz0_m2", "weekly_test_m2"], "tier": "A"}, {"gx": 0.6361, "gy": 0.6345, "count": 20, "matches": ["sanity_m2", "sanity_m3"], "tier": "A"}, {"gx": 0.3867, "gy": 0.5854, "count": 15, "matches": ["v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m5"], "tier": "A"}, {"gx": 0.4135, "gy": 0.6006, "count": 11, "matches": ["v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m5"], "tier": "A"}, {"gx": 0.5702, "gy": 0.658, "count": 10, "matches": ["v02_ZKc3gs-ZOEs_m2", "yETU_v2_m6"], "tier": "A"}, {"gx": 0.5866, "gy": 0.7212, "count": 17, "matches": ["yETU_v2_m6"], "tier": "B"}, {"gx": 0.5966, "gy": 0.7678, "count": 17, "matches": ["yETU_v2_m6"], "tier": "B"}, {"gx": 0.6954, "gy": 0.5905, "count": 16, "matches": ["sanity_m2"], "tier": "B"}, {"gx": 0.5856, "gy": 0.6887, "count": 15, "matches": ["yETU_v2_m6"], "tier": "B"}, {"gx": 0.4696, "gy": 0.2985, "count": 10, "matches": ["v02_ZKc3gs-ZOEs_m5"], "tier": "B"}], "4": [{"gx": 0.494, "gy": 0.531, "count": 207, "matches": ["v01_87nxIt1BIz0_m1", "v01_87nxIt1BIz0_m2", "v03_4EvDyQxXzME_m3", "weekly_test_m1", "weekly_test_m2", "yETU_v2_m2", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.6614, "gy": 0.4263, "count": 270, "matches": ["v01_87nxIt1BIz0_m5", "v01_RMcQHKwMwwg_m1", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.5542, "gy": 0.5125, "count": 50, "matches": ["v02_LrokJG_bUqY_m1", "v03_4EvDyQxXzME_m2", "yETU_v2_m2"], "tier": "S"}, {"gx": 0.6712, "gy": 0.6372, "count": 42, "matches": ["sanity_m1", "sanity_m2", "v02_ZKc3gs-ZOEs_m4"], "tier": "S"}, {"gx": 0.4418, "gy": 0.4249, "count": 62, "matches": ["v01_87nxIt1BIz0_m2", "weekly_test_m2"], "tier": "A"}, {"gx": 0.4065, "gy": 0.5967, "count": 61, "matches": ["v02_ZKc3gs-ZOEs_m1", "v03_4EvDyQxXzME_m5"], "tier": "A"}, {"gx": 0.644, "gy": 0.5873, "count": 19, "matches": ["sanity_m1", "sanity_m2"], "tier": "A"}, {"gx": 0.5968, "gy": 0.7124, "count": 71, "matches": ["yETU_v2_m6"], "tier": "B"}, {"gx": 0.5197, "gy": 0.3315, "count": 60, "matches": ["v02_ZKc3gs-ZOEs_m5"], "tier": "B"}, {"gx": 0.6379, "gy": 0.6573, "count": 15, "matches": ["sanity_m1"], "tier": "B"}, {"gx": 0.5948, "gy": 0.5801, "count": 15, "matches": ["v02_ZKc3gs-ZOEs_m2"], "tier": "B"}, {"gx": 0.6865, "gy": 0.5884, "count": 12, "matches": ["sanity_m2"], "tier": "B"}, {"gx": 0.6182, "gy": 0.3812, "count": 12, "matches": ["v03_4EvDyQxXzME_m1"], "tier": "B"}, {"gx": 0.6247, "gy": 0.6315, "count": 10, "matches": ["sanity_m1"], "tier": "B"}, {"gx": 0.5963, "gy": 0.4052, "count": 9, "matches": ["v03_4EvDyQxXzME_m1"], "tier": "B"}, {"gx": 0.6619, "gy": 0.544, "count": 8, "matches": ["sanity_m2"], "tier": "B"}], "5": [{"gx": 0.5095, "gy": 0.5277, "count": 176, "matches": ["v01_87nxIt1BIz0_m1", "v02_LrokJG_bUqY_m1", "v03_4EvDyQxXzME_m2", "v03_4EvDyQxXzME_m3", "weekly_test_m1", "yETU_v2_m2", "yETU_v2_m3", "yETU_v2_m5"], "tier": "S"}, {"gx": 0.6529, "gy": 0.4467, "count": 191, "matches": ["v01_87nxIt1BIz0_m5", "weekly_test_m5", "yETU_v2_m1"], "tier": "S"}, {"gx": 0.4392, "gy": 0.4421, "count": 46, "matches": ["v01_87nxIt1BIz0_m2", "weekly_test_m2"], "tier": "A"}, {"gx": 0.5971, "gy": 0.7182, "count": 54, "matches": ["yETU_v2_m6"], "tier": "B"}, {"gx": 0.7058, "gy": 0.6653, "count": 52, "matches": ["v02_ZKc3gs-ZOEs_m4"], "tier": "B"}, {"gx": 0.6646, "gy": 0.3546, "count": 47, "matches": ["v01_RMcQHKwMwwg_m1"], "tier": "B"}, {"gx": 0.6463, "gy": 0.6309, "count": 39, "matches": ["sanity_m1"], "tier": "B"}, {"gx": 0.5835, "gy": 0.4043, "count": 23, "matches": ["v03_4EvDyQxXzME_m1"], "tier": "B"}, {"gx": 0.5764, "gy": 0.5821, "count": 18, "matches": ["v02_ZKc3gs-ZOEs_m2"], "tier": "B"}, {"gx": 0.3683, "gy": 0.5854, "count": 16, "matches": ["v02_ZKc3gs-ZOEs_m1"], "tier": "B"}, {"gx": 0.5183, "gy": 0.3418, "count": 12, "matches": ["v02_ZKc3gs-ZOEs_m5"], "tier": "B"}, {"gx": 0.5532, "gy": 0.4811, "count": 11, "matches": ["v02_LrokJG_bUqY_m1"], "tier": "B"}, {"gx": 0.4078, "gy": 0.587, "count": 7, "matches": ["v03_4EvDyQxXzME_m5"], "tier": "B"}, {"gx": 0.4174, "gy": 0.6164, "count": 7, "matches": ["v03_4EvDyQxXzME_m5"], "tier": "B"}, {"gx": 0.6447, "gy": 0.6004, "count": 5, "matches": ["sanity_m1"], "tier": "B"}, {"gx": 0.5392, "gy": 0.3085, "count": 5, "matches": ["v02_ZKc3gs-ZOEs_m5"], "tier": "B"}]}};
+
+// 통계 채우기
+for (const [p, n] of Object.entries(DATA.metadata.markers_by_phase)) {
+  document.getElementById('n_p' + p).textContent = n;
+}
+
+// 마커 그리기 — 모든 페이즈 핫스팟
+function renderMarkers(filter) {
+  const map = document.getElementById('map');
+  map.querySelectorAll('.marker').forEach(m => m.remove());
+  for (const [phase, hotspots] of Object.entries(DATA.hotspots_by_phase)) {
+    if (filter !== 'all' && filter !== phase) continue;
+    for (const h of hotspots) {
+      const el = document.createElement('div');
+      el.className = `marker p${phase} ${h.tier.toLowerCase()}`;
+      el.style.left = (h.gx * 100) + '%';
+      el.style.top = (h.gy * 100) + '%';
+      el.title = `P${phase} ${h.tier} (${h.gx.toFixed(3)}, ${h.gy.toFixed(3)}) ${h.count}마커 ${h.matches.length}매치`;
+      map.appendChild(el);
+    }
+  }
+}
+
+// 핫스팟 테이블 (P1만)
+const tbody = document.getElementById('hotspot_table');
+DATA.hotspots_by_phase['1'].forEach((h, i) => {
+  tbody.innerHTML += `<tr>
+    <td>${i+1}</td>
+    <td>(${h.gx.toFixed(3)}, ${h.gy.toFixed(3)})</td>
+    <td class="tier-${h.tier}">${h.tier}</td>
+    <td>${h.count}</td>
+    <td>${h.matches.length}</td>
+  </tr>`;
+});
+
+// 필터 버튼
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderMarkers(btn.dataset.phase);
+  });
+});
+
+renderMarkers('all');
+</script>
+</div>
+</body>
+</html>

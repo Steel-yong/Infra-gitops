@@ -75,3 +75,31 @@ def apply_transform(px: float, py: float,
 
 # PUB-34 매치 1 OCR로 도출된 기본 변환식 (페이즈 1 시점 기준)
 DEFAULT_TRANSFORM_ERANGEL = ((1.0657, 0.0475), (1.0000, 0.0416))
+
+
+def derive_transform_from_zone(zone: dict, prev_transform: tuple, phase: int):
+    """체인 변환식 도출 — 페이즈 N 변환식.
+    OCR 격자가 zoom-in으로 화면 밖이라 OCR 불가한 페이즈 2~5에서 사용.
+
+    알고리즘:
+    1. 자기장 화면 중심 → 이전 페이즈 변환식으로 게임 좌표 (cx_game, cy_game)
+    2. 자기장 화면 반경 + 게임 PUBG_PHASE_RADII → zoom 비율 a = r_game / r_screen
+    3. 새 변환식: 화면 (px, py) → 게임 (gx, gy)
+       gx = a*(px - cx_screen) + cx_game = a*px + (cx_game - a*cx_screen)
+       gy = a*(py - cy_screen) + cy_game = a*py + (cy_game - a*cy_screen)
+    """
+    PUBG_PHASE_RADII = [0.24474, 0.13461, 0.07403, 0.04072, 0.02036, 0.01018, 0.00509, 0.00254]
+
+    x_t, y_t = prev_transform
+    cx_screen = zone['x_screen']
+    cy_screen = zone['y_screen']
+    r_screen = zone['r_screen']
+
+    cx_game = x_t[0] * cx_screen + x_t[1]
+    cy_game = y_t[0] * cy_screen + y_t[1]
+    r_game = PUBG_PHASE_RADII[phase - 1]
+
+    a = r_game / r_screen
+    b_x = cx_game - a * cx_screen
+    b_y = cy_game - a * cy_screen
+    return ((float(a), float(b_x)), (float(a), float(b_y)))

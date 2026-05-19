@@ -27,10 +27,16 @@ def classify_hotspot(gx: float, gy: float) -> tuple[str, str]:
 
 
 def hotspots_to_seed_block(hotspots: list[dict], min_match_count: int = 2,
-                           max_locations: int = 100) -> str:
+                           max_locations: int = 100, phase_label: str = "") -> str:
     """핫스팟 리스트 → seed.ts ERANGEL_PRO 블록 (TypeScript 코드).
     tier S/A/B는 매치 참여 수로 결정 (clustering.py 이미 매핑).
-    min_match_count: 신뢰도 위한 최소 매치 수.
+
+    PUB-35: 페이즈 1 핫스팟만 사용 권장 — 진짜 명당 위치 (자유 선택).
+    페이즈 2~5는 자기장 강제 위치라 명당 학습에 의미 다름.
+
+    Args:
+        min_match_count: 신뢰도 위한 최소 매치 수
+        phase_label: 주석에 표시할 페이즈 (예: "페이즈 1만")
     """
     # 신뢰도 필터
     filtered = [h for h in hotspots if len(h['matches']) >= min_match_count]
@@ -38,8 +44,9 @@ def hotspots_to_seed_block(hotspots: list[dict], min_match_count: int = 2,
     filtered = filtered[:max_locations]
 
     lines = []
-    lines.append("  // 에란겔 명당 자리 — PUB-34 영상 분석 자동 생성 (v2)")
-    lines.append(f"  // 데이터: PUBG Esports KR 채널 PWS (MAP) 영상 N개 클러스터링")
+    lines.append("  // 에란겔 명당 자리 — PUB-34/PUB-35 영상 분석 자동 생성 (v2)")
+    lines.append(f"  // 데이터: PUBG Esports KR 채널 PWS/PGS/PGC (MAP) 영상 다수 클러스터링" +
+                 (f" ({phase_label})" if phase_label else ""))
     lines.append("  // tier: S=3매치+ 공통, A=2매치 공통, B=1매치")
     lines.append("  const ERANGEL_PRO: { id: string; coordX: number; coordY: number; tier: Tier; teams: string[] }[] = [")
     for i, h in enumerate(filtered, 1):
