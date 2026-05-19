@@ -47,9 +47,53 @@
 <div class="container">
 
 <header>
-  <h1>PUB-35 영상 분석 → seed 적용 보고서</h1>
-  <p class="subtitle">2026-05-19 · PUBG Esports KR 채널 (MAP) 영상 23개 분석 → location-service ERANGEL_PRO 더미 20개 → 영상 분석 80곳으로 교체</p>
+  <h1>PUB-35 영상 분석 → seed 적용 보고서 (v2 — 사용자 통찰 반영)</h1>
+  <p class="subtitle">2026-05-19 · 영상 23개 → 페이즈 1 마커 3387개 + 대도시 18곳 자동 검출 → <strong>진짜 명당 67곳</strong> (S 10 / A 27 / B 30)</p>
+  <p class="subtitle" style="margin-top:6px">사용자 통찰: 대도시 드롭 = 시작 위치 (명당 아님), 외곽 작은 마을/능선/호 = 진짜 명당</p>
 </header>
+
+<h2>★ v2 알고리즘 (최종 채택) — 사용자 통찰 반영</h2>
+
+<div class="card">
+  <h3>핵심 발견 (자체 피드백)</h3>
+  <p><strong>v1 (페이즈 1 가중 80곳, 모두 S)</strong> → 잘못된 가설. 페이즈 1 마커는 대부분 대도시 드롭(시작 위치)이라 명당 아님.</p>
+  <p><strong>v2 (페이즈 1 + 대도시 외 + 매치 다양성, 67곳)</strong> — 사용자 통찰 정확 반영.</p>
+  <ol>
+    <li><strong>페이즈 1 마커 클러스터링</strong>으로 대도시 18곳 자동 검출 (수동 좌표 불필요)</li>
+    <li><strong>도시 영향력 감쇄 함수</strong>: 도시 가까울수록 점수 ↓, 멀수록 점수 그대로</li>
+    <li><strong>매치 다양성 가중</strong>: 여러 매치에서 같은 비대중 위치 = 진짜 명당</li>
+    <li><strong>외곽 버티기 제외</strong>: 자기장 가장자리 마커 제외</li>
+  </ol>
+  <p>점수 공식: <code>log(매치+1) × √(마커수) × (1 - 도시영향)</code></p>
+</div>
+
+<h3>분류 결과 (67곳)</h3>
+
+<table>
+  <thead><tr><th>분류</th><th>도시 영향</th><th>개수</th><th>의미</th></tr></thead>
+  <tbody>
+    <tr><td><strong>외곽 작은 마을</strong></td><td>0.2 ~ 0.5</td><td>17곳</td><td>대도시 외각 작은 건물군 (사용자 통찰)</td></tr>
+    <tr><td><strong>능선/호 (희귀 명당)</strong></td><td>&lt; 0.2</td><td>50곳</td><td>도시에서 멀리 떨어진 자연 지형 (사용자 통찰)</td></tr>
+  </tbody>
+</table>
+
+<h3>Top 10 진짜 명당 (v2)</h3>
+
+<table>
+  <thead><tr><th>#</th><th>좌표</th><th>Tier</th><th>매치</th><th>마커</th><th>도시영향</th><th>분류</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>(0.535, 0.727)</code></td><td class="tier-S">S</td><td><strong>19</strong></td><td>186</td><td>0.41</td><td>외곽 작은 마을</td></tr>
+    <tr><td>2</td><td><code>(0.493, 0.520)</code></td><td class="tier-S">S</td><td>16</td><td>87</td><td>0.10</td><td>능선/호</td></tr>
+    <tr><td>3</td><td><code>(0.611, 0.699)</code></td><td class="tier-S">S</td><td>18</td><td>113</td><td>0.34</td><td>외곽 작은 마을</td></tr>
+    <tr><td>4</td><td><code>(0.431, 0.789)</code></td><td class="tier-S">S</td><td>14</td><td>70</td><td>0.15</td><td>능선/호</td></tr>
+    <tr><td>5</td><td><code>(0.489, 0.598)</code></td><td class="tier-S">S</td><td>10</td><td>47</td><td>0.08</td><td>능선/호</td></tr>
+    <tr><td>6</td><td><code>(0.469, 0.921)</code></td><td class="tier-S">A</td><td>9</td><td>56</td><td>0.14</td><td>능선/호 (군사기지 남쪽)</td></tr>
+    <tr><td>7</td><td><code>(0.324, 0.535)</code></td><td class="tier-S">S</td><td>11</td><td>37</td><td>0.11</td><td>능선/호 (서부 외각)</td></tr>
+    <tr><td>8</td><td><code>(0.443, 0.453)</code></td><td class="tier-S">S</td><td>10</td><td>35</td><td>0.07</td><td>능선/호 (포친키 서쪽)</td></tr>
+    <tr><td>9</td><td><code>(0.625, 0.588)</code></td><td class="tier-S">S</td><td>14</td><td>39</td><td>0.24</td><td>외곽 작은 마을</td></tr>
+    <tr><td>10</td><td><code>(0.466, 0.369)</code></td><td class="tier-S">S</td><td>11</td><td>43</td><td>0.23</td><td>외곽 작은 마을</td></tr>
+  </tbody>
+</table>
 
 <h2>1. 한 페이지 요약</h2>
 
