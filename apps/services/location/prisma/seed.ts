@@ -170,63 +170,108 @@ async function main(): Promise<void> {
   console.log(`에란겔 비밀창고 ${ERANGEL_STASHES.length}개 완료`);
   console.log(`태이고 비밀창고 ${TAEGO_STASHES.length}개 완료`);
 
-  // 프로팀 더미 위치 데이터 (테스트용 — 실제 학습 데이터 삽입 전)
+  // ── 에란겔 명당 — PUB-35 영상 분석 자동 도출 (가중 점수 알고리즘) ──
+  // 데이터: PUBG Esports KR 채널 PWS/PGS/PGC/QUALIFIERS/마스터즈 (MAP) 영상 23개
+  // 마커 10,462개 → DBSCAN(eps=0.015) + 가중 점수 = log(매치+1) × sqrt(마커수)
+  // 신뢰도: 매치 ≥3 공통 필터 (80곳 모두 S tier)
   type Tier = 'S' | 'A' | 'B';
   const ERANGEL_PRO: { id: string; coordX: number; coordY: number; tier: Tier; teams: string[] }[] = [
-    { id: 'er-pro-01', coordX: 0.50, coordY: 0.30, tier: 'S', teams: ['Gen.G'] },
-    { id: 'er-pro-02', coordX: 0.35, coordY: 0.28, tier: 'S', teams: ['T1'] },
-    { id: 'er-pro-03', coordX: 0.63, coordY: 0.40, tier: 'S', teams: ['DRX'] },
-    { id: 'er-pro-04', coordX: 0.20, coordY: 0.35, tier: 'A', teams: ['Gen.G', 'T1'] },
-    { id: 'er-pro-05', coordX: 0.75, coordY: 0.25, tier: 'A', teams: ['OGN Entus'] },
-    { id: 'er-pro-06', coordX: 0.45, coordY: 0.55, tier: 'A', teams: ['BFG'] },
-    { id: 'er-pro-07', coordX: 0.28, coordY: 0.50, tier: 'A', teams: ['DRX'] },
-    { id: 'er-pro-08', coordX: 0.58, coordY: 0.22, tier: 'S', teams: ['Gen.G', 'DRX'] },
-    { id: 'er-pro-09', coordX: 0.70, coordY: 0.48, tier: 'B', teams: ['T1'] },
-    { id: 'er-pro-10', coordX: 0.15, coordY: 0.60, tier: 'B', teams: ['OGN Entus'] },
-    { id: 'er-pro-11', coordX: 0.40, coordY: 0.70, tier: 'A', teams: ['Gen.G'] },
-    { id: 'er-pro-12', coordX: 0.55, coordY: 0.65, tier: 'B', teams: ['BFG', 'DRX'] },
-    { id: 'er-pro-13', coordX: 0.80, coordY: 0.55, tier: 'A', teams: ['T1'] },
-    { id: 'er-pro-14', coordX: 0.25, coordY: 0.42, tier: 'S', teams: ['Gen.G'] },
-    { id: 'er-pro-15', coordX: 0.48, coordY: 0.45, tier: 'S', teams: ['Gen.G', 'T1', 'DRX'] },
-    { id: 'er-pro-16', coordX: 0.60, coordY: 0.75, tier: 'B', teams: ['OGN Entus'] },
-    { id: 'er-pro-17', coordX: 0.33, coordY: 0.62, tier: 'A', teams: ['DRX'] },
-    { id: 'er-pro-18', coordX: 0.72, coordY: 0.35, tier: 'A', teams: ['Gen.G'] },
-    { id: 'er-pro-19', coordX: 0.42, coordY: 0.38, tier: 'S', teams: ['T1', 'Gen.G'] },
-    { id: 'er-pro-20', coordX: 0.55, coordY: 0.50, tier: 'S', teams: ['Gen.G', 'T1', 'DRX', 'OGN Entus'] },
+    { id: 'er-pws-001', coordX: 0.5354, coordY: 0.7266, tier: 'S', teams: ['프로팀 19매치 공통'] },  // 능선·고지 (186마커)
+    { id: 'er-pws-002', coordX: 0.6651, coordY: 0.7308, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 능선·고지 (159마커)
+    { id: 'er-pws-003', coordX: 0.6106, coordY: 0.6987, tier: 'S', teams: ['프로팀 18매치 공통'] },  // 능선·고지 (113마커)
+    { id: 'er-pws-004', coordX: 0.5656, coordY: 0.1520, tier: 'S', teams: ['프로팀 21매치 공통'] },  // 야스나야 권역 (83마커)
+    { id: 'er-pws-005', coordX: 0.4930, coordY: 0.5198, tier: 'S', teams: ['프로팀 16매치 공통'] },  // 포친키 중심 (87마커)
+    { id: 'er-pws-006', coordX: 0.4919, coordY: 0.2499, tier: 'S', teams: ['프로팀 17매치 공통'] },  // 중부 (76마커)
+    { id: 'er-pws-007', coordX: 0.4315, coordY: 0.7889, tier: 'S', teams: ['프로팀 14매치 공통'] },  // 소스노프카 군사기지 (70마커)
+    { id: 'er-pws-008', coordX: 0.7807, coordY: 0.5917, tier: 'S', teams: ['프로팀 12매치 공통'] },  // 밀타 (66마커)
+    { id: 'er-pws-009', coordX: 0.5802, coordY: 0.5538, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 동남 능선 (56마커)
+    { id: 'er-pws-010', coordX: 0.5264, coordY: 0.3837, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 중북부 (54마커)
+    { id: 'er-pws-011', coordX: 0.8032, coordY: 0.5077, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 밀타 (49마커)
+    { id: 'er-pws-012', coordX: 0.4693, coordY: 0.9215, tier: 'S', teams: ['프로팀 9매치 공통'] },  // 군사기지 남쪽 (56마커)
+    { id: 'er-pws-013', coordX: 0.6253, coordY: 0.5883, tier: 'S', teams: ['프로팀 14매치 공통'] },  // 동남 능선 (39마커)
+    { id: 'er-pws-014', coordX: 0.5894, coordY: 0.4794, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 학교/로족 권역 (45마커)
+    { id: 'er-pws-015', coordX: 0.6111, coordY: 0.1545, tier: 'S', teams: ['프로팀 10매치 공통'] },  // 야스나야 (48마커)
+    { id: 'er-pws-016', coordX: 0.4893, coordY: 0.5975, tier: 'S', teams: ['프로팀 10매치 공통'] },  // 포친키 (47마커)
+    { id: 'er-pws-017', coordX: 0.4663, coordY: 0.3687, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 중부 (43마커)
+    { id: 'er-pws-018', coordX: 0.3865, coordY: 0.7322, tier: 'S', teams: ['프로팀 8매치 공통'] },  // 남서부 (54마커)
+    { id: 'er-pws-019', coordX: 0.7001, coordY: 0.2268, tier: 'S', teams: ['프로팀 7매치 공통'] },  // 야스나야 동 (53마커)
+    { id: 'er-pws-020', coordX: 0.3243, coordY: 0.5353, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 서부 (37마커)
+    { id: 'er-pws-021', coordX: 0.4967, coordY: 0.8476, tier: 'S', teams: ['프로팀 8매치 공통'] },  // 소스노프카 군사기지 (45마커)
+    { id: 'er-pws-022', coordX: 0.8404, coordY: 0.4159, tier: 'S', teams: ['프로팀 8매치 공통'] },  // 동부 (44마커)
+    { id: 'er-pws-023', coordX: 0.4428, coordY: 0.4534, tier: 'S', teams: ['프로팀 10매치 공통'] },  // 포친키 (35마커)
+    { id: 'er-pws-024', coordX: 0.6219, coordY: 0.2212, tier: 'S', teams: ['프로팀 11매치 공통'] },  // 야스나야 (32마커)
+    { id: 'er-pws-025', coordX: 0.3856, coordY: 0.6000, tier: 'S', teams: ['프로팀 7매치 공통'] },  // 포친키 서 (40마커)
+    { id: 'er-pws-026', coordX: 0.4266, coordY: 0.2557, tier: 'S', teams: ['프로팀 7매치 공통'] },  // 중북부 (31마커)
+    { id: 'er-pws-027', coordX: 0.6622, coordY: 0.3664, tier: 'S', teams: ['프로팀 6매치 공통'] },  // 동부 (33마커)
+    { id: 'er-pws-028', coordX: 0.6958, coordY: 0.5043, tier: 'S', teams: ['프로팀 8매치 공통'] },  // 학교/로족 (25마커)
+    { id: 'er-pws-029', coordX: 0.5105, coordY: 0.6950, tier: 'S', teams: ['프로팀 8매치 공통'] },  // 중남부 (25마커)
+    { id: 'er-pws-030', coordX: 0.4006, coordY: 0.6352, tier: 'S', teams: ['프로팀 9매치 공통'] },  // 포친키 서 (22마커)
+    { id: 'er-pws-031', coordX: 0.7158, coordY: 0.8938, tier: 'S', teams: ['프로팀 6매치 공통'] },  // 동남 끝 (29마커)
+    { id: 'er-pws-032', coordX: 0.7195, coordY: 0.6561, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 동남 능선 (32마커)
+    { id: 'er-pws-033', coordX: 0.4812, coordY: 0.7537, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 소스노프카 (26마커)
+    { id: 'er-pws-034', coordX: 0.5699, coordY: 0.6055, tier: 'S', teams: ['프로팀 7매치 공통'] },  // 동남 능선 (19마커)
+    { id: 'er-pws-035', coordX: 0.5768, coordY: 0.3727, tier: 'S', teams: ['프로팀 9매치 공통'] },  // 중부 (15마커)
+    { id: 'er-pws-036', coordX: 0.8349, coordY: 0.7270, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 밀타 (36마커)
+    { id: 'er-pws-037', coordX: 0.5990, coordY: 0.9860, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 남부 끝 (36마커)
+    { id: 'er-pws-038', coordX: 0.8428, coordY: 0.2136, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 야스나야 동 (26마커)
+    { id: 'er-pws-039', coordX: 0.8654, coordY: 0.0854, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 동북 (34마커)
+    { id: 'er-pws-040', coordX: 0.4405, coordY: 0.2110, tier: 'S', teams: ['프로팀 7매치 공통'] },  // 중북부 (14마커)
+    { id: 'er-pws-041', coordX: 0.3860, coordY: 0.2807, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 서북부 (18마커)
+    { id: 'er-pws-042', coordX: 0.5574, coordY: 0.8164, tier: 'S', teams: ['프로팀 6매치 공통'] },  // 소스노프카 (15마커)
+    { id: 'er-pws-043', coordX: 0.5281, coordY: 0.4757, tier: 'S', teams: ['프로팀 8매치 공통'] },  // 포친키 (11마커)
+    { id: 'er-pws-044', coordX: 0.4617, coordY: 0.1702, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 중북부 (16마커)
+    { id: 'er-pws-045', coordX: 0.5161, coordY: 0.5102, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 포친키 (16마커)
+    { id: 'er-pws-046', coordX: 0.7714, coordY: 0.5102, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 학교/로족 (26마커)
+    { id: 'er-pws-047', coordX: 0.3521, coordY: 0.7575, tier: 'S', teams: ['프로팀 6매치 공통'] },  // 남서부 (13마커)
+    { id: 'er-pws-048', coordX: 0.4436, coordY: 0.5588, tier: 'S', teams: ['프로팀 6매치 공통'] },  // 포친키 서 (13마커)
+    { id: 'er-pws-049', coordX: 0.6939, coordY: 0.5989, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 동남 능선 (15마커)
+    { id: 'er-pws-050', coordX: 0.6443, coordY: 0.5455, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 학교/로족 (25마커)
+    { id: 'er-pws-051', coordX: 0.5990, coordY: 0.3439, tier: 'S', teams: ['프로팀 6매치 공통'] },  // 중부 (12마커)
+    { id: 'er-pws-052', coordX: 0.7634, coordY: 0.2051, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 야스나야 (23마커)
+    { id: 'er-pws-053', coordX: 0.7269, coordY: 0.8501, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 남동부 (17마커)
+    { id: 'er-pws-054', coordX: 0.4253, coordY: 0.4096, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 중부 (16마커)
+    { id: 'er-pws-055', coordX: 0.8209, coordY: 0.6839, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 밀타 (16마커)
+    { id: 'er-pws-056', coordX: 0.7385, coordY: 0.3403, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 동부 (15마커)
+    { id: 'er-pws-057', coordX: 0.6434, coordY: 0.8706, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 군사기지 동 (15마커)
+    { id: 'er-pws-058', coordX: 0.9059, coordY: 0.8388, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 동남 끝 (20마커)
+    { id: 'er-pws-059', coordX: 0.6050, coordY: 0.8371, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 소스노프카 (19마커)
+    { id: 'er-pws-060', coordX: 0.4462, coordY: 0.7159, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 중남부 (11마커)
+    { id: 'er-pws-061', coordX: 0.8129, coordY: 0.6367, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 밀타 (11마커)
+    { id: 'er-pws-062', coordX: 0.7537, coordY: 0.1497, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 야스나야 (13마커)
+    { id: 'er-pws-063', coordX: 0.5508, coordY: 0.4431, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 학교/로족 (10마커)
+    { id: 'er-pws-064', coordX: 0.4182, coordY: 0.4947, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 포친키 서 (10마커)
+    { id: 'er-pws-065', coordX: 0.6920, coordY: 0.1614, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 야스나야 동 (12마커)
+    { id: 'er-pws-066', coordX: 0.5851, coordY: 0.2461, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 중부 (9마커)
+    { id: 'er-pws-067', coordX: 0.5450, coordY: 0.9331, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 군사기지 남 (15마커)
+    { id: 'er-pws-068', coordX: 0.7212, coordY: 0.7758, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 동남 (14마커)
+    { id: 'er-pws-069', coordX: 0.7750, coordY: 0.3107, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 동북 (14마커)
+    { id: 'er-pws-070', coordX: 0.3917, coordY: 0.5572, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 포친키 서 (10마커)
+    { id: 'er-pws-071', coordX: 0.8067, coordY: 0.2979, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 동부 (10마커)
+    { id: 'er-pws-072', coordX: 0.4047, coordY: 0.5342, tier: 'S', teams: ['프로팀 5매치 공통'] },  // 포친키 서 (8마커)
+    { id: 'er-pws-073', coordX: 0.9007, coordY: 0.5584, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 동부 끝 (13마커)
+    { id: 'er-pws-074', coordX: 0.6432, coordY: 0.7946, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 소스노프카 동 (13마커)
+    { id: 'er-pws-075', coordX: 0.7774, coordY: 0.6653, tier: 'S', teams: ['프로팀 4매치 공통'] },  // 밀타 (9마커)
+    { id: 'er-pws-076', coordX: 0.6867, coordY: 0.6853, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 동남 능선 (12마커)
+    { id: 'er-pws-077', coordX: 0.5853, coordY: 0.9108, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 군사기지 남 (12마커)
+    { id: 'er-pws-078', coordX: 0.5441, coordY: 0.8964, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 군사기지 남 (12마커)
+    { id: 'er-pws-079', coordX: 0.3668, coordY: 0.6170, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 포친키 서 (11마커)
+    { id: 'er-pws-080', coordX: 0.3072, coordY: 0.7201, tier: 'S', teams: ['프로팀 3매치 공통'] },  // 남서부 (10마커)
   ];
 
-  const TAEGO_PRO: { id: string; coordX: number; coordY: number; tier: Tier; teams: string[] }[] = [
-    { id: 'tg-pro-01', coordX: 0.50, coordY: 0.40, tier: 'S', teams: ['Gen.G'] },
-    { id: 'tg-pro-02', coordX: 0.35, coordY: 0.30, tier: 'S', teams: ['T1'] },
-    { id: 'tg-pro-03', coordX: 0.65, coordY: 0.35, tier: 'S', teams: ['DRX'] },
-    { id: 'tg-pro-04', coordX: 0.20, coordY: 0.45, tier: 'A', teams: ['Gen.G', 'T1'] },
-    { id: 'tg-pro-05', coordX: 0.78, coordY: 0.30, tier: 'A', teams: ['OGN Entus'] },
-    { id: 'tg-pro-06', coordX: 0.45, coordY: 0.58, tier: 'A', teams: ['BFG'] },
-    { id: 'tg-pro-07', coordX: 0.30, coordY: 0.55, tier: 'A', teams: ['DRX'] },
-    { id: 'tg-pro-08', coordX: 0.60, coordY: 0.25, tier: 'S', teams: ['Gen.G', 'DRX'] },
-    { id: 'tg-pro-09', coordX: 0.72, coordY: 0.52, tier: 'B', teams: ['T1'] },
-    { id: 'tg-pro-10', coordX: 0.15, coordY: 0.55, tier: 'B', teams: ['OGN Entus'] },
-    { id: 'tg-pro-11', coordX: 0.42, coordY: 0.70, tier: 'A', teams: ['Gen.G'] },
-    { id: 'tg-pro-12', coordX: 0.58, coordY: 0.65, tier: 'B', teams: ['BFG', 'DRX'] },
-    { id: 'tg-pro-13', coordX: 0.82, coordY: 0.60, tier: 'A', teams: ['T1'] },
-    { id: 'tg-pro-14', coordX: 0.28, coordY: 0.38, tier: 'S', teams: ['Gen.G'] },
-    { id: 'tg-pro-15', coordX: 0.50, coordY: 0.50, tier: 'S', teams: ['Gen.G', 'T1', 'DRX'] },
-    { id: 'tg-pro-16', coordX: 0.62, coordY: 0.78, tier: 'B', teams: ['OGN Entus'] },
-    { id: 'tg-pro-17', coordX: 0.35, coordY: 0.65, tier: 'A', teams: ['DRX'] },
-    { id: 'tg-pro-18', coordX: 0.70, coordY: 0.42, tier: 'A', teams: ['Gen.G'] },
-    { id: 'tg-pro-19', coordX: 0.45, coordY: 0.35, tier: 'S', teams: ['T1', 'Gen.G'] },
-    { id: 'tg-pro-20', coordX: 0.55, coordY: 0.45, tier: 'S', teams: ['Gen.G', 'T1', 'DRX', 'OGN Entus'] },
-  ];
+  // ── 태이고 명당 — PUB-35 영상 분석 후속 작업 (PUB-36) ──
+  // 현재 영상 23개 중 태이고 매치는 yETU 매치 4개만 식별됨 (전체 ~3매치).
+  // 데이터 부족 → 별도 영상 배치 + 매치 분류 v5 정확도 향상 후 채울 예정.
+  const TAEGO_PRO: { id: string; coordX: number; coordY: number; tier: Tier; teams: string[] }[] = [];
 
-  // 기존 프로 더미 데이터 초기화 후 재삽입
+  // 기존 프로 데이터 초기화 (더미 'er-pro-/tg-pro-' + 이전 PWS 'er-pws-' 모두 정리 후 재삽입)
   await prisma.location.deleteMany({
     where: {
-      id: { startsWith: 'er-pro-' },
-    },
-  });
-  await prisma.location.deleteMany({
-    where: {
-      id: { startsWith: 'tg-pro-' },
+      OR: [
+        { id: { startsWith: 'er-pro-' } },
+        { id: { startsWith: 'er-pws-' } },
+        { id: { startsWith: 'tg-pro-' } },
+        { id: { startsWith: 'tg-pws-' } },
+      ],
     },
   });
 
@@ -258,9 +303,9 @@ async function main(): Promise<void> {
     });
   }
 
-  console.log(`에란겔 프로 더미 ${ERANGEL_PRO.length}개 완료`);
-  console.log(`태이고 프로 더미 ${TAEGO_PRO.length}개 완료`);
-  console.log(`시드 완료 — CirclePhase 18개 + 비밀창고 ${ERANGEL_STASHES.length + TAEGO_STASHES.length}개 + 프로 더미 ${ERANGEL_PRO.length + TAEGO_PRO.length}개`);
+  console.log(`에란겔 프로 명당 ${ERANGEL_PRO.length}개 완료 (PUB-35 영상 분석)`);
+  console.log(`태이고 프로 명당 ${TAEGO_PRO.length}개 완료 (PUB-36 후속)`);
+  console.log(`시드 완료 — CirclePhase 18개 + 비밀창고 ${ERANGEL_STASHES.length + TAEGO_STASHES.length}개 + 명당 ${ERANGEL_PRO.length + TAEGO_PRO.length}개`);
 }
 
 main()

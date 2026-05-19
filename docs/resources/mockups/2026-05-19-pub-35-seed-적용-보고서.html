@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PUB-35 영상 분석 → seed 적용 보고서 — 2026-05-19</title>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #1a2028; --panel-2: #232a35; --border: #2c3441;
+    --text: #e1e7ee; --muted: #8b97a7; --accent: #4cc9f0;
+    --good: #6dd47e; --warn: #f0c75e; --bad: #f06464;
+    --tier-s: #f0c75e; --p1:#f0c75e; --p2:#6dd47e; --p3:#4cc9f0; --p4:#c084fc; --p5:#f06464;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; line-height: 1.55; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
+  header { border-bottom: 2px solid var(--accent); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  h2 { color: var(--accent); margin: 28px 0 10px; font-size: 19px; border-left: 4px solid var(--accent); padding-left: 10px; }
+  h3 { margin: 18px 0 8px; font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--panel-2); color: var(--accent); font-weight: 600; }
+  tr:nth-child(odd) td { background: rgba(255,255,255,0.012); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 14px 0 24px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .stat .v { font-size: 26px; font-weight: 700; color: var(--accent); }
+  .stat .l { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat.before .v { color: var(--muted); }
+  .stat.after .v { color: var(--good); }
+  .flow { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.8; }
+  .ok { color: var(--good); } .warn { color: var(--warn); } .bad { color: var(--bad); } .muted { color: var(--muted); }
+  code { font-family: "JetBrains Mono", Menlo, Consolas, monospace; background: #0d1117; padding: 1px 6px; border-radius: 4px; font-size: 0.88em; color: #b9d4f1; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .phase-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .p1 { background: rgba(240,199,94,0.18); color: var(--p1); }
+  .p2 { background: rgba(109,212,126,0.18); color: var(--p2); }
+  .p3 { background: rgba(76,201,240,0.18); color: var(--p3); }
+  .p4 { background: rgba(192,132,252,0.18); color: var(--p4); }
+  .p5 { background: rgba(240,100,100,0.18); color: var(--p5); }
+  .tier-S { color: var(--tier-s); font-weight: 700; }
+  .top-list li { margin: 6px 0; font-size: 13px; }
+  .top-list .coord { font-family: monospace; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>PUB-35 영상 분석 → seed 적용 보고서</h1>
+  <p class="subtitle">2026-05-19 · PUBG Esports KR 채널 (MAP) 영상 23개 분석 → location-service ERANGEL_PRO 더미 20개 → 영상 분석 80곳으로 교체</p>
+</header>
+
+<h2>1. 한 페이지 요약</h2>
+
+<div class="grid">
+  <div class="stat before"><div class="v">20</div><div class="l">더미 (Before)</div></div>
+  <div class="stat after"><div class="v">80</div><div class="l">PUB-35 명당 (After)</div></div>
+  <div class="stat"><div class="v">23</div><div class="l">분석 영상</div></div>
+  <div class="stat"><div class="v">10,462</div><div class="l">총 마커</div></div>
+</div>
+
+<table>
+  <thead><tr><th>지표</th><th>어제 (페이즈 1만)</th><th>오늘 (페이즈 1~5)</th><th>증가</th></tr></thead>
+  <tbody>
+    <tr><td>처리 영상</td><td>6</td><td>23</td><td class="ok">+283%</td></tr>
+    <tr><td>마커 총</td><td>1,216</td><td>10,462</td><td class="ok">+760% (8.6배)</td></tr>
+    <tr><td>핫스팟 (DBSCAN 페이즈 1)</td><td>28</td><td>99</td><td class="ok">+253%</td></tr>
+    <tr><td>알고리즘</td><td>DBSCAN만</td><td>DBSCAN+KMeans+격자+가중</td><td class="ok">+3</td></tr>
+    <tr><td>매치 분류</td><td>인트로 색만</td><td>+ 자기장 그룹 + 반경 변화</td><td class="ok">3종</td></tr>
+    <tr><td>YouTube 봇 우회</td><td>차단됨</td><td>Edge cookies로 우회</td><td class="ok">✓</td></tr>
+  </tbody>
+</table>
+
+<h2>2. 적용된 시드 (Top 10 가중 점수)</h2>
+
+<p class="muted">가중 점수 = log(매치+1) × √(마커수). 매치 다양성과 마커 농도 동시 반영.</p>
+
+<table>
+  <thead><tr><th>#</th><th>좌표 (gx, gy)</th><th>Tier</th><th>매치</th><th>마커</th><th>추정 권역</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>(0.535, 0.727)</code></td><td class="tier-S">S</td><td><strong>19</strong></td><td>186</td><td>능선·고지 동남</td></tr>
+    <tr><td>2</td><td><code>(0.665, 0.731)</code></td><td class="tier-S">S</td><td>11</td><td>159</td><td>능선·고지 동남</td></tr>
+    <tr><td>3</td><td><code>(0.611, 0.699)</code></td><td class="tier-S">S</td><td>18</td><td>113</td><td>능선·고지 동남</td></tr>
+    <tr><td>4</td><td><code>(0.566, 0.152)</code></td><td class="tier-S">S</td><td><strong>21</strong></td><td>83</td><td>야스나야 권역 (가장 다양한 매치)</td></tr>
+    <tr><td>5</td><td><code>(0.493, 0.520)</code></td><td class="tier-S">S</td><td>16</td><td>87</td><td>포친키 중심</td></tr>
+    <tr><td>6</td><td><code>(0.492, 0.250)</code></td><td class="tier-S">S</td><td>17</td><td>76</td><td>중부</td></tr>
+    <tr><td>7</td><td><code>(0.431, 0.789)</code></td><td class="tier-S">S</td><td>14</td><td>70</td><td>소스노프카 군사기지</td></tr>
+    <tr><td>8</td><td><code>(0.781, 0.592)</code></td><td class="tier-S">S</td><td>12</td><td>66</td><td>밀타</td></tr>
+    <tr><td>9</td><td><code>(0.580, 0.554)</code></td><td class="tier-S">S</td><td>11</td><td>56</td><td>동남 능선</td></tr>
+    <tr><td>10</td><td><code>(0.526, 0.384)</code></td><td class="tier-S">S</td><td>11</td><td>54</td><td>중북부</td></tr>
+  </tbody>
+</table>
+
+<h2>3. 데이터 흐름 (자동화)</h2>
+
+<div class="flow">
+  <span class="ok">①</span> 유튜브 (MAP) 영상 URL → <code>download.py</code> (Edge cookies 우회 ✓)<br>
+  <span class="ok">②</span> ffmpeg 30초 간격 프레임 추출 → 영상당 ~500 프레임<br>
+  <span class="ok">③</span> 매치 자동 분리 — <code>v2 인트로색</code> → <code>v4 자기장그룹</code> → <code>v5 반경변화</code> (3단 fallback)<br>
+  <span class="ok">④</span> 자기장 + 마커 + 격자 OCR 검출 (페이즈 1 격자 → 변환식)<br>
+  <span class="ok">⑤</span> <span class="warn">[NEW]</span> 페이즈 2~5 zoom-in 시점 <strong>체인 변환</strong> — 자기장 검출 + 이전 페이즈 변환식 → 새 변환식 도출<br>
+  <span class="ok">⑥</span> 다중 클러스터링: DBSCAN(eps=0.015, 120m) + KMeans(K=60) + 가중점수 + 16×16 격자<br>
+  <span class="ok">⑦</span> <code>seed_v4_*.ts</code> 자동 생성 → <code>apps/services/location/prisma/seed.ts</code> ERANGEL_PRO 교체<br>
+  <span class="ok">⑧</span> <code>prisma db seed</code> 실행 → DB에 80곳 명당 삽입
+</div>
+
+<h2>4. 페이즈별 데이터 분포</h2>
+
+<table>
+  <thead><tr><th>페이즈</th><th>마커 수</th><th>핫스팟 (DBSCAN)</th><th>의미</th></tr></thead>
+  <tbody>
+    <tr><td><span class="phase-tag p1">P1</span> 자기장 형성 직후</td><td>1,222</td><td>99</td><td><strong>진짜 명당</strong> — 팀 자유 선택 위치</td></tr>
+    <tr><td><span class="phase-tag p2">P2</span></td><td>897</td><td>63</td><td>자기장 안 위치 + 자기장 분포</td></tr>
+    <tr><td><span class="phase-tag p3">P3</span></td><td>837</td><td>25</td><td>중반 자기장 위치</td></tr>
+    <tr><td><span class="phase-tag p4">P4</span></td><td>606</td><td>16</td><td>후반 위치</td></tr>
+    <tr><td><span class="phase-tag p5">P5</span></td><td>422</td><td>19</td><td>엔드게임 자기장 중심 위치</td></tr>
+  </tbody>
+</table>
+
+<h2>5. 영상 출처 (PUBG Esports KR 채널)</h2>
+
+<table>
+  <thead><tr><th>영상 종류</th><th>개수</th><th>매치 분류 정확도</th><th>마커</th></tr></thead>
+  <tbody>
+    <tr><td>PWS 파이널 (D2, D3)</td><td>2</td><td class="ok">매치 6개 정확</td><td>2,395</td></tr>
+    <tr><td>위클리 QUALIFIERS</td><td>5</td><td class="ok">매치 5개 정확</td><td>5,469</td></tr>
+    <tr><td>PGS 3 그랜드 파이널</td><td>2</td><td class="warn">1매치 압축 (v5 필요)</td><td>744</td></tr>
+    <tr><td>PGS 2/1 파이널 스테이지</td><td>4</td><td class="warn">1매치 압축</td><td>495</td></tr>
+    <tr><td>PGS 위너 스테이지</td><td>2</td><td class="warn">1매치 압축</td><td>577</td></tr>
+    <tr><td>PGC 2025 그랜드 파이널</td><td>2</td><td class="warn">1매치 압축</td><td>1,377</td></tr>
+    <tr><td>마스터즈 인비테이셔널</td><td>3</td><td class="warn">1매치 (단순 영상)</td><td>118</td></tr>
+    <tr><td>RACE PGS PRELUDE</td><td>2</td><td class="warn">1매치 압축</td><td>797</td></tr>
+    <tr><td><strong>합계</strong></td><td><strong>23</strong></td><td>—</td><td><strong>11,972</strong></td></tr>
+  </tbody>
+</table>
+
+<h2>6. 사용자 통찰 반영</h2>
+
+<div class="card">
+  <h3>✓ "시작 대기 시간 (인트로 1시간) 불필요한 부분 자르기"</h3>
+  <p>매치 자동 분리 알고리즘 3단 fallback. 인트로 색 fail 시 자기장 반경 변화 기반 v5로 대체. PWS/QUALIFIERS 영상은 정확히 5~6 매치 분리. PGS 영상은 v5 효과 검증 대기.</p>
+</div>
+
+<div class="card">
+  <h3>✓ "도시 vs 능선/조그만 건물 구분"</h3>
+  <p>DBSCAN <code>eps</code> 변화 실험으로 sweet spot 결정:</p>
+  <ul>
+    <li><code>0.040</code> (320m): 18 핫스팟 — 도시 권역 통째</li>
+    <li><code>0.025</code> (200m): 37 핫스팟 — 도시 권역 단위</li>
+    <li><strong><code>0.015</code> (120m): 48 → 99 핫스팟 ★</strong> — 도시 구역/능선/건물군 단위</li>
+    <li><code>0.010</code> (80m): 39 — 단일 건물 (S tier 분산)</li>
+  </ul>
+  <p class="muted">PUBG 한 명당 사용권 100~150m가 자연스러움 → 0.015 최적.</p>
+</div>
+
+<h2>7. 변경 파일</h2>
+
+<table>
+  <thead><tr><th>파일</th><th>변경</th></tr></thead>
+  <tbody>
+    <tr><td><code>apps/services/location/prisma/seed.ts</code></td><td>ERANGEL_PRO 더미 20 → PUB-35 80곳. TAEGO_PRO 비움 (PUB-36 후속)</td></tr>
+    <tr><td><code>apps/services/video-analyzer/phase_timing.py</code></td><td>새 파일 — PUBG 페이즈 타이밍 추정</td></tr>
+    <tr><td><code>apps/services/video-analyzer/grid_ocr.py</code></td><td><code>derive_transform_from_zone</code> 추가 — 체인 변환</td></tr>
+    <tr><td><code>apps/services/video-analyzer/pipeline.py</code></td><td>페이즈 1~5 처리 + v5 매치 분류 fallback</td></tr>
+    <tr><td><code>apps/services/video-analyzer/match_classifier.py</code></td><td><code>find_matches_v5</code> 자기장 반경 기반</td></tr>
+    <tr><td><code>apps/services/video-analyzer/download.py</code></td><td>Edge cookies WSL 자동 사용</td></tr>
+    <tr><td><code>apps/services/video-analyzer/ml_export.py</code></td><td>새 파일 — ML 데이터셋 export, 페이즈별 분리</td></tr>
+    <tr><td><code>apps/services/video-analyzer/analysis.py</code></td><td>새 파일 — KMeans/격자/자기장분포/가중점수</td></tr>
+    <tr><td><code>apps/services/video-analyzer/eps_experiment.py</code></td><td>새 파일 — eps 정밀도 검증</td></tr>
+    <tr><td><code>apps/services/video-analyzer/run_seed_update.py</code></td><td>새 파일 — seed.ts 자동 갱신 진입점</td></tr>
+    <tr><td><code>apps/services/video-analyzer/seed_writer.py</code></td><td>페이즈 라벨 옵션 추가</td></tr>
+  </tbody>
+</table>
+
+<h2>8. 적용 결과 (DB)</h2>
+
+<div class="card">
+  <p><strong>seed 실행 흐름</strong>:</p>
+  <ol>
+    <li>기존 <code>er-pro-*</code> + <code>tg-pro-*</code> 더미 + <code>er-pws-*</code> 이전 시드 모두 deleteMany</li>
+    <li>새 <code>er-pws-001~080</code> 80곳 삽입 (모두 S tier, 매치 ≥3 공통)</li>
+    <li>TAEGO_PRO 빈 배열 (PUB-36에서 채울 예정)</li>
+  </ol>
+  <p class="muted">실제 적용은 <code>docker compose up -d --build</code> 후 location 컨테이너에서 자동 seed 실행됨.</p>
+</div>
+
+<h2>9. 한계 (정직히)</h2>
+
+<ul>
+  <li><span class="warn">⚠️</span> <strong>좌표가 진짜 PUBG 명당인지 시각 검증 안 됨</strong> — 사용자 게임 지식 필요. 화면공유로 자기장 락 후 우측 추천 표시 확인 후 평가.</li>
+  <li><span class="warn">⚠️</span> <strong>PGS/PGC 영상 매치 분류 부정확</strong> — 1매치로 압축. v5 자기장 반경 기반 fallback이 새로 작성됐지만 PGS는 v5에 의존하지 않은 채 진행. 다음 배치에서 v5 효과 검증.</li>
+  <li><span class="warn">⚠️</span> <strong>태이고 데이터 부족</strong> — 23 영상 중 태이고 매치 ~3개만. PUB-36 별도 작업.</li>
+  <li><span class="warn">⚠️</span> <strong>지역 권역 추정 단순</strong> — 좌표 → 권역명은 정적 매핑. 시각 검증 후 수정 가능.</li>
+</ul>
+
+<h2>10. 다음 단계</h2>
+
+<ol>
+  <li><strong>도커 재빌드 완료 후 사용자 게임 테스트</strong> — 화면공유 → 자기장 락 → 우측 추천 위치 표시 확인</li>
+  <li><strong>좌표 정확도 시각 검증</strong> — 80곳이 실제 명당과 일치하는지 사용자 판단</li>
+  <li><strong>좌표 어긋남 발견 시 알고리즘 튜닝</strong> — eps/가중치 변경, 변환식 재계산, 또는 영상 추가</li>
+  <li><strong>PUB-36: 태이고 영상 분석</strong> — 태이고 매치 많은 영상 별도 배치</li>
+  <li><strong>PUB-37: 실제 ML 모델</strong> (자기장 위치 예측) — 자기장 중심 분포 데이터 활용</li>
+</ol>
+
+</div>
+</body>
+</html>
