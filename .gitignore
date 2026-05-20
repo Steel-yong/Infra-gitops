@@ -29,9 +29,24 @@ Thumbs.db
 # Claude Code 로컬 자산 (이미지/세션 설정은 사용자별)
 .claude/images/
 .claude/settings.json
+# 쿠키 (YouTube 다운로드용) — 절대 커밋 금지
+.claude/*cookies*.txt
+.claude/cookies/
 
 # TypeScript 빌드 캐시
 *.tsbuildinfo
 
+# TypeScript 컴파일 산출물 (packages/shared/src — .ts 만 추적)
+packages/shared/src/**/*.d.ts
+packages/shared/src/**/*.d.ts.map
+packages/shared/src/**/*.js
+packages/shared/src/**/*.js.map
+
 # 검증 스크립트 산출물 (이미지 오버레이 등)
 scripts-output/
+
+# 에디터 워크스페이스 설정 (개발자별 다름)
+.vscode/
+
+# 영상 분석 캐시 (대용량 numpy lookup 등)
+.claude/*.npy
