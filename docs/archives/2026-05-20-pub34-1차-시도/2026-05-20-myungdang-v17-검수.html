@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>명당 v17 — 바다 필터 적용</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0e1a; color: #e4e7ed; font-family: -apple-system, sans-serif; padding: 32px; max-width: 1500px; margin: 0 auto; }
+h1 { font-size: 28px; margin-bottom: 8px; }
+h2 { font-size: 20px; margin: 28px 0 14px; color: #9bc1ff; border-left: 3px solid #4d8bff; padding-left: 12px; }
+.meta { color: #8a96a8; font-size: 13px; }
+.card { background: #131826; border: 1px solid #232a3a; border-radius: 8px; padding: 16px; margin-top: 16px; }
+img { width: 100%; height: auto; border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #232a3a; }
+th { background: #1a2030; color: #9bc1ff; }
+.tier-S { color: #ff6b6b; font-weight: 700; }
+.tier-A { color: #ffa64d; font-weight: 600; }
+.tier-B { color: #ffd166; font-weight: 500; }
+.stat { background: #1a2030; padding: 18px; border-radius: 8px; text-align: center; }
+.stat .num { font-size: 28px; font-weight: 700; color: #82e0d6; }
+.stat .lbl { font-size: 12px; color: #8a96a8; }
+.note { background: #1a2030; padding: 14px 18px; border-radius: 6px; margin: 14px 0; border-left: 3px solid #ffa64d; font-size: 13px; }
+</style></head><body>
+<h1>명당 v17 — 바다 필터 적용 (사용자 꿀팁 반영)</h1>
+<div class="meta">2026-05-20 · 기존 22 영상 마커 + 바다 마스크 필터 + 27도시 DB 검증</div>
+
+<div class="note">
+<b>사용자 꿀팁:</b> "원이 바다에 있으면 잘못된 거다" → 바다 픽셀 마스크 만들어 좌표 변환 잘못된 마커 자동 제외 → 152 hotspot 모두 육지 검증 완료.
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0">
+<div class="stat"><div class="num">38,472 → 37,734</div><div class="lbl">전체 마커 (바다 738개 제거)</div></div>
+<div class="stat"><div class="num">152</div><div class="lbl">명당 클러스터</div></div>
+<div class="stat"><div class="num">20/31/101</div><div class="lbl">S/A/B tier</div></div>
+<div class="stat"><div class="num">0</div><div class="lbl">바다 위 명당 (검증)</div></div>
+</div>
+
+<div class="card"><img src="2026-05-20-myungdang-v17-sea-filtered.png" alt="v17"></div>
+
+<h2>Top 25 명당</h2>
+<table>
+<thead><tr><th>#</th><th>좌표</th><th>마커</th><th>매치</th><th>영상</th><th>tier</th><th>가까운 도시</th><th>거리</th></tr></thead>
+<tbody><tr><td>1</td><td>(0.448,0.744)</td><td>541</td><td>74</td><td>26</td><td class="tier-S">S</td><td>SosnovkaIsl</td><td>851m</td></tr><tr><td>2</td><td>(0.583,0.483)</td><td>416</td><td>75</td><td>23</td><td class="tier-S">S</td><td>School</td><td>654m</td></tr><tr><td>3</td><td>(0.550,0.705)</td><td>317</td><td>77</td><td>27</td><td class="tier-S">S</td><td>SosnovkaIsl</td><td>241m</td></tr><tr><td>4</td><td>(0.688,0.750)</td><td>364</td><td>64</td><td>21</td><td class="tier-S">S</td><td>Novorepnoye</td><td>456m</td></tr><tr><td>5</td><td>(0.365,0.664)</td><td>405</td><td>60</td><td>18</td><td class="tier-S">S</td><td>Ferry</td><td>406m</td></tr><tr><td>6</td><td>(0.593,0.732)</td><td>339</td><td>47</td><td>19</td><td class="tier-S">S</td><td>SosnovkaIsl</td><td>314m</td></tr><tr><td>7</td><td>(0.460,0.594)</td><td>190</td><td>52</td><td>17</td><td class="tier-S">S</td><td>Pochinki</td><td>812m</td></tr><tr><td>8</td><td>(0.397,0.739)</td><td>303</td><td>38</td><td>14</td><td class="tier-S">S</td><td>Ferry</td><td>513m</td></tr><tr><td>9</td><td>(0.637,0.660)</td><td>176</td><td>47</td><td>22</td><td class="tier-S">S</td><td>Farm</td><td>829m</td></tr><tr><td>10</td><td>(0.733,0.853)</td><td>157</td><td>43</td><td>17</td><td class="tier-S">S</td><td>Novorepnoye</td><td>902m</td></tr><tr><td>11</td><td>(0.720,0.659)</td><td>201</td><td>36</td><td>13</td><td class="tier-S">S</td><td>Mylta</td><td>651m</td></tr><tr><td>12</td><td>(0.568,0.593)</td><td>142</td><td>42</td><td>17</td><td class="tier-S">S</td><td>Farm</td><td>754m</td></tr><tr><td>13</td><td>(0.403,0.826)</td><td>262</td><td>30</td><td>8</td><td class="tier-S">S</td><td>Ferry</td><td>1057m</td></tr><tr><td>14</td><td>(0.593,0.368)</td><td>107</td><td>41</td><td>19</td><td class="tier-S">S</td><td>School</td><td>771m</td></tr><tr><td>15</td><td>(0.380,0.590)</td><td>108</td><td>40</td><td>16</td><td class="tier-S">S</td><td>Pochinki</td><td>941m</td></tr><tr><td>16</td><td>(0.669,0.571)</td><td>100</td><td>39</td><td>21</td><td class="tier-S">S</td><td>Farm</td><td>146m</td></tr><tr><td>17</td><td>(0.543,0.866)</td><td>177</td><td>28</td><td>13</td><td class="tier-A">A</td><td>MilBase</td><td>498m</td></tr><tr><td>18</td><td>(0.478,0.527)</td><td>90</td><td>34</td><td>18</td><td class="tier-S">S</td><td>Pochinki</td><td>375m</td></tr><tr><td>19</td><td>(0.635,0.839)</td><td>90</td><td>30</td><td>12</td><td class="tier-S">S</td><td>MilBase</td><td>721m</td></tr><tr><td>20</td><td>(0.490,0.484)</td><td>82</td><td>31</td><td>18</td><td class="tier-S">S</td><td>Pochinki</td><td>355m</td></tr><tr><td>21</td><td>(0.800,0.512)</td><td>75</td><td>30</td><td>16</td><td class="tier-S">S</td><td>Prison</td><td>387m</td></tr><tr><td>22</td><td>(0.813,0.632)</td><td>87</td><td>25</td><td>14</td><td class="tier-A">A</td><td>Mylta</td><td>789m</td></tr><tr><td>23</td><td>(0.571,0.553)</td><td>74</td><td>26</td><td>15</td><td class="tier-A">A</td><td>Farm</td><td>679m</td></tr><tr><td>24</td><td>(0.528,0.901)</td><td>68</td><td>26</td><td>13</td><td class="tier-A">A</td><td>MilBase</td><td>802m</td></tr><tr><td>25</td><td>(0.655,0.887)</td><td>147</td><td>17</td><td>3</td><td class="tier-A">A</td><td>MilBase</td><td>1058m</td></tr></tbody>
+</table>
+</body></html>

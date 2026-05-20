@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>에란겔 명당 — 최선 vs 차선</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0e1a; color: #e4e7ed; font-family: -apple-system, sans-serif; padding: 32px; max-width: 1700px; margin: 0 auto; }
+h1 { font-size: 28px; margin-bottom: 8px; }
+h2 { font-size: 20px; margin: 32px 0 14px; color: #9bc1ff; border-left: 3px solid #4d8bff; padding-left: 12px; }
+.meta { color: #8a96a8; font-size: 13px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.card { background: #131826; border: 1px solid #232a3a; border-radius: 8px; padding: 16px; }
+.card h3 { font-size: 16px; color: #9bc1ff; margin-bottom: 10px; }
+img { width: 100%; height: auto; border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid #232a3a; }
+th { background: #1a2030; color: #9bc1ff; }
+.tier-S { color: #ff6b6b; font-weight: 700; }
+.tier-A { color: #ffa64d; font-weight: 600; }
+.tier-B { color: #ffd166; font-weight: 500; }
+.stat { background: #1a2030; padding: 18px; border-radius: 8px; text-align: center; }
+.stat .num { font-size: 28px; font-weight: 700; color: #82e0d6; }
+.stat .lbl { font-size: 12px; color: #8a96a8; }
+.note { background: #1a2030; padding: 14px 18px; border-radius: 6px; margin: 14px 0; border-left: 3px solid #ffa64d; font-size: 13px; }
+ul { padding-left: 22px; } li { margin: 4px 0; }
+</style></head><body>
+<h1>에란겔 명당 — 최선 vs 차선 비교</h1>
+<div class="meta">2026-05-20 · 자율 진행 결과 · 바다 마스크 검증 + 3-offset cross-validation 적용</div>
+
+<div class="note">
+<b>방법론:</b> ① 기존 22 영상 마커 + 신규 스트림 영상 데이터 합침 ② 바다 위 마커 제거 (꿀팁 반영) ③ 페이즈 1 마커 DBSCAN 클러스터링 (eps=0.008) ④ 신규 데이터를 sec%30=0/10/20 3개 subset으로 분리, 각각 클러스터링 후 cross-validation
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:18px 0">
+<div class="stat"><div class="num">64,218</div><div class="lbl">전체 마커 (바다 제외)</div></div>
+<div class="stat"><div class="num">26,484</div><div class="lbl">신규 스트림 마커 (10s)</div></div>
+<div class="stat"><div class="num">57</div><div class="lbl">🥇 최선 (cross-validated)</div></div>
+<div class="stat"><div class="num">163</div><div class="lbl">🥈 차선 (전체)</div></div>
+<div class="stat"><div class="num">158 / 150 / 155</div><div class="lbl">offset 0/10/20</div></div>
+</div>
+
+<h2>맵 시각화</h2>
+<div class="grid2">
+<div class="card"><h3>🥇 최선 — Cross-validated (3-offset 검증)</h3>
+<img src="2026-05-20-myungdang-best-ingame.png" alt="best"></div>
+<div class="card"><h3>🥈 차선 — 전체 데이터 클러스터링</h3>
+<img src="2026-05-20-myungdang-secondary-ingame.png" alt="secondary"></div>
+</div>
+
+<h2>🥇 최선 명당 Top 30 (Cross-validated)</h2>
+<table>
+<thead><tr><th>#</th><th>좌표</th><th>마커</th><th>매치</th><th>영상</th><th>tier</th><th>3패스 통과</th><th>가까운 도시</th><th>거리</th></tr></thead>
+<tbody><tr><td>1</td><td>(0.657, 0.869)</td><td>570</td><td>41</td><td>24</td><td class="tier-S">S</td><td>3</td><td>MilBase</td><td>991m</td></tr><tr><td>2</td><td>(0.355, 0.801)</td><td>265</td><td>42</td><td>30</td><td class="tier-S">S</td><td>3</td><td>Ferry</td><td>745m</td></tr><tr><td>3</td><td>(0.852, 0.473)</td><td>483</td><td>25</td><td>25</td><td class="tier-A">A</td><td>3</td><td>Lipovka</td><td>579m</td></tr><tr><td>4</td><td>(0.858, 0.643)</td><td>266</td><td>30</td><td>26</td><td class="tier-S">S</td><td>3</td><td>MyltaPower</td><td>669m</td></tr><tr><td>5</td><td>(0.525, 0.898)</td><td>139</td><td>33</td><td>20</td><td class="tier-S">S</td><td>3</td><td>MilBase</td><td>784m</td></tr><tr><td>6</td><td>(0.854, 0.558)</td><td>212</td><td>26</td><td>22</td><td class="tier-A">A</td><td>3</td><td>MyltaPower</td><td>341m</td></tr><tr><td>7</td><td>(0.888, 0.593)</td><td>429</td><td>18</td><td>18</td><td class="tier-A">A</td><td>3</td><td>MyltaPower</td><td>208m</td></tr><tr><td>8</td><td>(0.584, 0.899)</td><td>234</td><td>23</td><td>23</td><td class="tier-A">A</td><td>3</td><td>MilBase</td><td>801m</td></tr><tr><td>9</td><td>(0.844, 0.265)</td><td>260</td><td>20</td><td>20</td><td class="tier-A">A</td><td>3</td><td>Kameshki</td><td>1042m</td></tr><tr><td>10</td><td>(0.795, 0.682)</td><td>158</td><td>23</td><td>21</td><td class="tier-A">A</td><td>3</td><td>Novorepnoye</td><td>622m</td></tr><tr><td>11</td><td>(0.537, 0.168)</td><td>128</td><td>23</td><td>17</td><td class="tier-A">A</td><td>3</td><td>Severny</td><td>575m</td></tr><tr><td>12</td><td>(0.427, 0.125)</td><td>204</td><td>16</td><td>16</td><td class="tier-A">A</td><td>3</td><td>Severny</td><td>373m</td></tr><tr><td>13</td><td>(0.391, 0.851)</td><td>187</td><td>16</td><td>16</td><td class="tier-A">A</td><td>3</td><td>Ferry</td><td>1205m</td></tr><tr><td>14</td><td>(0.547, 0.103)</td><td>106</td><td>18</td><td>18</td><td class="tier-A">A</td><td>3</td><td>Severny</td><td>726m</td></tr><tr><td>15</td><td>(0.134, 0.716)</td><td>172</td><td>14</td><td>14</td><td class="tier-B">B</td><td>3</td><td>Quarry</td><td>604m</td></tr><tr><td>16</td><td>(0.268, 0.506)</td><td>135</td><td>14</td><td>14</td><td class="tier-B">B</td><td>3</td><td>Gatka</td><td>220m</td></tr><tr><td>17</td><td>(0.148, 0.764)</td><td>112</td><td>15</td><td>15</td><td class="tier-A">A</td><td>3</td><td>Primorsk</td><td>501m</td></tr><tr><td>18</td><td>(0.190, 0.782)</td><td>138</td><td>12</td><td>12</td><td class="tier-B">B</td><td>3</td><td>Primorsk</td><td>360m</td></tr><tr><td>19</td><td>(0.810, 0.290)</td><td>106</td><td>13</td><td>12</td><td class="tier-B">B</td><td>3</td><td>Mansion</td><td>806m</td></tr><tr><td>20</td><td>(0.284, 0.565)</td><td>84</td><td>14</td><td>14</td><td class="tier-B">B</td><td>3</td><td>Gatka</td><td>708m</td></tr><tr><td>21</td><td>(0.489, 0.116)</td><td>93</td><td>10</td><td>10</td><td class="tier-B">B</td><td>3</td><td>Severny</td><td>308m</td></tr><tr><td>22</td><td>(0.878, 0.473)</td><td>111</td><td>8</td><td>8</td><td class="tier-B">B</td><td>3</td><td>Lipovka</td><td>574m</td></tr><tr><td>23</td><td>(0.158, 0.622)</td><td>98</td><td>8</td><td>8</td><td class="tier-B">B</td><td>3</td><td>Quarry</td><td>571m</td></tr><tr><td>24</td><td>(0.193, 0.434)</td><td>89</td><td>8</td><td>8</td><td class="tier-B">B</td><td>3</td><td>Hospital</td><td>296m</td></tr><tr><td>25</td><td>(0.930, 0.585)</td><td>87</td><td>8</td><td>8</td><td class="tier-B">B</td><td>3</td><td>MyltaPower</td><td>308m</td></tr><tr><td>26</td><td>(0.299, 0.776)</td><td>75</td><td>8</td><td>8</td><td class="tier-B">B</td><td>3</td><td>Ferry</td><td>631m</td></tr><tr><td>27</td><td>(0.101, 0.709)</td><td>43</td><td>10</td><td>10</td><td class="tier-B">B</td><td>3</td><td>Quarry</td><td>823m</td></tr><tr><td>28</td><td>(0.899, 0.657)</td><td>112</td><td>6</td><td>6</td><td class="tier-B">B</td><td>3</td><td>MyltaPower</td><td>711m</td></tr><tr><td>29</td><td>(0.262, 0.447)</td><td>36</td><td>9</td><td>9</td><td class="tier-B">B</td><td>3</td><td>Gatka</td><td>251m</td></tr><tr><td>30</td><td>(0.936, 0.559)</td><td>78</td><td>6</td><td>6</td><td class="tier-B">B</td><td>3</td><td>MyltaPower</td><td>336m</td></tr></tbody>
+</table>
+
+<h2>🥈 차선 명당 Top 30 (전체)</h2>
+<table>
+<thead><tr><th>#</th><th>좌표</th><th>마커</th><th>매치</th><th>영상</th><th>tier</th><th>3패스 통과</th><th>가까운 도시</th><th>거리</th></tr></thead>
+<tbody><tr><td>1</td><td>(0.543, 0.564)</td><td>47684</td><td>177</td><td>55</td><td class="tier-S">S</td><td>1</td><td>Farm</td><td>907m</td></tr><tr><td>2</td><td>(0.716, 0.853)</td><td>307</td><td>60</td><td>26</td><td class="tier-S">S</td><td>0</td><td>Novorepnoye</td><td>923m</td></tr><tr><td>3</td><td>(0.657, 0.869)</td><td>570</td><td>41</td><td>24</td><td class="tier-S">S</td><td>3</td><td>MilBase</td><td>991m</td></tr><tr><td>4</td><td>(0.403, 0.826)</td><td>297</td><td>41</td><td>16</td><td class="tier-S">S</td><td>0</td><td>Ferry</td><td>1055m</td></tr><tr><td>5</td><td>(0.355, 0.801)</td><td>265</td><td>42</td><td>30</td><td class="tier-S">S</td><td>3</td><td>Ferry</td><td>745m</td></tr><tr><td>6</td><td>(0.397, 0.222)</td><td>287</td><td>36</td><td>28</td><td class="tier-S">S</td><td>1</td><td>Shooting</td><td>166m</td></tr><tr><td>7</td><td>(0.705, 0.242)</td><td>223</td><td>39</td><td>28</td><td class="tier-S">S</td><td>0</td><td>Yasnaya</td><td>432m</td></tr><tr><td>8</td><td>(0.852, 0.473)</td><td>483</td><td>25</td><td>25</td><td class="tier-A">A</td><td>3</td><td>Lipovka</td><td>579m</td></tr><tr><td>9</td><td>(0.573, 0.157)</td><td>147</td><td>42</td><td>24</td><td class="tier-S">S</td><td>0</td><td>Severny</td><td>840m</td></tr><tr><td>10</td><td>(0.858, 0.643)</td><td>266</td><td>30</td><td>26</td><td class="tier-S">S</td><td>3</td><td>MyltaPower</td><td>669m</td></tr><tr><td>11</td><td>(0.636, 0.837)</td><td>112</td><td>39</td><td>19</td><td class="tier-S">S</td><td>0</td><td>MilBase</td><td>723m</td></tr><tr><td>12</td><td>(0.525, 0.898)</td><td>139</td><td>33</td><td>20</td><td class="tier-S">S</td><td>3</td><td>MilBase</td><td>784m</td></tr><tr><td>13</td><td>(0.784, 0.232)</td><td>140</td><td>32</td><td>23</td><td class="tier-S">S</td><td>0</td><td>Kameshki</td><td>816m</td></tr><tr><td>14</td><td>(0.854, 0.558)</td><td>212</td><td>26</td><td>22</td><td class="tier-A">A</td><td>3</td><td>MyltaPower</td><td>341m</td></tr><tr><td>15</td><td>(0.888, 0.593)</td><td>429</td><td>18</td><td>18</td><td class="tier-A">A</td><td>3</td><td>MyltaPower</td><td>208m</td></tr><tr><td>16</td><td>(0.584, 0.899)</td><td>234</td><td>23</td><td>23</td><td class="tier-A">A</td><td>3</td><td>MilBase</td><td>801m</td></tr><tr><td>17</td><td>(0.844, 0.265)</td><td>260</td><td>20</td><td>20</td><td class="tier-A">A</td><td>3</td><td>Kameshki</td><td>1042m</td></tr><tr><td>18</td><td>(0.769, 0.772)</td><td>101</td><td>29</td><td>16</td><td class="tier-A">A</td><td>0</td><td>Novorepnoye</td><td>317m</td></tr><tr><td>19</td><td>(0.795, 0.682)</td><td>158</td><td>23</td><td>21</td><td class="tier-A">A</td><td>3</td><td>Novorepnoye</td><td>622m</td></tr><tr><td>20</td><td>(0.741, 0.888)</td><td>113</td><td>25</td><td>8</td><td class="tier-A">A</td><td>0</td><td>Novorepnoye</td><td>1176m</td></tr><tr><td>21</td><td>(0.537, 0.168)</td><td>128</td><td>23</td><td>17</td><td class="tier-A">A</td><td>3</td><td>Severny</td><td>575m</td></tr><tr><td>22</td><td>(0.427, 0.125)</td><td>204</td><td>16</td><td>16</td><td class="tier-A">A</td><td>3</td><td>Severny</td><td>373m</td></tr><tr><td>23</td><td>(0.391, 0.851)</td><td>187</td><td>16</td><td>16</td><td class="tier-A">A</td><td>3</td><td>Ferry</td><td>1205m</td></tr><tr><td>24</td><td>(0.632, 0.224)</td><td>71</td><td>25</td><td>19</td><td class="tier-A">A</td><td>0</td><td>Yasnaya</td><td>689m</td></tr><tr><td>25</td><td>(0.825, 0.679)</td><td>74</td><td>23</td><td>20</td><td class="tier-A">A</td><td>0</td><td>Novorepnoye</td><td>817m</td></tr><tr><td>26</td><td>(0.355, 0.367)</td><td>96</td><td>20</td><td>18</td><td class="tier-A">A</td><td>1</td><td>Ruins</td><td>452m</td></tr><tr><td>27</td><td>(0.275, 0.475)</td><td>192</td><td>14</td><td>14</td><td class="tier-B">B</td><td>2</td><td>Gatka</td><td>51m</td></tr><tr><td>28</td><td>(0.547, 0.103)</td><td>106</td><td>18</td><td>18</td><td class="tier-A">A</td><td>3</td><td>Severny</td><td>726m</td></tr><tr><td>29</td><td>(0.134, 0.716)</td><td>172</td><td>14</td><td>14</td><td class="tier-B">B</td><td>3</td><td>Quarry</td><td>604m</td></tr><tr><td>30</td><td>(0.284, 0.408)</td><td>191</td><td>13</td><td>13</td><td class="tier-B">B</td><td>1</td><td>Gatka</td><td>577m</td></tr></tbody>
+</table>
+
+<h2>방법론 세부</h2>
+<ul>
+<li><b>바다 마스크:</b> 인게임 맵 HSV에서 H=95-125, S>80, V<90 → 바다 영역 27.8%. 27 도시 모두 육지 검증 통과.</li>
+<li><b>3-offset 비교:</b> 신규 영상은 10초 간격 캡처 → sec%30=0/10/20 subset → 같은 자리가 3패스 중 N개에서 나오면 cross_passes=N</li>
+<li><b>최선 (BEST):</b> 전체 데이터 클러스터링 결과를 3-offset과 cross-check. 같은 위치에 핫스팟이 1+ offset subset에 있는 것만 채택 → 시간 안정성 검증</li>
+<li><b>차선 (SECONDARY):</b> 전체 데이터로 클러스터링한 결과. 더 많은 곳을 잡지만 단발성 outlier 포함 가능</li>
+</ul>
+</body></html>
