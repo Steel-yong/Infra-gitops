@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>인프라 감사 우선순위 — 2026-05-18</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --pink: #db61a2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Pretendard", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px;
+    line-height: 1.55;
+  }
+  h1 { color: var(--accent); margin: 0 0 4px; font-size: 28px; }
+  h2 { color: var(--accent); margin: 40px 0 12px; font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  .sub { color: var(--muted); margin-bottom: 32px; font-size: 14px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card.critical { border-left: 4px solid var(--red); }
+  .card.high { border-left: 4px solid var(--yellow); }
+  .card.medium { border-left: 4px solid var(--accent); }
+  .card.good { border-left: 4px solid var(--green); }
+  .card h3 { margin: 0 0 8px; font-size: 15px; }
+  .card .meta { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .badge.red { background: rgba(248,81,73,.15); color: var(--red); }
+  .badge.yellow { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .badge.blue { background: rgba(88,166,255,.15); color: var(--accent); }
+  .badge.green { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge.pink { background: rgba(219,97,162,.15); color: var(--pink); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { background: #1f2937; color: var(--muted); font-weight: 600; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  .score {
+    display: inline-block;
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .score.high { color: var(--green); }
+  .score.mid { color: var(--yellow); }
+  .score.low { color: var(--muted); }
+  code {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    color: var(--pink);
+  }
+  .quick-fix {
+    background: rgba(63,185,80,.07);
+    border: 1px solid rgba(63,185,80,.3);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+  }
+  .quick-fix h4 { margin: 0 0 6px; color: var(--green); font-size: 14px; }
+  .danger-callout {
+    background: rgba(248,81,73,.07);
+    border: 1px solid rgba(248,81,73,.3);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+  }
+  .danger-callout h4 { margin: 0 0 6px; color: var(--red); font-size: 14px; }
+  ul { margin: 6px 0; padding-left: 18px; }
+  li { margin: 4px 0; }
+  .flow {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<h1>인프라 감사 — 우선순위 시각화</h1>
+<div class="sub">2026-05-18 · Infra-gitops onprem-dev · 단일 RKE2 클러스터 + PUBG Helper 앱</div>
+
+<div class="danger-callout" style="border-color: rgba(63,185,80,.3); background: rgba(63,185,80,.07);">
+  <h4 style="color: var(--green);">✏ 사용자 정정 (2026-05-18)</h4>
+  <p>초안의 "브랜치 분기" 리스크는 <b>오해</b>. 실제는 의도된 3단계 환경 분리: <code>develop</code>=docker-compose 개발, <code>onprem-dev-test</code>=K8s 통합 dev, <code>main</code>=최종 prod. 앱 K8s 매니페스트가 develop에 없는 것도 의도된 상태 (개발 완료 후 머지 시 작성 예정).</p>
+</div>
+
+<h2>🔥 진짜 리스크 3가지 (정정 후)</h2>
+<div class="grid-3">
+  <div class="card critical">
+    <span class="badge red">SECURITY</span>
+    <h3>① staging cert로 외부 서빙</h3>
+    <div class="meta">components/cert-manager/cluster-issuer.yaml:11</div>
+    <p>letsencrypt-<b>staging</b>만 정의. cloudflared로 외부에 <code>*.yongun.shop</code> 노출 중이라 <b>브라우저 신뢰 안 됨</b>. prod issuer 한 줄 추가로 해결.</p>
+  </div>
+  <div class="card critical">
+    <span class="badge red">DEAD CODE</span>
+    <h3>② alert-service dead code</h3>
+    <div class="meta">apps/services/alert</div>
+    <p>Frontend가 호출 안 함. 알림은 클라이언트사이드 OCR. <code>NEXT_PUBLIC_ALERT_SERVICE_URL</code> grep 0건. <b>결정 필요: 전환 vs 제거</b>.</p>
+  </div>
+  <div class="card high">
+    <span class="badge yellow">PREP NEEDED</span>
+    <h3>③ onprem-dev-test 머지 준비 부족</h3>
+    <div class="meta">develop → onprem-dev-test</div>
+    <p>머지 시점에 <b>앱 매니페스트 + Dockerfile 멀티스테이지 + CI 빌드/푸시</b>가 한꺼번에 필요. 미리 develop에서 작성해두고 머지 시 활성화하는 게 안전.</p>
+  </div>
+</div>
+
+<h2>🌳 브랜치 환경 분리 (의도된 설계)</h2>
+<div class="flow">develop  ─────────────────── docker-compose (로컬, 빠른 이터레이션)
+   │
+   │ 안정되면 머지
+   ▼
+onprem-dev-test  ─────────── RKE2 onprem-dev 클러스터 (ArgoCD가 본다)
+   │                          + Prometheus/Grafana
+   │                          + monitoring namespace
+   │                          + Cilium Hubble 라우트
+   │ 최종 완성 후
+   ▼
+main  ────────────────────── (향후) prod</div>
+
+<h2>⚡ 한 줄짜리 Quick Win (영향 ÷ 비용 ≥ 4)</h2>
+<div class="quick-fix">
+  <h4>① prod ClusterIssuer 추가 (점수 5.0)</h4>
+  <p><code>components/cert-manager/cluster-issuer.yaml:11</code>에 staging만 정의됨. <b>letsencrypt-prod 한 줄 추가 + Certificate에서 prod 선택</b>으로 끝. 외부에 staging cert로 서빙 중인 상태에서 브라우저 경고 사라짐.</p>
+</div>
+<div class="quick-fix">
+  <h4>② CI에 kustomize + kubeconform 검증 (점수 4.0)</h4>
+  <p><code>.github/workflows/ci.yml</code>은 앱 lint/test만 검증. 인프라 매니페스트 PR 검증 0건. <b>한 job 추가로 잘못된 매니페스트 onprem-dev-test 머지 전에 차단</b>.</p>
+</div>
+<div class="quick-fix">
+  <h4>③ Alertmanager receiver 연결 (점수 4.0)</h4>
+  <p>onprem-dev-test에 Prometheus는 있는데 <b>receiver가 null</b>. 알람을 어디로도 안 보냄. Discord/Slack webhook 한 개 연결만 하면 모니터링 효과 0 → 실효.</p>
+</div>
+<div class="quick-fix">
+  <h4>④ capture.gateway.ts에 OnGatewayDisconnect (점수 4.0)</h4>
+  <p>sessions Map 정리 누락 → 메모리 누수. alert.gateway.ts:42-45와 같은 패턴 적용. 5줄.</p>
+</div>
+
+<h2>📊 우선순위 — 3트랙으로 분리</h2>
+
+<h3 style="color: var(--green); margin-top: 24px;">🅐 트랙 A — develop에서 지금</h3>
+<table>
+  <thead>
+    <tr>
+      <th style="width:5%">#</th>
+      <th style="width:55%">권고</th>
+      <th style="width:8%">영향</th>
+      <th style="width:8%">비용</th>
+      <th style="width:8%">점수</th>
+      <th style="width:16%">비고</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>A1</td><td><b>alert-service 결정 (전환 or 제거)</b></td><td>4</td><td>1</td><td><span class="score high">4.0</span></td><td>dead code</td></tr>
+    <tr><td>A2</td><td><b>capture.gateway.ts OnDisconnect + /tmp 디버그 제거</b></td><td>4</td><td>1</td><td><span class="score high">4.0</span></td><td>메모리 누수</td></tr>
+    <tr><td>A3</td><td>frontend console.log 제거 + no-console: error</td><td>3</td><td>1</td><td><span class="score high">3.0</span></td><td>CLAUDE.md 위반</td></tr>
+    <tr><td>A4</td><td>WebSocket payload binary 전환</td><td>3</td><td>2</td><td><span class="score mid">1.5</span></td><td>33% 대역폭</td></tr>
+    <tr><td>A5</td><td><b>CI kustomize+kubeconform 검증</b></td><td>4</td><td>1</td><td><span class="score high">4.0</span></td><td>머지 PR 안전망</td></tr>
+  </tbody>
+</table>
+
+<h3 style="color: var(--accent); margin-top: 24px;">🅒 트랙 C — 인프라 자체 (onprem-dev-test 직접, 언제든)</h3>
+<table>
+  <thead>
+    <tr>
+      <th style="width:5%">#</th>
+      <th style="width:55%">권고</th>
+      <th style="width:8%">영향</th>
+      <th style="width:8%">비용</th>
+      <th style="width:8%">점수</th>
+      <th style="width:16%">비고</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>C1</td><td><b>prod ClusterIssuer 추가</b></td><td>5</td><td>1</td><td><span class="score high">5.0</span></td><td>한 줄, 즉시</td></tr>
+    <tr><td>C2</td><td><b>Alertmanager receiver 연결</b></td><td>4</td><td>1</td><td><span class="score high">4.0</span></td><td>알람 효과 0</td></tr>
+    <tr><td>C3</td><td><b>NetworkPolicy default-deny</b></td><td>5</td><td>2</td><td><span class="score mid">2.5</span></td><td>Vault 평문</td></tr>
+    <tr><td>C4</td><td>Cilium CNI 매니페스트화</td><td>4</td><td>2</td><td><span class="score mid">2.0</span></td><td>부트스트랩 자동화</td></tr>
+    <tr><td>C5</td><td>etcd snapshot off-cluster 백업</td><td>5</td><td>3</td><td><span class="score mid">1.67</span></td><td>마스터 복구</td></tr>
+    <tr><td>C6</td><td>ArgoCD HA replica + Redis HA</td><td>3</td><td>2</td><td><span class="score mid">1.5</span></td><td>self-manage</td></tr>
+    <tr><td>C7</td><td>Loki + Promtail</td><td>4</td><td>3</td><td><span class="score low">1.33</span></td><td>디버깅 효율</td></tr>
+    <tr><td>C8</td><td>Vault autoUnseal</td><td>4</td><td>4</td><td><span class="score low">1.0</span></td><td>cloud 계정</td></tr>
+  </tbody>
+</table>
+
+<h3 style="color: var(--yellow); margin-top: 24px;">🅑 트랙 B — develop → onprem-dev-test 머지 직전 (한 묶음)</h3>
+<table>
+  <thead>
+    <tr>
+      <th style="width:5%">#</th>
+      <th style="width:55%">권고</th>
+      <th style="width:8%">영향</th>
+      <th style="width:8%">비용</th>
+      <th style="width:8%">점수</th>
+      <th style="width:16%">비고</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>B1</td><td><b>앱 K8s 매니페스트 + ApplicationSet 신규 작성</b></td><td>5</td><td>3</td><td><span class="score mid">1.67</span></td><td>GitOps 진입</td></tr>
+    <tr><td>B2</td><td><b>Dockerfile 멀티스테이지 + non-root</b></td><td>5</td><td>3</td><td><span class="score mid">1.67</span></td><td>ts-node 제거</td></tr>
+    <tr><td>B3</td><td>CI docker build + Trivy + Harbor push + ArgoCD sync</td><td>5</td><td>3</td><td><span class="score mid">1.67</span></td><td>A5와 짝</td></tr>
+    <tr><td>B4</td><td>location prisma migrate/seed를 Job/initContainer로</td><td>3</td><td>2</td><td><span class="score mid">1.5</span></td><td>안티패턴 제거</td></tr>
+    <tr><td>B5</td><td>liveness/readiness probe 작성</td><td>3</td><td>1</td><td><span class="score high">3.0</span></td><td>매니페스트와 함께</td></tr>
+  </tbody>
+</table>
+
+<h2>🛠 컴포넌트별 상태</h2>
+<div class="grid-2">
+  <div class="card good">
+    <span class="badge green">GOOD</span>
+    <h3>잘 깔린 것</h3>
+    <ul>
+      <li>MetalLB (HA + PDB)</li>
+      <li>cert-manager (HA + topology spread)</li>
+      <li>Longhorn (replica 2)</li>
+      <li>Vault Raft 3 replicas (antiAffinity)</li>
+      <li>ESO (system-cluster-critical)</li>
+      <li>Envoy Gateway (controller 2 + EnvoyProxy 2)</li>
+      <li>cloudflared (replicas 2 + tag pin)</li>
+      <li>Prometheus stack (onprem-dev-test, 대시보드 6종)</li>
+    </ul>
+  </div>
+  <div class="card high">
+    <span class="badge yellow">WEAK</span>
+    <h3>HA 부족 (replica 1)</h3>
+    <ul>
+      <li>ArgoCD server / controller / repo-server</li>
+      <li>Harbor jobservice / registry / exporter</li>
+      <li>Grafana</li>
+    </ul>
+    <p style="margin-top:8px"><b>Harbor DB PV = 1Gi</b> — prod 진입 시 부족.</p>
+  </div>
+  <div class="card critical">
+    <span class="badge red">SECURITY GAP</span>
+    <h3>보안 결함</h3>
+    <ul>
+      <li>Staging-only ClusterIssuer (외부에 staging cert 서빙)</li>
+      <li>Vault TLS 평문 (<code>tls_disable=1</code>)</li>
+      <li>Vault autoUnseal 없음</li>
+      <li>NetworkPolicy 0개</li>
+      <li>cloudflared PodSecurityContext 누락</li>
+      <li>frontend <code>console.log</code> 다수 잔존</li>
+    </ul>
+  </div>
+  <div class="card critical">
+    <span class="badge red">미구현</span>
+    <h3>계획만 있고 없음</h3>
+    <ul>
+      <li>Kyverno (Policy as Code)</li>
+      <li>Argo Rollouts (Canary/Blue-Green)</li>
+      <li>Falco / Trivy (독립)</li>
+      <li>Velero (etcd+PV 백업)</li>
+      <li>Loki / Tempo / OTel</li>
+      <li>ClusterMesh / 멀티클러스터</li>
+      <li>Terraform / Ansible IaC</li>
+      <li>Playwright E2E</li>
+    </ul>
+  </div>
+</div>
+
+<h2>🌐 트래픽 흐름</h2>
+<div class="flow">인터넷
+   │
+   ├─ Cloudflare ─→ cloudflared(ops) ─→ argocd / vault / longhorn / grafana / hubble
+   │                cloudflared(svc) ─→ PUBG 앱 도메인
+   │                       │
+   │                       ▼
+   │              Envoy Gateway (public-gateway)
+   │                       │
+   │                       ▼
+   │              HTTPRoute (namespace selector: gateway-access=true)
+   │                       │
+   │                       ▼
+   │                   Pod / Service
+   │
+   └─ MetalLB .100 ──→ envoy-gateway-public Service [⚠ type 명시 없음 → ClusterIP 의혹]</div>
+
+<h2>🎯 면접 어필 관점 — 깎일 포인트</h2>
+<div class="grid-2">
+  <div class="card high">
+    <h3>즉시 지적당할 항목</h3>
+    <ul>
+      <li>"인프라는 있는데 앱 배포 매니페스트가 없음"</li>
+      <li><code>console.log</code> / 디버그 파일 잔존</li>
+      <li>"Cilium은 어떻게 설치?" → 수동 helm install</li>
+      <li>"prod cert 없이 staging 서빙"</li>
+      <li>"Alertmanager 깔았는데 알람 어디로 가나요?"</li>
+      <li>"etcd 백업?" → RKE2 기본 snapshot만</li>
+      <li>"브랜치 둘로 분기" → GitOps 규율</li>
+    </ul>
+  </div>
+  <div class="card good">
+    <h3>강점으로 어필 가능</h3>
+    <ul>
+      <li>App-of-AppSets + sync-wave 정석 부트스트랩</li>
+      <li>ArgoCD self-management</li>
+      <li>Vault + ESO + ClusterSecretStore 정석 패턴</li>
+      <li>Helm + Kustomize multi-source $values 패턴</li>
+      <li>Gateway API + cross-namespace selector</li>
+      <li>cloudflared ops/svc 분리로 zero-trust 정책 분리</li>
+      <li>MetalLB IP pool 환경별 patch (JSON6902)</li>
+      <li>vitest 95% 커버리지 임계 강제</li>
+    </ul>
+  </div>
+</div>
+
+<h2>📋 다음 액션 — 이번 주 후보</h2>
+<div class="grid-2">
+  <div class="card good">
+    <h3 style="color: var(--green);">develop에서 (앱 개발 중에도 가능)</h3>
+    <ul>
+      <li>☐ alert-service 결정 (전환 or 제거)</li>
+      <li>☐ capture.gateway.ts <code>OnGatewayDisconnect</code> + /tmp 제거 (~30분)</li>
+      <li>☐ frontend console.log 제거 + <code>no-console: 'error'</code> (~30분)</li>
+      <li>☐ CI kustomize + kubeconform validate (~1시간)</li>
+    </ul>
+  </div>
+  <div class="card medium">
+    <h3 style="color: var(--accent);">인프라 트랙 (onprem-dev-test 직접)</h3>
+    <ul>
+      <li>☐ prod ClusterIssuer + Certificate 전환 (~30분)</li>
+      <li>☐ Alertmanager Discord webhook (~1시간)</li>
+      <li>☐ NetworkPolicy default-deny (~반나절)</li>
+      <li>☐ Cilium CNI 매니페스트화 (~1~2시간)</li>
+      <li>☐ etcd snapshot off-cluster CronJob (~반나절)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card high" style="margin-top: 16px;">
+  <h3 style="color: var(--yellow);">📦 develop → onprem-dev-test 머지 전 체크리스트</h3>
+  <p style="color: var(--muted); font-size: 13px;">미리 develop에서 작성해두고, 머지 시 활성화. 한 번에 다 만들지 말 것.</p>
+  <ul>
+    <li>☐ 4개 서비스 Dockerfile 멀티스테이지 + non-root + 빌드 산출물</li>
+    <li>☐ shared 패키지 dist 빌드 + main: dist/index.js</li>
+    <li>☐ <code>clusters/onprem-dev/apps/{frontend,capture,location,alert}/</code> Deployment + Service + HTTPRoute</li>
+    <li>☐ resource requests/limits + liveness/readiness probe</li>
+    <li>☐ env는 ConfigMap, secret은 ExternalSecret</li>
+    <li>☐ <code>12-apps-appset.yaml</code> (wave 50) 신설</li>
+    <li>☐ location prisma migrate/seed를 K8s Job/initContainer로 분리</li>
+    <li>☐ CI에 docker build + Trivy + Harbor push + ArgoCD sync 추가</li>
+    <li>☐ frontend가 service 도메인을 어떻게 부르는지 확정 (Gateway 경유? 직접?)</li>
+    <li>☐ WebSocket sticky session 필요 여부 결정</li>
+  </ul>
+</div>
+
+<div class="danger-callout">
+  <h4>⚠ 확인 필요한 미검증 가정</h4>
+  <ul>
+    <li><code>envoy-gateway-public</code> Service가 실제로 EXTERNAL-IP 받는지 (<code>kubectl get svc -A | grep LoadBalancer</code>)</li>
+    <li>Vault에 ESO 참조 secret key 실제 존재 여부 (<code>HARBOR_ADMIN_PASSWORD</code>, tunnel token 등)</li>
+    <li>Cloudflare 대시보드 tunnel 라우팅 (ops/svc 도메인 매핑)</li>
+    <li>로컬 <code>onprem-dev-test</code> ↔ <code>origin/onprem-dev-test</code> 동기화</li>
+    <li>prisma seed가 실제로 idempotent한지</li>
+  </ul>
+</div>
+
+</body>
+</html>

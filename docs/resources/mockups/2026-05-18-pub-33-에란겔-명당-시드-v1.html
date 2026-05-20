@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PUB-33 에란겔 명당 시드 v1 — 68곳 시각 검토</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    background: #0d1117; color: #c9d1d9;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+  header { margin-bottom: 16px; }
+  h1 { margin: 0 0 8px; color: #58a6ff; font-size: 20px; }
+  .meta { color: #8b949e; font-size: 13px; }
+
+  .stats { display: flex; gap: 14px; margin: 14px 0; }
+  .stat {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 10px 14px; flex: 1;
+  }
+  .stat .num { font-size: 22px; font-weight: 700; color: #58a6ff; }
+  .stat .label { font-size: 11px; color: #8b949e; text-transform: uppercase; }
+
+  .layout { display: grid; grid-template-columns: 1fr 320px; gap: 14px; }
+
+  .map-wrap {
+    position: relative; width: 100%; max-width: 1024px;
+    aspect-ratio: 1/1; background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    overflow: hidden;
+  }
+  .map-wrap img { width: 100%; height: 100%; display: block; opacity: 0.92; }
+  .marker {
+    position: absolute; width: 12px; height: 12px; border-radius: 50%;
+    transform: translate(-50%, -50%); cursor: pointer; border: 2px solid #0d1117;
+    transition: width .12s, height .12s, z-index 0s;
+  }
+  .marker:hover, .marker.active {
+    width: 22px; height: 22px; z-index: 99; border-color: #fff;
+  }
+  .marker[data-tier="S"] { background: #ffd700; }
+  .marker[data-tier="A"] { background: #c0c0c0; }
+  .marker[data-tier="B"] { background: #cd7f32; }
+  .tooltip {
+    position: absolute; background: rgba(13,17,23,0.95); color: #fff;
+    padding: 8px 12px; border-radius: 4px; border: 1px solid #30363d;
+    font-size: 12px; pointer-events: none; z-index: 100;
+    white-space: nowrap; display: none;
+  }
+
+  .panel {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 14px; height: 100%; overflow-y: auto; max-height: 1024px;
+  }
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; }
+  .chip {
+    padding: 4px 10px; font-size: 12px; background: #21262d; color: #c9d1d9;
+    border: 1px solid #30363d; border-radius: 12px; cursor: pointer;
+  }
+  .chip.active { background: #58a6ff; color: #0d1117; }
+
+  .list { font-size: 12px; }
+  .item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid #21262d; cursor: pointer;
+  }
+  .item:hover { background: #21262d; }
+  .item.active { background: #1f6feb33; }
+  .item .name { font-weight: 500; }
+  .item .tier { font-weight: 700; padding: 1px 6px; border-radius: 3px; font-size: 10px; }
+  .item .tier-S { background: #ffd700; color: #0d1117; }
+  .item .tier-A { background: #c0c0c0; color: #0d1117; }
+  .item .tier-B { background: #cd7f32; color: #0d1117; }
+
+  .note {
+    margin-top: 16px; padding: 12px 14px; background: #1f2a44; border-left: 3px solid #58a6ff;
+    border-radius: 4px; font-size: 13px; line-height: 1.6;
+  }
+  .note strong { color: #58a6ff; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>PUB-33 에란겔 명당 시드 v1 — 68곳 시각 검토</h1>
+    <div class="meta">2026-05-18 · mockup 46곳 + 4 Agent 출처 통합 · 좌표 정밀도 ±0.05 (8×8 격자)</div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="num">68</div><div class="label">총 위치</div></div>
+    <div class="stat"><div class="num" style="color:#ffd700">11</div><div class="label">S tier</div></div>
+    <div class="stat"><div class="num" style="color:#c0c0c0">29</div><div class="label">A tier</div></div>
+    <div class="stat"><div class="num" style="color:#cd7f32">28</div><div class="label">B tier</div></div>
+  </div>
+
+  <div class="layout">
+    <div class="map-wrap" id="mapwrap">
+      <img src="../../../apps/frontend/public/maps/erangel.jpg" alt="Erangel">
+      <div class="tooltip" id="tt"></div>
+    </div>
+    <div class="panel">
+      <div class="filter-bar">
+        <button class="chip active" data-tier="all">전체</button>
+        <button class="chip" data-tier="S">S</button>
+        <button class="chip" data-tier="A">A</button>
+        <button class="chip" data-tier="B">B</button>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>검토 방법:</strong> 점을 클릭하거나 우측 목록에서 위치를 선택하면 강조됩니다.
+    <strong>어색한 위치</strong>(엉뚱한 곳에 박힌 점, 같은 도시 중복, 좌표 명백 오류)가 보이면 알려주세요.
+    페이지 5+ 엔드존 시점엔 ±0.05 격자 정밀도라 정확한 명당 매칭이 어렵습니다 — v1.5에서 어드민 클릭 UI로 정밀화 예정.
+  </div>
+</div>
+
+<script>
+const DATA = [{"ko": "포친키 중심", "en": "Pochinki Center", "cell": "D-E5", "x": 0.44, "y": 0.53, "cat": "랜드마크중심", "tier": "S", "memo": "핫드롭/엔드게임/회전 허브", "url": "https://desportz.gg/landing-spots-in-erangel/", "src": "EN+KO", "origin": "mockup", "id": "er-pochinki-center"}, {"ko": "포친키 교회 언덕", "en": "Pochinki Church Hill", "cell": "D5", "x": 0.44, "y": 0.56, "cat": "능선·고지", "tier": "S", "memo": "엔드게임 종탑 오버워치", "url": "https://www.topuplive.com/news/pubg-pochinki-guide-loot-routes-hot-drops-pro-combat-tips.html", "src": "EN+KO", "origin": "mockup", "id": "er-pochinki-church-hill"}, {"ko": "포친키 오른쪽 돌산", "en": "Pochinki East Rocky Hill", "cell": "E5", "x": 0.56, "y": 0.56, "cat": "능선·고지", "tier": "S", "memo": "프로 추천 엔드게임 고지", "url": "https://www.inven.co.kr/board/battlegrounds/5074/1962", "src": "KO ★", "origin": "mockup", "id": "er-pochinki-east-rocky-hill"}, {"ko": "포친키 동쪽 언덕", "en": "Hill East of Pochinki", "cell": "E-F5", "x": 0.63, "y": 0.56, "cat": "능선·고지", "tier": "S", "memo": "School·포친키 동시 커버", "url": "https://www.keengamer.com/articles/guides/6-of-the-best-pubg-sniping-locations-in-erangel/", "src": "EN", "origin": "mockup", "id": "er-hill-east-of-pochinki"}, {"ko": "포친키 SE 창고", "en": "Pochinki SE Warehouse", "cell": "E5", "x": 0.56, "y": 0.6, "cat": "격리컴파운드", "tier": "A", "memo": "빠른 루팅 후 회전", "url": "https://www.topuplive.com/news/pubg-pochinki-guide-loot-routes-hot-drops-pro-combat-tips.html", "src": "EN", "origin": "mockup", "id": "er-pochinki-se-warehouse"}, {"ko": "짱구집 (적 지붕 판자집)", "en": "Red-Roof Shack Compound", "cell": "D4", "x": 0.44, "y": 0.44, "cat": "격리컴파운드", "tier": "A", "memo": "UAZ 벙커 구성, 위쪽 방어 집중", "url": "https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977", "src": "KO ★", "origin": "mockup", "id": "er-red-roof-shack-compound"}, {"ko": "학교", "en": "School", "cell": "E4", "x": 0.56, "y": 0.44, "cat": "랜드마크중심", "tier": "S", "memo": "지하벙커 엔드게임 은신", "url": "https://gamerant.com/pubg-battlegrounds-best-drop-spots-erangel/", "src": "EN+KO", "origin": "mockup", "id": "er-school"}, {"ko": "학교 북쪽 아파트", "en": "School North Apartments", "cell": "D3", "x": 0.44, "y": 0.28, "cat": "핫드롭전용", "tier": "B", "memo": "[핫드롭] 학교 연계 핫드롭", "url": "https://desportz.gg/landing-spots-in-erangel/", "src": "KO", "origin": "mockup", "id": "er-school-north-apartments"}, {"ko": "로족 언덕", "en": "Rozhok Hill", "cell": "E4", "x": 0.56, "y": 0.445, "cat": "능선·고지", "tier": "A", "memo": "School·Yasnaya 회전 제압", "url": "https://news.bittopup.com/news/pubg-mobile-erangel-late-circle-guide-75-win-rate-tips", "src": "EN+KO", "origin": "mockup", "id": "er-rozhok-hill"}, {"ko": "로족 남쪽 창고능선", "en": "Rozhok South Warehouse Ridge", "cell": "D3", "x": 0.44, "y": 0.38, "cat": "능선·고지", "tier": "S", "memo": "프로 KSV_Juwon 추천 1위", "url": "https://www.inven.co.kr/board/battlegrounds/5074/1962", "src": "KO ★", "origin": "mockup", "id": "er-rozhok-south-warehouse-ridge"}, {"ko": "로족 동쪽 능선", "en": "Rozhok East Ridge", "cell": "E3", "x": 0.56, "y": 0.38, "cat": "능선·고지", "tier": "A", "memo": "로족·아파트 동시 장악", "url": "https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html", "src": "KO", "origin": "mockup", "id": "er-rozhok-east-ridge"}, {"ko": "루인스 남쪽 판자집 능선", "en": "Ruins South Shack Ridge", "cell": "D3", "x": 0.41, "y": 0.34, "cat": "능선·고지", "tier": "A", "memo": "프로 KSV_Juwon 추천 2위", "url": "https://www.inven.co.kr/board/battlegrounds/5074/1962", "src": "KO ★", "origin": "mockup", "id": "er-ruins-south-shack-ridge"}, {"ko": "폐허 (루인스)", "en": "Ruins", "cell": "D4", "x": 0.44, "y": 0.4, "cat": "랜드마크중심", "tier": "B", "memo": "[핫드롭] 포친키 회전 핫드롭", "url": "https://esportsdriven.com/gaming/guides/1528/pubg-erangel-best-drop-spots", "src": "EN+KO", "origin": "mockup", "id": "er-ruins"}, {"ko": "조르조폴 컨테이너", "en": "Georgopol Containers", "cell": "B3", "x": 0.19, "y": 0.31, "cat": "핫드롭전용", "tier": "B", "memo": "[핫드롭] 최상급 루트, 컨테이너 은폐", "url": "https://desportz.gg/landing-spots-in-erangel/", "src": "EN+KO", "origin": "mockup", "id": "er-georgopol-containers"}, {"ko": "조르조폴 북부 아파트", "en": "Georgopol North Apts", "cell": "B2", "x": 0.19, "y": 0.19, "cat": "랜드마크중심", "tier": "A", "memo": "다층 건물, 서해안 통제", "url": "https://pubg.wiki.gg/wiki/Erangel/Georgopol", "src": "EN+KO", "origin": "mockup", "id": "er-georgopol-north-apts"}, {"ko": "조르조폴 남쪽 큰 언덕", "en": "Big Hill SE of Georgopol", "cell": "C4", "x": 0.31, "y": 0.44, "cat": "능선·고지", "tier": "S", "memo": "프로 분석 3대 지점", "url": "https://www.dexerto.com/pubg/pubg-analyst-reveals-most-likely-final-circles-miramar-erangel-977417/", "src": "EN+KO", "origin": "mockup", "id": "er-big-hill-se-of-georgopol"}, {"ko": "개미지옥 북쪽 능선", "en": "Quarry North Ridge", "cell": "C4", "x": 0.31, "y": 0.445, "cat": "능선·고지", "tier": "A", "memo": "프로 KSV_Juwon 추천 3위", "url": "https://www.inven.co.kr/board/battlegrounds/5074/1962", "src": "KO ★", "origin": "mockup", "id": "er-quarry-north-ridge"}, {"ko": "야스나야 폴랴나", "en": "Yasnaya Polyana", "cell": "F-G2", "x": 0.75, "y": 0.19, "cat": "랜드마크중심", "tier": "S", "memo": "북동 대도시 핫드롭", "url": "https://news.bittopup.com/news/pubg-mobile-erangel-late-circle-guide-75-win-rate-tips", "src": "EN+KO", "origin": "mockup", "id": "er-yasnaya-polyana"}, {"ko": "야스나야 남쪽 빌라", "en": "Yasnaya South Villas", "cell": "G2", "x": 0.81, "y": 0.25, "cat": "격리컴파운드", "tier": "A", "memo": "8개 건물, 옥상 360도 시야", "url": "https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html", "src": "KO", "origin": "mockup", "id": "er-yasnaya-south-villas"}, {"ko": "야스나야 굴뚝 갭", "en": "Yasnaya Chimney Gap", "cell": "F2", "x": 0.69, "y": 0.19, "cat": "격리컴파운드", "tier": "S", "memo": "엔드게임 피크 포지션", "url": "https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html", "src": "EN", "origin": "mockup", "id": "er-yasnaya-chimney-gap"}, {"ko": "야스나야 따개비/판자집", "en": "Yasnaya West Shacks", "cell": "F2", "x": 0.69, "y": 0.22, "cat": "격리컴파운드", "tier": "A", "memo": "원 진입 시 필수", "url": "https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977", "src": "KO", "origin": "mockup", "id": "er-yasnaya-west-shacks"}, {"ko": "소스노브카 군사기지", "en": "Sosnovka Military Base", "cell": "D-E7", "x": 0.5, "y": 0.81, "cat": "핫드롭전용", "tier": "S", "memo": "프로 분석 3대 지점, 78% 레벨3", "url": "https://desportz.gg/landing-spots-in-erangel/", "src": "EN+KO", "origin": "mockup", "id": "er-sosnovka-military-base"}, {"ko": "군사기지 라디오 타워 언덕", "en": "Mil Base Radio Tower Hill", "cell": "E7", "x": 0.56, "y": 0.75, "cat": "능선·고지", "tier": "S", "memo": "군기지 전역 오버워치", "url": "https://www.keengamer.com/articles/guides/6-of-the-best-pubg-sniping-locations-in-erangel/", "src": "EN", "origin": "mockup", "id": "er-mil-base-radio-tower-hill"}, {"ko": "군사기지 남서 언덕", "en": "Mil Base SW Hill", "cell": "D7", "x": 0.44, "y": 0.81, "cat": "능선·고지", "tier": "A", "memo": "섬 내 최우선 포지션", "url": "https://esportsnewskorea.com/?p=433", "src": "KO", "origin": "mockup", "id": "er-mil-base-sw-hill"}, {"ko": "밀타 파워", "en": "Mylta Power", "cell": "G5", "x": 0.81, "y": 0.56, "cat": "격리컴파운드", "tier": "A", "memo": "저위험 고루트, 단독 운영", "url": "https://desportz.gg/landing-spots-in-erangel/", "src": "EN+KO", "origin": "mockup", "id": "er-mylta-power"}, {"ko": "밀타 파워 옥상", "en": "Mylta Power Rooftop", "cell": "G5", "x": 0.81, "y": 0.58, "cat": "능선·고지", "tier": "A", "memo": "쿼리·포친키 동시 시야", "url": "https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html", "src": "EN+KO", "origin": "mockup", "id": "er-mylta-power-rooftop"}, {"ko": "밀타 마을", "en": "Mylta Town", "cell": "G5", "x": 0.75, "y": 0.58, "cat": "수계인접", "tier": "B", "memo": "강변 중루트 거점 / 밀타 파워 옆 북쪽 건물군. 솔로 적합", "url": "https://liquipedia.net/pubg/Erangel_Classic", "src": "KO", "origin": "mockup", "merge_count": 2, "id": "er-mylta-town"}, {"ko": "셸터", "en": "Shelter", "cell": "F4", "x": 0.69, "y": 0.5, "cat": "격리컴파운드", "tier": "A", "memo": "동쪽 레벨3 루팅 거점", "url": "https://zilliongamer.com/pubg-mobile/c/map/erangel-1", "src": "EN+KO", "origin": "mockup", "id": "er-shelter"}, {"ko": "리포브카", "en": "Lipovka", "cell": "G4", "x": 0.81, "y": 0.44, "cat": "격리컴파운드", "tier": "B", "memo": "동쪽 중반 루팅 / 동부 소도시, 경쟁 낮음", "url": "https://liquipedia.net/pubg/Erangel_Classic", "src": "EN", "origin": "mockup", "merge_count": 2, "id": "er-lipovka"}, {"ko": "스탈버 산 정상", "en": "Stalber Peak", "cell": "G1", "x": 0.81, "y": 0.06, "cat": "능선·고지", "tier": "A", "memo": "북동 광역 스나이핑", "url": "https://www.keengamer.com/articles/guides/6-of-the-best-pubg-sniping-locations-in-erangel/", "src": "EN+KO", "origin": "mockup", "id": "er-stalber-peak"}, {"ko": "맨션 북부", "en": "Mansion North", "cell": "G2", "x": 0.81, "y": 0.13, "cat": "격리컴파운드", "tier": "B", "memo": "4인 스쿼드 풀 루팅, 저경쟁", "url": "https://noobs2pro.com/top-20-safest-loot-locations-in-erangel-pubg-safe-looting-guide/", "src": "EN", "origin": "mockup", "id": "er-mansion-north"}, {"ko": "카메시키", "en": "Kameshki", "cell": "G-H1", "x": 0.88, "y": 0.06, "cat": "격리컴파운드", "tier": "B", "memo": "북동 저경쟁, 스탈버 연계 / 북동 외곽 소도시, 경쟁 거의 없음", "url": "https://esportsdriven.com/gaming/guides/1528/pubg-erangel-best-drop-spots", "src": "EN", "origin": "mockup", "merge_count": 2, "id": "er-kameshki"}, {"ko": "세브나이", "en": "Severny", "cell": "E1", "x": 0.56, "y": 0.06, "cat": "격리컴파운드", "tier": "A", "memo": "북측 저경쟁 / 북부 소도시, 우회 루트 거점", "url": "https://liquipedia.net/pubg/Erangel_Classic", "src": "EN", "origin": "mockup", "merge_count": 2, "id": "er-severny"}, {"ko": "슈팅 레인지 벙커", "en": "Shooting Range Bunker", "cell": "C2", "x": 0.31, "y": 0.19, "cat": "격리컴파운드", "tier": "A", "memo": "다층 벙커 은신, 레벨3 루팅", "url": "https://gamerant.com/pubg-battlegrounds-best-drop-spots-erangel/", "src": "EN", "origin": "mockup", "id": "er-shooting-range-bunker"}, {"ko": "병원 옥상", "en": "Hospital Rooftop", "cell": "C3", "x": 0.31, "y": 0.31, "cat": "능선·고지", "tier": "A", "memo": "조르조폴 동쪽 오버워치", "url": "https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html", "src": "EN", "origin": "mockup", "id": "er-hospital-rooftop"}, {"ko": "자르키 남쪽 돌산", "en": "Zharki South Rocky Hill", "cell": "B2", "x": 0.13, "y": 0.19, "cat": "능선·고지", "tier": "B", "memo": "서북 오픈 필드 제압 / 조르조폴 방향 농지 저격", "url": "https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977", "src": "EN+KO", "origin": "mockup", "merge_count": 2, "id": "er-zharki-south-rocky-hill"}, {"ko": "강북 연속능선", "en": "North River Chain Ridge", "cell": "C-D2", "x": 0.38, "y": 0.19, "cat": "능선·고지", "tier": "A", "memo": "삼각형 연속 능선 방어 / 디시 오더포지션. 삼각 연속 능선", "url": "https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977", "src": "KO ★", "origin": "mockup", "merge_count": 2, "id": "er-north-river-chain-ridge"}, {"ko": "감옥 (프리즌)", "en": "Prison", "cell": "C7", "x": 0.31, "y": 0.75, "cat": "격리컴파운드", "tier": "B", "memo": "초중반 조용한 루트", "url": "https://gamerant.com/pubg-battlegrounds-best-drop-spots-erangel/", "src": "EN+KO", "origin": "mockup", "id": "er-prison"}, {"ko": "감옥 Guard Peak", "en": "Prison Guard Peak", "cell": "C7", "x": 0.31, "y": 0.81, "cat": "능선·고지", "tier": "A", "memo": "감옥 주변 산악 오버워치", "url": "https://www.pubgprotips.com/articles/my-erangel-adventures-top-drop-spots-in-pubg-2025.html", "src": "EN", "origin": "mockup", "id": "er-prison-guard-peak"}, {"ko": "프리모르스크 북쪽 언덕", "en": "Primorsk North Hill", "cell": "B6", "x": 0.19, "y": 0.63, "cat": "능선·고지", "tier": "B", "memo": "서남부 안정적 시야", "url": "https://esportsnewskorea.com/?p=433", "src": "KO", "origin": "mockup", "id": "er-primorsk-north-hill"}, {"ko": "프리모르스크 독", "en": "Primorsk Docks", "cell": "B6", "x": 0.13, "y": 0.75, "cat": "수계인접", "tier": "B", "memo": "보트 탈출 루트", "url": "https://www.pubgprotips.com/articles/my-erangel-adventures-top-drop-spots-in-pubg-2025.html", "src": "EN", "origin": "mockup", "id": "er-primorsk-docks"}, {"ko": "페리 피어", "en": "Ferry Pier", "cell": "C7", "x": 0.31, "y": 0.72, "cat": "수계인접", "tier": "B", "memo": "서쪽 섬 다리 제압 / 해안 외곽 로테이션 노드", "url": "https://noobs2pro.com/top-20-safest-loot-locations-in-erangel-pubg-safe-looting-guide/", "src": "EN", "origin": "mockup", "merge_count": 2, "id": "er-ferry-pier"}, {"ko": "늪지대 망루", "en": "Swamp Watchtower", "cell": "B5", "x": 0.19, "y": 0.56, "cat": "수계인접", "tier": "B", "memo": "존버 최적 / 서쪽 자기장 시 유리, 방문자 적음", "url": "https://www.inven.co.kr/board/battlegrounds/5074/1828", "src": "KO", "origin": "mockup", "merge_count": 2, "id": "er-swamp-watchtower"}, {"ko": "가트카", "en": "Gatka", "cell": "D6", "x": 0.44, "y": 0.69, "cat": "격리컴파운드", "tier": "B", "memo": "군기지 회전 전 루팅 / 서부 소규모 마을, 조용한 초중반 로테이션", "url": "https://liquipedia.net/pubg/Erangel_Classic", "src": "EN", "origin": "mockup", "merge_count": 2, "id": "er-gatka"}, {"ko": "노보렙노예", "en": "Novorepnoye", "cell": "F8", "x": 0.69, "y": 0.94, "cat": "랜드마크중심", "tier": "A", "memo": "중반 루팅, 동쪽 회전 / 남동 해안 항구도시. 컨테이너 + 주거 혼합", "url": "https://zilliongamer.com/pubg-mobile/c/map/erangel-1", "src": "EN", "origin": "mockup", "merge_count": 2, "id": "er-novorepnoye"}, {"ko": "노보렙노예 라디오 타워", "en": "Novorepnoye Radio Tower", "cell": "F7", "x": 0.69, "y": 0.81, "cat": "능선·고지", "tier": "A", "memo": "브릿지 제압 스나이핑 / 노보 인근 독립 타워, 레벨3 확률 높음", "url": "https://noobs2pro.com/top-20-safest-loot-locations-in-erangel-pubg-safe-looting-guide/", "src": "EN", "origin": "mockup", "merge_count": 2, "id": "er-novorepnoye-radio-tower"}, {"ko": "프리모르스크", "en": "Primorsk", "cell": "A6", "cat": "도시", "tier": "B", "memo": "남서 해안 대도시. 경쟁 적고 루팅 우수 — 저평가 숨은 명당", "srcs": ["EN", "EN", "EN"], "x": 0.062, "y": 0.688, "origin": "agent", "src": "EN", "url": "", "id": "er-primorsk"}, {"ko": "사격장", "en": "Shooting Range", "cell": "D2", "cat": "군사", "tier": "A", "memo": "지하 벙커 레벨3 장비, 경쟁 매우 낮음", "srcs": ["EN", "EN", "EN"], "x": 0.438, "y": 0.188, "origin": "agent", "src": "EN", "url": "", "id": "er-shooting-range"}, {"ko": "병원", "en": "Hospital", "cell": "C3", "cat": "랜드마크중심", "tier": "A", "memo": "조르조폴 인근 다층 건물. 80% 회복템 스폰", "srcs": ["EN", "EN", "EN"], "x": 0.312, "y": 0.312, "origin": "agent", "src": "EN", "url": "", "id": "er-hospital"}, {"ko": "채석장", "en": "Quarry", "cell": "C5", "cat": "랜드마크중심", "tier": "A", "memo": "맵 중서부, 내부 급경사가 저격 포지션", "srcs": ["EN", "EN", "EN"], "x": 0.312, "y": 0.562, "origin": "agent", "src": "EN", "url": "", "id": "er-quarry"}, {"ko": "채석장 동쪽 언덕", "en": "Quarry East Hilltop", "cell": "D5", "cat": "능선·고지", "tier": "A", "memo": "농지 전체 조망 저격 능선", "srcs": ["EN"], "x": 0.438, "y": 0.562, "origin": "agent", "src": "EN", "url": "", "id": "er-quarry-east-hilltop"}, {"ko": "자르키", "en": "Zharki", "cell": "B2", "cat": "마을", "tier": "B", "memo": "북서 외곽 마을, 차량 확보 필수", "srcs": ["EN", "EN", "EN"], "x_offset": 0.005, "x": 0.193, "y": 0.188, "origin": "agent", "src": "EN", "url": "", "id": "er-zharki"}, {"ko": "맨션", "en": "Mansion", "cell": "F2", "cat": "격리컴파운드", "tier": "B", "memo": "동북부 저택, 외딴 위치 경쟁 낮음 / 야스나야 북측 독립 저택 4인 분량", "srcs": ["EN", "EN"], "x": 0.688, "y": 0.188, "origin": "agent", "src": "EN", "url": "", "merge_count": 2, "id": "er-mansion"}, {"ko": "워터타운", "en": "Water Town", "cell": "D3", "cat": "수계인접", "tier": "B", "memo": "루인스 인근 수변, 무주공산", "srcs": ["EN"], "x": 0.438, "y": 0.312, "origin": "agent", "src": "EN", "url": "", "id": "er-water-town"}, {"ko": "농장", "en": "Farm", "cell": "E5", "cat": "랜드마크중심", "tier": "B", "memo": "남동부, 엔드존 회전 중간 기착지", "srcs": ["EN", "EN"], "x": 0.562, "y": 0.562, "origin": "agent", "src": "EN", "url": "", "id": "er-farm"}, {"ko": "농장 능선", "en": "Farm Ridge", "cell": "C2", "cat": "능선·고지", "tier": "B", "memo": "비표시 능선형 농장군, 게오르고폴 북부와 세트", "srcs": ["EN"], "x": 0.312, "y": 0.188, "origin": "agent", "src": "EN", "url": "", "id": "er-farm-ridge"}, {"ko": "서부 군사 복합지", "en": "Western Military Compounds", "cell": "B4", "cat": "군사", "tier": "B", "memo": "소스노프카 섬 외 서부 군사시설, 경쟁 거의 없음", "srcs": ["EN"], "x": 0.188, "y": 0.438, "origin": "agent", "src": "EN", "url": "", "id": "er-western-military-compounds"}, {"ko": "남부 농장지대", "en": "Southern Hay Farms", "cell": "E6", "cat": "마을", "tier": "B", "memo": "건물 분산 배치, 가장 안전한 루팅지", "srcs": ["EN"], "x": 0.562, "y": 0.688, "origin": "agent", "src": "EN", "url": "", "id": "er-southern-hay-farms"}, {"ko": "로조크 시가지", "en": "Rozhok (city)", "cell": "E4", "cat": "도시", "tier": "B", "memo": "[핫드롭] 맵 중앙 시가지, 드롭 스트레이핑 + 초기 무기 획득", "srcs": ["EN"], "y_offset": -0.005, "x": 0.562, "y": 0.433, "origin": "agent", "src": "EN", "url": "", "id": "er-rozhok-city"}, {"ko": "검문소", "en": "Checkpoint", "cell": "F4", "cat": "랜드마크중심", "tier": "B", "memo": "밀타-야스나야 사이 파쿠르 가능 거점", "srcs": ["KO"], "x": 0.688, "y": 0.438, "origin": "agent", "src": "KO", "url": "", "id": "er-checkpoint"}, {"ko": "포친키 동남쪽 큰집 계단", "en": "Pochinki SE Large House Stairs", "cell": "E5", "cat": "격리컴파운드", "tier": "A", "memo": "계단 위 시야 + 차량 스폰 인접", "srcs": ["KO"], "x_offset": 0.01, "y_offset": 0.005, "x": 0.572, "y": 0.567, "origin": "agent", "src": "KO", "url": "", "id": "er-pochinki-se-large-house-stairs"}, {"ko": "에란겔 동쪽 컨테이너", "en": "East Erangel Container Yard", "cell": "G7", "cat": "격리컴파운드", "tier": "B", "memo": "동쪽 하단부 자기장 시 은폐 가능", "srcs": ["KO"], "x_offset": 0.01, "x": 0.822, "y": 0.812, "origin": "agent", "src": "KO", "url": "", "id": "er-east-erangel-container-yard"}, {"ko": "개미지옥 건물 내부", "en": "Ant Hell House Interior", "cell": "C5", "cat": "격리컴파운드", "tier": "A", "memo": "디시 오더포지션. 집·해우소·울타리 벙커", "srcs": ["KO ★"], "y_offset": -0.005, "x": 0.312, "y": 0.557, "origin": "agent", "src": "KO ★", "url": "", "id": "er-ant-hell-house-interior"}, {"ko": "자르키 좌측 돌산", "en": "Zharki West Rocky Hill", "cell": "A3", "cat": "능선·고지", "tier": "B", "memo": "디시 오더포지션. 정상보다 차량 이동 편리", "srcs": ["KO ★"], "x": 0.062, "y": 0.312, "origin": "agent", "src": "KO ★", "url": "", "id": "er-zharki-west-rocky-hill"}, {"ko": "밀타파워 앞쪽 창고", "en": "Mylta Power Front Warehouse", "cell": "G5", "cat": "격리컴파운드", "tier": "B", "memo": "동선 짧고 경쟁률 낮음. 파밍 후 자기장 이동 용이", "srcs": ["KO"], "y_offset": -0.005, "x": 0.812, "y": 0.557, "origin": "agent", "src": "KO", "url": "", "id": "er-mylta-power-front-warehouse"}, {"ko": "쿼리 서쪽 비밀 지하창고", "en": "Quarry West Secret Cache", "cell": "C5", "cat": "격리컴파운드", "tier": "A", "memo": "역니은자 건물 지하. 총으로 문 파괴 후 AR 드롭률 높음", "srcs": ["KO"], "x": 0.312, "y": 0.567, "origin": "agent", "src": "KO", "url": "", "id": "er-quarry-west-secret-cache"}, {"ko": "로족 북서쪽 외곽", "en": "Rozhok NW Fringe", "cell": "D3", "cat": "마을", "tier": "B", "memo": "메이저 지역이 어그로 흡수, 경쟁 낮음", "srcs": ["KO"], "y_offset": 0.01, "x": 0.438, "y": 0.322, "origin": "agent", "src": "KO", "url": "", "id": "er-rozhok-nw-fringe"}, {"ko": "노보 북쪽 산악지대", "en": "Novo North Highland", "cell": "G6", "cat": "능선·고지", "tier": "A", "memo": "메타 핵심 3대 지점. 외곽 통제 + 중반 자기장 시야", "srcs": ["KO"], "x": 0.812, "y": 0.688, "origin": "agent", "src": "KO", "url": "", "id": "er-novo-north-highland"}];
+
+const mapwrap = document.getElementById('mapwrap');
+const tt = document.getElementById('tt');
+const list = document.getElementById('list');
+
+function render(filter = 'all') {
+  // 기존 마커 제거
+  mapwrap.querySelectorAll('.marker').forEach(m => m.remove());
+  list.innerHTML = '';
+
+  const filtered = DATA.filter(r => filter === 'all' || r.tier === filter);
+  filtered.sort((a,b) => {
+    const tier = {'S':0,'A':1,'B':2};
+    return (tier[a.tier]||9) - (tier[b.tier]||9) || a.ko.localeCompare(b.ko);
+  });
+
+  filtered.forEach(r => {
+    // 마커
+    const m = document.createElement('div');
+    m.className = 'marker';
+    m.dataset.tier = r.tier;
+    m.dataset.id = r.id;
+    m.style.left = (r.x * 100) + '%';
+    m.style.top = (r.y * 100) + '%';
+    m.addEventListener('mouseenter', e => showTooltip(e, r));
+    m.addEventListener('mouseleave', () => tt.style.display = 'none');
+    m.addEventListener('click', () => highlightItem(r.id));
+    mapwrap.appendChild(m);
+
+    // 목록
+    const it = document.createElement('div');
+    it.className = 'item';
+    it.dataset.id = r.id;
+    it.innerHTML = `<span class="name">${r.ko}</span><span class="tier tier-${r.tier}">${r.tier}</span>`;
+    it.addEventListener('click', () => highlightItem(r.id));
+    list.appendChild(it);
+  });
+}
+
+function showTooltip(e, r) {
+  const rect = mapwrap.getBoundingClientRect();
+  tt.innerHTML = `<strong>${r.ko}</strong> (${r.tier})<br>` +
+    `(${r.x.toFixed(3)}, ${r.y.toFixed(3)}) ${r.cell ? '· ' + r.cell : ''}<br>` +
+    `<span style="color:#8b949e">${r.cat || ''}</span>`;
+  tt.style.display = 'block';
+  tt.style.left = (e.clientX - rect.left + 12) + 'px';
+  tt.style.top = (e.clientY - rect.top + 12) + 'px';
+}
+
+function highlightItem(id) {
+  mapwrap.querySelectorAll('.marker').forEach(m => m.classList.toggle('active', m.dataset.id === id));
+  list.querySelectorAll('.item').forEach(i => i.classList.toggle('active', i.dataset.id === id));
+  const item = list.querySelector(`.item[data-id="${id}"]`);
+  if (item) item.scrollIntoView({block: 'nearest'});
+}
+
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    render(c.dataset.tier);
+  });
+});
+
+render();
+</script>
+</body>
+</html>

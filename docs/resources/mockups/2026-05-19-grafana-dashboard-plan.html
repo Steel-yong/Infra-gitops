@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Grafana 대시보드 정리 계획 — 2026-05-19</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1f2530;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --orange: #ff8c42;
+    --red: #f85149;
+    --purple: #b877d9;
+    --pink: #db61a2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Pretendard", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px;
+    line-height: 1.55;
+  }
+  h1 { color: var(--accent); margin: 0 0 4px; font-size: 26px; }
+  .sub { color: var(--muted); margin-bottom: 24px; font-size: 13px; }
+  h2 {
+    color: var(--accent);
+    margin: 36px 0 12px;
+    font-size: 18px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  h3 { font-size: 15px; margin: 16px 0 8px; color: var(--text); }
+  code {
+    background: rgba(0,0,0,0.4);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    color: var(--pink);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 13px;
+    margin: 8px 0 16px;
+  }
+  th, td {
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { background: #1f2937; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge.keep   { background: rgba(63,185,80,0.15);  color: var(--green); }
+  .badge.drop   { background: rgba(248,81,73,0.15);  color: var(--red); }
+  .badge.merge  { background: rgba(255,140,66,0.15); color: var(--orange); }
+  .badge.new    { background: rgba(184,119,217,0.15);color: var(--purple); }
+  .badge.maybe  { background: rgba(210,153,34,0.15); color: var(--yellow); }
+
+  /* Tree visualization */
+  .tree {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 28px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .tree b { color: var(--accent); font-weight: 600; }
+  .tree .new-d { color: var(--purple); }
+  .tree .keep-d { color: var(--green); }
+  .tree .dim { color: var(--muted); }
+
+  /* Stage comparison */
+  .stage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+  .stage.before { border-left: 4px solid var(--red); }
+  .stage.after  { border-left: 4px solid var(--green); }
+  .stage h3 { margin-top: 0; }
+  .stage .count {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 8px 0;
+  }
+  .stage.before .count { color: var(--red); }
+  .stage.after  .count { color: var(--green); }
+  .stage ul { margin: 8px 0; padding-left: 18px; font-size: 12px; }
+
+  /* Overview mockup */
+  .ov {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    margin: 12px 0;
+  }
+  .ov-row {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .ov-r5 { grid-template-columns: repeat(5, 1fr); }
+  .ov-r4 { grid-template-columns: repeat(4, 1fr); }
+  .ov-r3 { grid-template-columns: repeat(3, 1fr); }
+  .ov-r2 { grid-template-columns: 1fr 1fr; }
+  .ov-cell {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 10px;
+    min-height: 56px;
+  }
+  .ov-cell .h { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .ov-cell .v { color: var(--text); font-size: 15px; font-weight: 600; margin-top: 4px; }
+  .ov-cell.tall { min-height: 110px; }
+  .ov-cell.taller { min-height: 150px; }
+  .ov-cell .sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+
+  /* Note */
+  .note {
+    background: rgba(88,166,255,0.07);
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+  }
+  .note h4 { margin: 0 0 6px; color: var(--accent); font-size: 13px; }
+  .note.warn { background: rgba(210,153,34,0.07); border-color: rgba(210,153,34,0.3); }
+  .note.warn h4 { color: var(--yellow); }
+  .note.success { background: rgba(63,185,80,0.07); border-color: rgba(63,185,80,0.3); }
+  .note.success h4 { color: var(--green); }
+
+  /* Drilldown matrix */
+  .matrix {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+  }
+  .matrix-row { display: contents; }
+  .matrix-row > div {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .matrix-row > div:first-child {
+    background: #1f2937;
+    color: var(--muted);
+    font-weight: 600;
+    border-right: 1px solid var(--border);
+  }
+  .matrix-row:last-child > div { border-bottom: none; }
+
+  ul li { margin: 4px 0; }
+  .small { font-size: 12px; color: var(--muted); }
+  .row-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Layout principle viz */
+  .principle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .principle {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .principle .num {
+    color: var(--accent);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .principle h4 { margin: 6px 0 4px; font-size: 14px; }
+  .principle p { margin: 0; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>📐 Grafana 대시보드 정리 계획</h1>
+<div class="sub">2026-05-19 · onprem-dev · 31개 → 7개로 정리, 한눈에 보기 + drill-down 분리 전략</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>0. 현황 — 왜 정리가 필요한가</h2>
+
+<div class="stage-grid">
+  <div class="stage before">
+    <h3>BEFORE 😵‍💫</h3>
+    <div class="count">31개</div>
+    <p class="small">grafana에 떠 있는 대시보드</p>
+    <ul>
+      <li>kube-prometheus-stack 내장 25개</li>
+      <li>grafana.com에서 다운받은 6개</li>
+      <li>같은 메트릭을 여러 대시보드가 각자 쿼리</li>
+      <li>"오늘 클러스터 어때?" → 어디 봐야 할지 모름</li>
+      <li>drill-down 경로 불명확</li>
+    </ul>
+  </div>
+  <div class="stage after">
+    <h3>AFTER ✨</h3>
+    <div class="count">7개</div>
+    <p class="small">목표 대시보드 수</p>
+    <ul>
+      <li>Overview 1개 (진입점, 한눈에 보기)</li>
+      <li>Drill-down 5개 (영역별 깊이)</li>
+      <li>Logs 1개 (Loki 통합)</li>
+      <li>중복 제거, 명확한 역할 분담</li>
+      <li>Overview → 클릭 → drill-down 흐름</li>
+    </ul>
+  </div>
+</div>
+
+<div class="note warn">
+  <h4>⚠ 핵심 문제 3가지</h4>
+  <ul>
+    <li><b>중복:</b> 다운받은 <code>node-exporter</code> 대시보드 ≈ 내장 <code>Node Exporter / Nodes</code> (95% 중복). 다운받은 <code>k8s-cluster</code> ≈ 내장 <code>Kubernetes / Compute Resources / Cluster</code> (90% 중복).</li>
+    <li><b>노이즈:</b> 내장 25개 중 RKE2 환경에서 무의미한 것 다수 (Controller Manager, Proxy, Scheduler 등 — RKE2는 통합 바이너리).</li>
+    <li><b>진입점 없음:</b> "Overview" 역할 대시보드가 없어서 매번 여러 대시보드를 왔다갔다.</li>
+  </ul>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>1. 다운받은 6개 — 내장과 중복 분석</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:18%">다운받은 대시보드</th>
+      <th style="width:30%">내장에 동등한 게 있나?</th>
+      <th style="width:10%">중복도</th>
+      <th style="width:12%">결정</th>
+      <th>이유</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>argocd</b></td>
+      <td>❌ 없음 (kube-prometheus-stack는 K8s만)</td>
+      <td>0%</td>
+      <td><span class="badge keep">KEEP</span></td>
+      <td>ArgoCD 자체 헬스/sync 상태는 필수</td>
+    </tr>
+    <tr>
+      <td><b>cert-manager</b></td>
+      <td>❌ 없음</td>
+      <td>0%</td>
+      <td><span class="badge keep">KEEP</span></td>
+      <td>인증서 만료 추적 필수</td>
+    </tr>
+    <tr>
+      <td><b>k8s-cluster</b></td>
+      <td>✅ <code>Kubernetes / Compute Resources / Cluster</code></td>
+      <td>90%</td>
+      <td><span class="badge drop">DROP</span></td>
+      <td>내장이 더 잘 만들어져 있음. 다운받은 거 삭제</td>
+    </tr>
+    <tr>
+      <td><b>kube-state-metrics</b></td>
+      <td>△ KSM은 메트릭 소스, 내장 대시보드들이 이를 사용</td>
+      <td>50%</td>
+      <td><span class="badge merge">MERGE</span></td>
+      <td>KSM 자체 헬스만 Overview 1패널로 흡수, 별도 대시보드 불필요</td>
+    </tr>
+    <tr>
+      <td><b>longhorn</b></td>
+      <td>❌ 없음</td>
+      <td>0%</td>
+      <td><span class="badge keep">KEEP</span></td>
+      <td>스토리지 운영 핵심</td>
+    </tr>
+    <tr>
+      <td><b>node-exporter</b></td>
+      <td>✅ <code>Node Exporter / Nodes</code> + <code>USE Method / Node</code></td>
+      <td>95%</td>
+      <td><span class="badge drop">DROP</span></td>
+      <td>내장이 USE Method까지 잘 정리. 다운받은 거 삭제</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note success">
+  <h4>✓ 다운받은 6개 처리 결과</h4>
+  <p>KEEP 3 (argocd / cert-manager / longhorn) · DROP 2 (k8s-cluster / node-exporter) · MERGE 1 (kube-state-metrics → Overview로 흡수)</p>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>2. 내장 25개 — 분류 + 취사선택</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:22%">카테고리</th>
+      <th style="width:50%">내장 대시보드</th>
+      <th style="width:14%">결정</th>
+      <th>이유</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Compute Resources</b><br><span class="small">(자원 사용)</span></td>
+      <td>
+        Cluster / Namespace (Pods) / Namespace (Workloads) /<br>
+        Node (Pods) / Pod / Workload
+      </td>
+      <td>
+        <span class="badge keep">KEEP 3</span><br>
+        <span class="badge drop">DROP 3</span>
+      </td>
+      <td>
+        KEEP: Cluster, Pod, Node (Pods)<br>
+        DROP: Namespace 시리즈 (Pod로 충분), Workload (Pod와 중복)
+      </td>
+    </tr>
+    <tr>
+      <td><b>Node Exporter</b><br><span class="small">(노드 OS 메트릭)</span></td>
+      <td>USE Method / Cluster / USE Method / Node / Nodes</td>
+      <td>
+        <span class="badge keep">KEEP 1</span><br>
+        <span class="badge drop">DROP 2</span>
+      </td>
+      <td>
+        KEEP: Nodes (가장 자주 봄)<br>
+        DROP: USE Method 시리즈 (학습용, 일상 운영엔 과함)
+      </td>
+    </tr>
+    <tr>
+      <td><b>Networking</b><br><span class="small">(통신)</span></td>
+      <td>
+        Cluster / Namespace (Pods) / Namespace (Workloads) /<br>
+        Pod / Workload
+      </td>
+      <td><span class="badge drop">DROP 5</span></td>
+      <td>
+        <b>Cilium 환경이라 Hubble UI가 훨씬 강력.</b> 이 대시보드들은 kube-proxy 시대 유물. 전부 끔
+      </td>
+    </tr>
+    <tr>
+      <td><b>Control Plane</b></td>
+      <td>API Server / Controller Manager / Scheduler / Proxy / Kubelet</td>
+      <td>
+        <span class="badge keep">KEEP 1</span><br>
+        <span class="badge drop">DROP 4</span>
+      </td>
+      <td>
+        KEEP: API Server (장애 시 필수)<br>
+        DROP: Controller Manager / Scheduler / Proxy / Kubelet (RKE2 통합 바이너리, 별도 모니터링 의미 작음)
+      </td>
+    </tr>
+    <tr>
+      <td><b>Storage</b></td>
+      <td>Persistent Volumes</td>
+      <td><span class="badge keep">KEEP 1</span></td>
+      <td>PV 사용률 추적 필수, Longhorn 대시보드와 다른 관점 (K8s 입장)</td>
+    </tr>
+    <tr>
+      <td><b>Workload Types</b></td>
+      <td>StatefulSets</td>
+      <td><span class="badge drop">DROP 1</span></td>
+      <td>Compute Resources / Pod에서 같이 봄</td>
+    </tr>
+    <tr>
+      <td><b>Self-monitoring</b></td>
+      <td>Prometheus Overview / alertmanager-overview / grafana-overview</td>
+      <td><span class="badge keep">KEEP 1</span></td>
+      <td>
+        KEEP: Prometheus Overview (Prometheus 자체 헬스)<br>
+        DROP: AM / Grafana (거의 안 봄)
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <h4>📊 내장 25개 처리 결과</h4>
+  <ul>
+    <li>KEEP 7: <code>Compute Resources / Cluster · Pod · Node(Pods)</code> + <code>Node Exporter / Nodes</code> + <code>API Server</code> + <code>Persistent Volumes</code> + <code>Prometheus Overview</code></li>
+    <li>DROP 18 (대부분 Namespace 중복 + Networking + RKE2 통합 컴포넌트)</li>
+  </ul>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>3. 최종 대시보드 트리 (7개)</h2>
+
+<div class="tree">📁 Folder: <b>onprem-dev</b>
+│
+├─ <b class="new-d">📊 [00] Overview</b>                               <span class="dim">← 진입점, 한눈에 (NEW, 커스텀)</span>
+│   <span class="dim">메인 홈으로 설정. 클러스터 들어오면 첫 화면</span>
+│
+├─📁 K8s 자원
+│   ├─ <b class="keep-d">[01] Cluster Resources</b>           <span class="dim">← 내장 Compute Resources/Cluster</span>
+│   ├─ <b class="keep-d">[02] Pod Resources</b>               <span class="dim">← 내장 Compute Resources/Pod</span>
+│   └─ <b class="keep-d">[03] Node (Pods)</b>                 <span class="dim">← 내장 Compute Resources/Node(Pods)</span>
+│
+├─📁 노드 & 스토리지
+│   ├─ <b class="keep-d">[04] Nodes</b>                       <span class="dim">← 내장 Node Exporter/Nodes</span>
+│   ├─ <b class="keep-d">[05] Persistent Volumes</b>          <span class="dim">← 내장</span>
+│   └─ <b class="keep-d">[06] Longhorn</b>                    <span class="dim">← 다운받은 거</span>
+│
+├─📁 플랫폼 컴포넌트
+│   ├─ <b class="keep-d">[07] ArgoCD</b>                      <span class="dim">← 다운받은 거</span>
+│   ├─ <b class="keep-d">[08] cert-manager</b>                <span class="dim">← 다운받은 거</span>
+│   └─ <b class="keep-d">[09] API Server</b>                  <span class="dim">← 내장</span>
+│
+├─📁 자기관측
+│   └─ <b class="keep-d">[10] Prometheus Overview</b>         <span class="dim">← 내장</span>
+│
+└─ <b class="new-d">📜 [11] Logs (Loki)</b>                            <span class="dim">← NEW, 커스텀</span>
+    <span class="dim">모든 컴포넌트 로그 통합 검색 + 에러 패턴</span></div>
+
+<div class="note">
+  <h4>🎯 핵심 효과</h4>
+  <ul>
+    <li><b>Overview([00])가 진입점</b> — 홈 대시보드로 설정. 매일 5초만에 이상 감지</li>
+    <li><b>Folder로 시각 그루핑</b> — K8s 자원 / 노드&스토리지 / 플랫폼 / 자기관측 / 로그</li>
+    <li><b>번호 prefix [00]~[11]</b> — 정렬 순서 강제, 자주 보는 거 위로</li>
+    <li><b>Logs 대시보드</b> — Loki 이미 깔렸으니 활용. 메트릭 이상 → Overview → Logs로 drill-down</li>
+  </ul>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>4. Overview [00] 디자인 — UX 원칙 3가지</h2>
+
+<div class="principle-grid">
+  <div class="principle">
+    <div class="num">1</div>
+    <h4>F자 패턴 시선 흐름</h4>
+    <p>왼쪽 위 = 가장 중요. 사용자 시선이 자연스럽게 따라가는 F자 패턴에 맞춰 우선순위 배치.</p>
+  </div>
+  <div class="principle">
+    <div class="num">2</div>
+    <h4>색은 의미일 때만</h4>
+    <p>녹/노/빨 = 정상/주의/이상. 장식용 색 금지. 무채색 기본 + 이상 시에만 색.</p>
+  </div>
+  <div class="principle">
+    <div class="num">3</div>
+    <h4>0이면 사라짐</h4>
+    <p>"Pending Pod: 0", "CrashLoop: 0" 같은 평시 패널은 0일 때 회색으로 숨김. 이상 시에만 강조.</p>
+  </div>
+</div>
+
+<h3>Overview 패널 레이아웃</h3>
+<div class="ov">
+  <!-- Row 1: 헬스 5종 -->
+  <div class="small" style="margin-bottom:4px;">Row 1 — 클러스터 헬스 (5초 스캔용)</div>
+  <div class="ov-row ov-r5">
+    <div class="ov-cell"><div class="h">노드 Ready</div><div class="v" style="color:var(--green);">3 / 3</div></div>
+    <div class="ov-cell"><div class="h">CPU</div><div class="v">38%</div><div class="sub">avg</div></div>
+    <div class="ov-cell"><div class="h">메모리</div><div class="v" style="color:var(--yellow);">71%</div><div class="sub">avg</div></div>
+    <div class="ov-cell"><div class="h">디스크 (max)</div><div class="v">42%</div></div>
+    <div class="ov-cell"><div class="h">활성 Alert</div><div class="v" style="color:var(--red);">2</div><div class="sub">1 crit · 1 warn</div></div>
+  </div>
+
+  <!-- Row 2: GitOps -->
+  <div class="small" style="margin-top:12px; margin-bottom:4px;">Row 2 — GitOps + 인증서 + 스토리지 (한눈에)</div>
+  <div class="ov-row ov-r4">
+    <div class="ov-cell"><div class="h">ArgoCD Synced</div><div class="v" style="color:var(--green);">11 / 11</div></div>
+    <div class="ov-cell"><div class="h">ArgoCD Healthy</div><div class="v" style="color:var(--yellow);">10 / 11</div></div>
+    <div class="ov-cell"><div class="h">인증서 ≤30일</div><div class="v" style="color:var(--yellow);">1</div></div>
+    <div class="ov-cell"><div class="h">Longhorn 볼륨</div><div class="v" style="color:var(--green);">8 / 8</div></div>
+  </div>
+
+  <!-- Row 3: 트렌드 -->
+  <div class="small" style="margin-top:12px; margin-bottom:4px;">Row 3 — 트렌드 시계열 (6시간)</div>
+  <div class="ov-row ov-r2">
+    <div class="ov-cell taller">
+      <div class="h">노드별 CPU/메모리 (multi-line)</div>
+      <svg width="100%" height="100" viewBox="0 0 400 100" style="margin-top:8px;">
+        <path style="stroke:var(--accent); stroke-width:1.5; fill:none;" d="M0,70 L40,65 L80,55 L120,60 L160,45 L200,40 L240,50 L280,35 L320,40 L360,30 L400,35"/>
+        <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,85 L40,80 L80,75 L120,70 L160,75 L200,65 L240,70 L280,60 L320,55 L360,65 L400,60"/>
+        <path style="stroke:var(--yellow); stroke-width:1.5; fill:none;" d="M0,50 L40,55 L80,35 L120,40 L160,30 L200,25 L240,35 L280,20 L320,25 L360,15 L400,20"/>
+      </svg>
+    </div>
+    <div class="ov-cell taller">
+      <div class="h">Hubble 네트워크 흐름 (성공/거부)</div>
+      <svg width="100%" height="100" viewBox="0 0 400 100" style="margin-top:8px;">
+        <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,30 L40,32 L80,25 L120,30 L160,20 L200,25 L240,15 L280,20 L320,10 L360,15 L400,12"/>
+        <path style="stroke:var(--red); stroke-width:1.5; fill:none;" d="M0,90 L40,88 L80,85 L120,90 L160,88 L200,85 L240,90 L280,88 L320,85 L360,90 L400,88"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Row 4: 이슈 (0이면 회색) -->
+  <div class="small" style="margin-top:12px; margin-bottom:4px;">Row 4 — 워크로드 이슈 (있을 때만 강조)</div>
+  <div class="ov-row ov-r3">
+    <div class="ov-cell"><div class="h">Pending Pod</div><div class="v" style="color:var(--muted);">0</div></div>
+    <div class="ov-cell"><div class="h">CrashLoop</div><div class="v" style="color:var(--muted);">0</div></div>
+    <div class="ov-cell"><div class="h">1h 재시작 Top 3</div><div class="v" style="font-size:11px; color:var(--muted);">없음</div></div>
+  </div>
+
+  <!-- Row 5: Loki 로그 -->
+  <div class="small" style="margin-top:12px; margin-bottom:4px;">Row 5 — Loki 로그 통합 (이게 진짜 한눈에 보기 추가가치)</div>
+  <div class="ov-row ov-r2">
+    <div class="ov-cell tall">
+      <div class="h">에러 로그 발생률 (네임스페이스별)</div>
+      <svg width="100%" height="60" viewBox="0 0 400 60" style="margin-top:8px;">
+        <rect x="10"  y="40" width="20" height="20" fill="var(--accent)"/>
+        <rect x="40"  y="35" width="20" height="25" fill="var(--accent)"/>
+        <rect x="70"  y="50" width="20" height="10" fill="var(--accent)"/>
+        <rect x="100" y="20" width="20" height="40" fill="var(--red)"/>
+        <rect x="130" y="45" width="20" height="15" fill="var(--accent)"/>
+        <rect x="160" y="38" width="20" height="22" fill="var(--accent)"/>
+      </svg>
+    </div>
+    <div class="ov-cell tall">
+      <div class="h">최근 ERROR 로그 (Top 5)</div>
+      <div style="font-family:monospace; font-size:10px; color:var(--muted); margin-top:6px; line-height:1.6;">
+        harbor-trivy &nbsp;&nbsp;&nbsp;ImagePullBackOff: timeout<br>
+        vault-1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;raft: leader election<br>
+        cilium-xyz &nbsp;&nbsp;&nbsp;BPF map full warning<br>
+        cert-mgr &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DNS-01 propagation retry<br>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note success">
+  <h4>✨ Overview의 5초 스캔 흐름</h4>
+  <ol>
+    <li><b>Row 1</b>: 큰 숫자 5개 → 한 줄에 다 보임 → 색 보고 즉시 판단</li>
+    <li><b>Row 2</b>: GitOps/인증서/스토리지 상태 → 운영 컴포넌트 헬스 한 줄</li>
+    <li><b>Row 3</b>: 트렌드 → 갑자기 튄 패턴 보임</li>
+    <li><b>Row 4</b>: 0이면 회색, 있으면 빨강 → 자연스럽게 시선이 이상으로 감</li>
+    <li><b>Row 5</b>: 로그 — Prometheus는 "수치"만 줌. Loki로 "왜" 답을 함</li>
+  </ol>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>5. Drill-down 연결 (Grafana data link)</h2>
+
+<div class="matrix">
+  <div class="matrix-row">
+    <div>Overview 패널</div>
+    <div>클릭 → 이동</div>
+  </div>
+  <div class="matrix-row">
+    <div>노드 Ready / CPU / 메모리</div>
+    <div>[04] Nodes &nbsp;+ [03] Node (Pods)</div>
+  </div>
+  <div class="matrix-row">
+    <div>디스크 / Longhorn 볼륨</div>
+    <div>[05] Persistent Volumes &nbsp;+ [06] Longhorn</div>
+  </div>
+  <div class="matrix-row">
+    <div>활성 Alert</div>
+    <div>AlertManager UI (외부 링크)</div>
+  </div>
+  <div class="matrix-row">
+    <div>ArgoCD Synced/Healthy</div>
+    <div>[07] ArgoCD &nbsp;+ ArgoCD UI</div>
+  </div>
+  <div class="matrix-row">
+    <div>인증서 ≤30일</div>
+    <div>[08] cert-manager</div>
+  </div>
+  <div class="matrix-row">
+    <div>Pending Pod / CrashLoop / 재시작</div>
+    <div>[02] Pod Resources</div>
+  </div>
+  <div class="matrix-row">
+    <div>Hubble 네트워크</div>
+    <div>Hubble UI (외부 링크) — Grafana 패널 무의미</div>
+  </div>
+  <div class="matrix-row">
+    <div>에러 로그 발생률 / Top 5 ERROR</div>
+    <div>[11] Logs — 네임스페이스 필터링된 채로</div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>6. Logs [11] 대시보드 디자인 (Loki)</h2>
+
+<div class="ov">
+  <div class="small" style="margin-bottom:4px;">상단: 필터 변수 (template variable)</div>
+  <div class="ov-row ov-r4">
+    <div class="ov-cell"><div class="h">namespace</div><div class="v" style="font-size:13px;">[ argocd ▼ ]</div></div>
+    <div class="ov-cell"><div class="h">pod</div><div class="v" style="font-size:13px;">[ All ▼ ]</div></div>
+    <div class="ov-cell"><div class="h">level</div><div class="v" style="font-size:13px;">[ error,warn ▼ ]</div></div>
+    <div class="ov-cell"><div class="h">search</div><div class="v" style="font-size:13px;">[ keyword... ]</div></div>
+  </div>
+
+  <div class="small" style="margin-top:12px; margin-bottom:4px;">Row 1 — 로그 볼륨 시계열</div>
+  <div class="ov-row" style="grid-template-columns: 1fr;">
+    <div class="ov-cell tall">
+      <div class="h">레벨별 로그 발생률 (stacked area, namespace 분포)</div>
+      <svg width="100%" height="80" viewBox="0 0 400 80" style="margin-top:8px;">
+        <path d="M0,80 L0,60 L40,55 L80,58 L120,40 L160,45 L200,30 L240,35 L280,25 L320,30 L360,20 L400,25 L400,80 Z" fill="var(--accent)" opacity="0.4"/>
+        <path d="M0,80 L0,75 L40,72 L80,73 L120,65 L160,68 L200,55 L240,58 L280,50 L320,55 L360,48 L400,52 L400,80 Z" fill="var(--yellow)" opacity="0.5"/>
+        <path d="M0,80 L0,78 L40,76 L80,77 L120,72 L160,74 L200,68 L240,70 L280,65 L320,68 L360,62 L400,65 L400,80 Z" fill="var(--red)" opacity="0.6"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="small" style="margin-top:12px; margin-bottom:4px;">Row 2 — 로그 라인 (LogQL)</div>
+  <div class="ov-row" style="grid-template-columns: 1fr;">
+    <div class="ov-cell taller">
+      <div class="h">최근 로그 (필터 적용, 자동 스크롤)</div>
+      <div style="font-family:monospace; font-size:10px; color:var(--muted); margin-top:6px; line-height:1.5; max-height:120px; overflow:hidden;">
+        <span style="color:var(--muted);">2026-05-19 12:34:01</span> <span style="color:var(--red);">ERROR</span> harbor/trivy &nbsp;ImagePullBackOff: timeout pulling oci://ghcr.io/...<br>
+        <span style="color:var(--muted);">2026-05-19 12:33:58</span> <span style="color:var(--yellow);">WARN</span> &nbsp;vault/vault-1 raft: leader election in progress<br>
+        <span style="color:var(--muted);">2026-05-19 12:33:55</span> <span style="color:var(--accent);">INFO</span> &nbsp;argocd/server reconcile loop started<br>
+        <span style="color:var(--muted);">2026-05-19 12:33:50</span> <span style="color:var(--yellow);">WARN</span> &nbsp;cilium/cilium-xyz BPF map approaching limit (90%)<br>
+        <span style="color:var(--muted);">2026-05-19 12:33:42</span> <span style="color:var(--red);">ERROR</span> cert-manager/cert-manager DNS-01 propagation check failed<br>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>7. 정리표 — 최종 7개 + Folder 구조</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:6%">번호</th>
+      <th style="width:14%">Folder</th>
+      <th style="width:22%">이름</th>
+      <th style="width:10%">출처</th>
+      <th style="width:48%">역할</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>00</b></td>
+      <td>(루트)</td>
+      <td><b>Overview</b></td>
+      <td><span class="badge new">NEW</span></td>
+      <td>홈. 한눈에 보기. 5초 스캔. 모든 drill-down의 진입점</td>
+    </tr>
+    <tr>
+      <td><b>01</b></td>
+      <td>K8s 자원</td>
+      <td>Cluster Resources</td>
+      <td><span class="badge keep">내장</span></td>
+      <td>전체 클러스터 CPU/메모리/네트워크/스토리지 요청·사용량</td>
+    </tr>
+    <tr>
+      <td><b>02</b></td>
+      <td>K8s 자원</td>
+      <td>Pod Resources</td>
+      <td><span class="badge keep">내장</span></td>
+      <td>특정 Pod의 CPU/메모리/네트워크 깊이 보기</td>
+    </tr>
+    <tr>
+      <td><b>03</b></td>
+      <td>K8s 자원</td>
+      <td>Node (Pods)</td>
+      <td><span class="badge keep">내장</span></td>
+      <td>특정 노드에 떠 있는 Pod들의 자원 사용</td>
+    </tr>
+    <tr>
+      <td><b>04</b></td>
+      <td>노드&스토리지</td>
+      <td>Nodes</td>
+      <td><span class="badge keep">내장</span></td>
+      <td>노드 OS 메트릭 (CPU/메모리/디스크/네트워크/load)</td>
+    </tr>
+    <tr>
+      <td><b>05</b></td>
+      <td>노드&스토리지</td>
+      <td>Persistent Volumes</td>
+      <td><span class="badge keep">내장</span></td>
+      <td>PV 사용률, IOPS, latency (K8s 관점)</td>
+    </tr>
+    <tr>
+      <td><b>06</b></td>
+      <td>노드&스토리지</td>
+      <td>Longhorn</td>
+      <td><span class="badge keep">다운</span></td>
+      <td>Longhorn 볼륨/replica/백업 (Longhorn 관점)</td>
+    </tr>
+    <tr>
+      <td><b>07</b></td>
+      <td>플랫폼</td>
+      <td>ArgoCD</td>
+      <td><span class="badge keep">다운</span></td>
+      <td>Application sync/health, reconcile 시간</td>
+    </tr>
+    <tr>
+      <td><b>08</b></td>
+      <td>플랫폼</td>
+      <td>cert-manager</td>
+      <td><span class="badge keep">다운</span></td>
+      <td>인증서 발급/갱신 성공률, 만료 임박 목록</td>
+    </tr>
+    <tr>
+      <td><b>09</b></td>
+      <td>플랫폼</td>
+      <td>API Server</td>
+      <td><span class="badge keep">내장</span></td>
+      <td>API server 요청률, latency, 에러율</td>
+    </tr>
+    <tr>
+      <td><b>10</b></td>
+      <td>자기관측</td>
+      <td>Prometheus Overview</td>
+      <td><span class="badge keep">내장</span></td>
+      <td>Prometheus 자체 헬스 (scrape, TSDB, 메모리)</td>
+    </tr>
+    <tr>
+      <td><b>11</b></td>
+      <td>로그</td>
+      <td>Logs (Loki)</td>
+      <td><span class="badge new">NEW</span></td>
+      <td>모든 컴포넌트 로그 통합 검색, 에러 패턴, namespace 필터</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <h4>📊 통계</h4>
+  <ul>
+    <li><b>총 7개 활성</b> (Overview 1 + Drill-down 5 + Logs 1) — 위 표의 [00]~[11] 중 사용 안 하는 번호는 향후 앱 대시보드용 예약</li>
+    <li><b>없애는 거: 24개</b> (내장 18 + 다운 2 + KSM merge 1 + 기타)</li>
+    <li><b>새로 만드는 거: 2개</b> (Overview, Logs)</li>
+  </ul>
+</div>
+
+<!-- ═════════════════════════════════ -->
+<h2>8. 액션 — 결정 필요 6가지</h2>
+
+<div class="row-2-cols">
+  <div class="note">
+    <h4>① 이 7개 구성 OK?</h4>
+    <p class="small">빼고 싶은 거 / 추가하고 싶은 거 있어? (예: Vault 전용 대시보드, Cilium 메트릭 별도 등)</p>
+  </div>
+  <div class="note">
+    <h4>② Overview의 Row 5 (Loki 로그 통합)</h4>
+    <p class="small">한 화면에 메트릭+로그 같이 보는 패턴. 인지 비용 약간 ↑인데 디버깅 효율 ↑. 넣을까?</p>
+  </div>
+  <div class="note">
+    <h4>③ Folder로 그루핑</h4>
+    <p class="small">"K8s 자원 / 노드&스토리지 / 플랫폼 / 자기관측 / 로그" 5개 folder. 마음에 들어? 다른 분류 원해?</p>
+  </div>
+  <div class="note">
+    <h4>④ 번호 prefix [00]~[11]</h4>
+    <p class="small">Grafana는 알파벳 정렬이라 번호 prefix가 강제 정렬용. OK?</p>
+  </div>
+  <div class="note">
+    <h4>⑤ 내장 대시보드 18개 끄는 방법</h4>
+    <p class="small">kube-prometheus-stack values.yaml에서 <code>grafana.defaultDashboardsEnabled: false</code>로 전부 끄고, 7개 KEEP 대상만 ConfigMap으로 다시 박는 방식 vs 개별 grafana.dashboards 키에서 빼는 방식. 다음에 결정.</p>
+  </div>
+  <div class="note">
+    <h4>⑥ "01~11" 진짜 번호 매김 vs 다른 naming</h4>
+    <p class="small">예: <code>01-cluster-resources</code> vs <code>K8s · Cluster Resources</code> 이런 식의 raw prefix vs separator. 취향 선택.</p>
+  </div>
+</div>
+
+<div class="note success">
+  <h4>✨ 이 6개 결정되면</h4>
+  <p>다음 단계: <b>Overview JSON 작성</b> → Logs JSON 작성 → 6개 KEEP 대시보드 ConfigMap화 → values.yaml에서 18개 disable → 검증.</p>
+</div>
+
+</body>
+</html>

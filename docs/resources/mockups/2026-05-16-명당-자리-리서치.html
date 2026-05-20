@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PUBG 명당 자리 리서치 — 에란겔·태이고 — 2026-05-16</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2028;
+    --panel-2: #232a35;
+    --border: #2c3441;
+    --text: #e1e7ee;
+    --muted: #8b97a7;
+    --accent: #4cc9f0;
+    --tier-s: #f0c75e;
+    --tier-a: #6dd47e;
+    --tier-b: #8b97a7;
+    --tier-h: #f06464;
+    --cat-landmark: #c084fc;
+    --cat-ridge: #6dd47e;
+    --cat-compound: #4cc9f0;
+    --cat-water: #38bdf8;
+    --cat-hotdrop: #f06464;
+    --cat-revive: #f0c75e;
+    --code-bg: #0d1117;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.55;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
+  header {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  h2 {
+    color: var(--accent);
+    margin: 28px 0 10px;
+    font-size: 19px;
+    border-left: 4px solid var(--accent);
+    padding-left: 10px;
+  }
+  h3 { margin: 18px 0 8px; font-size: 15px; color: var(--text); }
+  p { margin: 6px 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre {
+    font-family: "JetBrains Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    border-radius: 4px;
+  }
+  code { padding: 2px 6px; font-size: 12px; }
+  pre {
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    margin: 12px 0;
+  }
+
+  /* Stats cards */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0; }
+  .stat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .stat-card .num { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat-card .label { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+    margin: 20px 0 16px;
+  }
+  .tab {
+    background: var(--panel);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 6px 6px 0 0;
+    font-family: inherit;
+  }
+  .tab.active {
+    background: var(--panel-2);
+    color: var(--accent);
+    border-color: var(--accent);
+    border-bottom: 1px solid var(--panel-2);
+    margin-bottom: -1px;
+    font-weight: 600;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Map layout */
+  .map-layout {
+    display: grid;
+    grid-template-columns: minmax(520px, 560px) 1fr;
+    gap: 20px;
+    margin-top: 12px;
+  }
+  @media (max-width: 1100px) {
+    .map-layout { grid-template-columns: 1fr; }
+  }
+  .map-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    max-height: 92vh;
+    overflow: auto;
+  }
+  .map-svg { width: 100%; height: auto; display: block; background: #1a2531; border-radius: 6px; }
+  .map-svg .grid-line { stroke: #2c3441; stroke-width: 0.4; }
+  .map-svg .grid-label { fill: #6e7c8f; font-size: 8px; font-family: monospace; }
+  .map-svg .marker { stroke: #0f1419; stroke-width: 0.5; cursor: pointer; transition: r 0.15s; }
+  .map-svg .marker:hover { stroke: #fff; stroke-width: 1.2; }
+  .map-svg .marker-label {
+    fill: #fff; font-size: 5.5px; font-weight: 600;
+    pointer-events: none; text-anchor: middle;
+    paint-order: stroke; stroke: #0f1419; stroke-width: 1.5;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 0;
+    margin-bottom: 8px;
+  }
+  .chip {
+    background: var(--panel);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    transition: background 0.1s;
+  }
+  .chip:hover { background: var(--panel-2); }
+  .chip.active { background: var(--accent); color: #0f1419; border-color: var(--accent); font-weight: 600; }
+  .chip.tier-s.active { background: var(--tier-s); border-color: var(--tier-s); }
+  .chip.tier-a.active { background: var(--tier-a); border-color: var(--tier-a); }
+  .chip.tier-b.active { background: var(--tier-b); border-color: var(--tier-b); }
+  .chip.tier-h.active { background: var(--tier-h); border-color: var(--tier-h); }
+
+  /* Data table */
+  .data-table-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--panel-2); font-weight: 600; position: sticky; top: 0; cursor: pointer; user-select: none; }
+  th:hover { color: var(--accent); }
+  th .sort-arrow { color: var(--accent); margin-left: 4px; }
+  tr:hover td { background: var(--panel-2); }
+  td.tier { font-weight: 700; text-align: center; }
+  td.tier-s { color: var(--tier-s); }
+  td.tier-a { color: var(--tier-a); }
+  td.tier-b { color: var(--tier-b); }
+  td.tier-h { color: var(--tier-h); }
+  td.coord { font-family: monospace; font-size: 12px; color: var(--muted); }
+  td.cell { font-family: monospace; font-weight: 600; color: var(--accent); }
+  td.name { font-weight: 600; }
+  td.name .en { display: block; color: var(--muted); font-size: 11px; font-weight: normal; }
+  .cat-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+  .cat-랜드마크 { color: var(--cat-landmark); border-color: var(--cat-landmark); }
+  .cat-능선 { color: var(--cat-ridge); border-color: var(--cat-ridge); }
+  .cat-컴파운드 { color: var(--cat-compound); border-color: var(--cat-compound); }
+  .cat-수계 { color: var(--cat-water); border-color: var(--cat-water); }
+  .cat-핫드롭 { color: var(--cat-hotdrop); border-color: var(--cat-hotdrop); }
+  .cat-부활 { color: var(--cat-revive); border-color: var(--cat-revive); }
+  .precision-측정 { color: var(--tier-a); font-size: 11px; }
+  .precision-추정 { color: var(--muted); font-size: 11px; }
+  .row-hidden { display: none; }
+  .row-highlight td { background: rgba(76, 201, 240, 0.15) !important; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+
+  /* Roadmap */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .panel.warn { border-left: 4px solid var(--tier-s); }
+  .panel.good { border-left: 4px solid var(--tier-a); }
+  .panel.info { border-left: 4px solid var(--accent); }
+
+  .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 16px 0; }
+  @media (max-width: 900px) { .roadmap { grid-template-columns: 1fr; } }
+  .phase-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .phase-card h3 { margin-top: 0; color: var(--accent); }
+  .phase-card .meta { font-size: 12px; color: var(--muted); margin: 6px 0 10px; }
+  .phase-card ul { margin: 6px 0; padding-left: 18px; font-size: 13px; }
+  .phase-card.v1 { border-left: 4px solid var(--tier-b); }
+  .phase-card.v15 { border-left: 4px solid var(--tier-a); }
+  .phase-card.v2 { border-left: 4px solid var(--tier-s); }
+
+  .key-insight {
+    background: linear-gradient(135deg, rgba(76, 201, 240, 0.1), rgba(108, 212, 126, 0.05));
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+  }
+  .key-insight strong { color: var(--accent); }
+
+  .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .source-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .source-card h3 { margin: 0 0 8px; font-size: 14px; color: var(--accent); }
+  .source-card ul { margin: 0; padding-left: 18px; font-size: 12px; }
+  .source-card li { margin: 4px 0; }
+  .lang-badge {
+    display: inline-block;
+    background: var(--panel-2);
+    color: var(--muted);
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    margin-right: 5px;
+    font-family: monospace;
+  }
+
+  details { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; margin: 10px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  details[open] { padding-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>PUBG 명당 자리 리서치 — 에란겔 · 태이고</h1>
+  <div class="subtitle">
+    수집일 2026-05-16 · 4개 리서치 에이전트 병렬 (영문/한국어/일본어/중국어) ·
+    <code>location-service</code> D3 단계용 시드 데이터
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat-card"><div class="num">40+</div><div class="label">에란겔 명당 (유니크)</div></div>
+  <div class="stat-card"><div class="num">26</div><div class="label">태이고 명당 (부활아레나 2개 포함)</div></div>
+  <div class="stat-card"><div class="num">25+</div><div class="label">출처 URL (한/영/일/중)</div></div>
+  <div class="stat-card"><div class="num">v1→v2</div><div class="label">정밀도 단계 (격자→Telemetry)</div></div>
+</div>
+
+<div class="key-insight">
+  <strong>핵심 결론:</strong> 어떤 공개 소스도 0~1 정규화 좌표를 직접 제공하지 않는다.
+  현재 데이터는 <strong>전부 그리드 셀 중심값 추정</strong>이며 ±0.05 오차 감안 필요.
+  진짜 정밀 좌표는 <strong>PUBG 공식 Telemetry API</strong>(<code>cm/816000</code>)가 유일한 표준 경로 —
+  v2 로드맵에서 자동 추출 파이프라인으로 전환할 것.
+</div>
+
+<div class="key-insight">
+  <strong>한국 vs 영어권 차이:</strong> 한국 커뮤니티(인벤·디시)는
+  "<em>로족 밑 창고능선</em>", "<em>짱구집</em>", "<em>강북 연속능선</em>" 같은
+  <strong>능선·소형 컴파운드 단위</strong> 세부 명칭을 공통어로 사용.
+  영어권(GameRant·Dexerto)은 도시 단위(Pochinki, Georgopol) 위주.
+  좌표 해상도 ↑ 작업에는 <strong>한국 소스가 더 가치 있음</strong>.
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="erangel">에란겔 (40+)</button>
+  <button class="tab" data-tab="taego">태이고 (26)</button>
+  <button class="tab" data-tab="coords">좌표 추출 가이드</button>
+  <button class="tab" data-tab="endgame">엔드게임 빈출 셀</button>
+  <button class="tab" data-tab="sources">출처 ({총})</button>
+</div>
+
+<!-- ============ ERANGEL ============ -->
+<div class="tab-panel active" id="tab-erangel">
+
+<div class="filter-bar">
+  <button class="chip active" data-filter="cat" data-value="all">전체</button>
+  <button class="chip" data-filter="cat" data-value="랜드마크중심">랜드마크중심</button>
+  <button class="chip" data-filter="cat" data-value="능선·고지">능선·고지</button>
+  <button class="chip" data-filter="cat" data-value="격리컴파운드">격리컴파운드</button>
+  <button class="chip" data-filter="cat" data-value="수계인접">수계인접</button>
+  <button class="chip" data-filter="cat" data-value="핫드롭전용">핫드롭전용</button>
+  <span style="width: 1px; background: var(--border); margin: 0 4px;"></span>
+  <button class="chip tier-s active" data-filter="tier" data-value="all">티어 전체</button>
+  <button class="chip tier-s" data-filter="tier" data-value="S">S</button>
+  <button class="chip tier-a" data-filter="tier" data-value="A">A</button>
+  <button class="chip tier-b" data-filter="tier" data-value="B">B</button>
+  <button class="chip tier-h" data-filter="tier" data-value="H">H</button>
+</div>
+
+<div class="map-layout">
+  <div class="map-panel">
+    <h3 style="margin-top:0">에란겔 8×8 그리드</h3>
+    <svg class="map-svg" viewBox="0 0 100 100" id="map-erangel">
+      <!-- Grid lines drawn by JS -->
+    </svg>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-s)"></span>S (최종권 빈출)</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-a)"></span>A (중반 유효)</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-b)"></span>B (초중반)</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-h)"></span>H (핫드롭)</div>
+    </div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted)">
+      마커 호버 → 표 강조. 행 클릭 → 맵 강조.<br>
+      x: 서(0) → 동(1) · y: 북(0) → 남(1).
+    </div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table id="table-erangel">
+      <thead>
+        <tr>
+          <th data-sort="name">이름</th>
+          <th data-sort="cell">셀</th>
+          <th data-sort="x">x</th>
+          <th data-sort="y">y</th>
+          <th data-sort="cat">분류</th>
+          <th data-sort="tier">티어</th>
+          <th>용도</th>
+          <th>출처</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Erangel rows injected by JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<!-- ============ TAEGO ============ -->
+<div class="tab-panel" id="tab-taego">
+
+<div class="filter-bar">
+  <button class="chip active" data-filter="cat" data-value="all" data-scope="taego">전체</button>
+  <button class="chip" data-filter="cat" data-value="랜드마크중심" data-scope="taego">랜드마크중심</button>
+  <button class="chip" data-filter="cat" data-value="능선·고지" data-scope="taego">능선·고지</button>
+  <button class="chip" data-filter="cat" data-value="격리컴파운드" data-scope="taego">격리컴파운드</button>
+  <button class="chip" data-filter="cat" data-value="수계인접" data-scope="taego">수계인접</button>
+  <button class="chip" data-filter="cat" data-value="핫드롭전용" data-scope="taego">핫드롭전용</button>
+  <button class="chip" data-filter="cat" data-value="부활타워근접" data-scope="taego">부활타워근접</button>
+  <span style="width: 1px; background: var(--border); margin: 0 4px;"></span>
+  <button class="chip tier-s active" data-filter="tier" data-value="all" data-scope="taego">티어 전체</button>
+  <button class="chip tier-s" data-filter="tier" data-value="S" data-scope="taego">S</button>
+  <button class="chip tier-a" data-filter="tier" data-value="A" data-scope="taego">A</button>
+  <button class="chip tier-b" data-filter="tier" data-value="B" data-scope="taego">B</button>
+  <button class="chip tier-h" data-filter="tier" data-value="H" data-scope="taego">H</button>
+</div>
+
+<div class="map-layout">
+  <div class="map-panel">
+    <h3 style="margin-top:0">태이고 8×8 그리드</h3>
+    <svg class="map-svg" viewBox="0 0 100 100" id="map-taego"></svg>
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-s)"></span>S</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-a)"></span>A</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-b)"></span>B</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--tier-h)"></span>H</div>
+    </div>
+    <div style="margin-top:12px; font-size:11px; color:var(--muted)">
+      태이고는 부활(Comeback BR) 시스템 보유.<br>
+      부활 아레나 2개소 위치는 정확 좌표 미공개 (추정).
+    </div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table id="table-taego">
+      <thead>
+        <tr>
+          <th data-sort="name">이름</th>
+          <th data-sort="cell">셀</th>
+          <th data-sort="x">x</th>
+          <th data-sort="y">y</th>
+          <th data-sort="cat">분류</th>
+          <th data-sort="tier">티어</th>
+          <th>용도</th>
+          <th>출처</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<!-- ============ COORDS ============ -->
+<div class="tab-panel" id="tab-coords">
+
+<h2>좌표 정밀도 3단계 로드맵</h2>
+
+<div class="roadmap">
+  <div class="phase-card v1">
+    <h3>v1 — 격자 셀 추정</h3>
+    <div class="meta">정밀도 0.125 · 공수 2h · 즉시 가능</div>
+    <p style="font-size:13px">
+      이 보고서 데이터가 v1. 그리드 A~H × 1~8 셀 중심값을
+      <code>x=(열×2-1)/16</code> 공식으로 산출.
+    </p>
+    <ul>
+      <li>장점: 출처만 있으면 즉시 시드 가능</li>
+      <li>단점: 셀 내 50m 단위 차이를 표현 못 함</li>
+      <li>용도: 서비스 기본 기능 검증 (D4)</li>
+    </ul>
+  </div>
+
+  <div class="phase-card v15">
+    <h3>v1.5 — pubgmap.io 추출</h3>
+    <div class="meta">정밀도 ~0.001 · 공수 4~8h · JS 번들 분석 필요</div>
+    <p style="font-size:13px">
+      pubgmap.io는 Leaflet 기반. 마커 좌표가 JS chunk 내부에 번들링됨.
+      Chrome DevTools → Network → JS 필터로 추출.
+    </p>
+    <ul>
+      <li>추출: Leaflet pixel ÷ 맵 이미지 픽셀 크기</li>
+      <li>주의: TOS 확인 필요</li>
+      <li>마우스 클릭 콘솔 출력에 lat/lng 패턴 노출 가능성</li>
+    </ul>
+  </div>
+
+  <div class="phase-card v2">
+    <h3>v2 — Telemetry API ★</h3>
+    <div class="meta">정밀도 ~0.001 (실측) · 공수 1~2일 · 완전 자동</div>
+    <p style="font-size:13px">
+      <strong>유일한 표준 경로.</strong> PUBG 공식 API에서
+      <code>LogPlayerPosition</code>의 <code>x, y</code> (cm) ÷ 816,000으로
+      우리 좌표계와 그대로 매칭.
+    </p>
+    <ul>
+      <li>API Key: 무료 (developer.pubg.com)</li>
+      <li>텔레메트리 다운로드: <strong>API Key 불필요</strong></li>
+      <li>샘플 매치 200개 → 착지 히트맵 → 클러스터 centroid 60개 자동 추출</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Telemetry API 핵심 흐름</h2>
+
+<pre>// 1. 매치 ID 얻기 (API Key 필요)
+GET https://api.pubg.com/shards/pc-na/samples
+  Authorization: Bearer &lt;API_KEY&gt;
+
+// 2. 매치 → 텔레메트리 URL 추출
+GET https://api.pubg.com/shards/pc-na/matches/{match-id}
+  → response.included[].attributes.URL  (asset type = telemetry)
+
+// 3. 텔레메트리 JSON 다운로드 (API Key 불필요, gzip)
+GET https://telemetry-cdn.pubg.com/...telemetry.json
+
+// 4. LogPlayerPosition 파싱 → 정규화
+{
+  "_T": "LogPlayerPosition",
+  "character": { "location": { "x": 428000, "y": 302000, "z": 100 } },
+  "elapsedTime": 10.0
+}
+→ coordX = 428000 / 816000 = 0.524
+→ coordY = 302000 / 816000 = 0.370</pre>
+
+<h2>방법별 비교</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>방법</th><th>정밀도</th><th>자동화</th><th>라이선스</th><th>공수</th><th>즉시 사용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>격자 셀 추정 (현재)</td>
+      <td><code>0.125</code></td>
+      <td>불가 (손 입력)</td>
+      <td>없음</td>
+      <td>2h</td>
+      <td class="tier tier-a">즉시</td>
+    </tr>
+    <tr>
+      <td>pubgmap.io DevTools 파싱</td>
+      <td><code>~0.001</code></td>
+      <td>반자동</td>
+      <td>TOS 확인</td>
+      <td>4~8h</td>
+      <td class="tier tier-b">JS 분석 후</td>
+    </tr>
+    <tr>
+      <td>PUBG Telemetry API ★</td>
+      <td><code>~0.001</code> (집계)</td>
+      <td>완전 자동</td>
+      <td>공식 허용</td>
+      <td>1~2일</td>
+      <td class="tier tier-s">API Key 발급 후</td>
+    </tr>
+    <tr>
+      <td>UE4 uasset datamine</td>
+      <td><code>~0.001</code></td>
+      <td>반자동</td>
+      <td>게임 TOS 위반 가능</td>
+      <td>3~5일</td>
+      <td class="tier tier-h">비권장</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="panel warn">
+  <strong>⚠ 공개 데이터셋 부재:</strong>
+  <code>pubg/api-assets</code>, <code>cgcostume/pubg-maps</code>, <code>pubgapi/v2-json</code> 등
+  GitHub 오픈소스 중 POI 좌표를 직접 제공하는 것은 없음.
+  Telemetry API + 자체 클러스터링이 사실상 유일한 정답.
+</div>
+
+</div>
+
+<!-- ============ ENDGAME ============ -->
+<div class="tab-panel" id="tab-endgame">
+
+<h2>에란겔 — 영문 커뮤니티 종합 엔드게임 자기장 빈출 셀</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>셀 범위</th><th>지역</th><th>이유</th><th>출처</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code style="color:var(--tier-s)">D-E 4-5</code></td>
+      <td>맵 정중앙 (포친키 · 루인스 · 로족)</td>
+      <td>프로 4,000경기 분석 3대 빈출 지점 1위. 최종권 35% 빈도 도심권 핵심.</td>
+      <td><a href="https://www.dexerto.com/pubg/pubg-analyst-reveals-most-likely-final-circles-miramar-erangel-977417/">Dexerto</a></td>
+    </tr>
+    <tr>
+      <td><code style="color:var(--tier-s)">B-C 3-4</code></td>
+      <td>조르조폴 · 동쪽 산</td>
+      <td>프로 분석 3대 지점 2위. 컨테이너 + 남쪽 큰 언덕 조합.</td>
+      <td><a href="https://www.dexerto.com/pubg/pubg-analyst-reveals-most-likely-final-circles-miramar-erangel-977417/">Dexerto</a></td>
+    </tr>
+    <tr>
+      <td><code style="color:var(--tier-s)">D-E 7-8</code></td>
+      <td>소스노브카 군사기지 (남쪽 섬)</td>
+      <td>프로 분석 3대 지점 3위. 섬 특성상 브릿지 제압이 결정적.</td>
+      <td><a href="https://www.dexerto.com/pubg/pubg-analyst-reveals-most-likely-final-circles-miramar-erangel-977417/">Dexerto</a></td>
+    </tr>
+    <tr>
+      <td><code style="color:var(--tier-a)">E-F 1-3</code></td>
+      <td>야스나야 폴랴나</td>
+      <td>북동 대도시. 북쪽 비행경로 시 60~70% 플레이어 집중.</td>
+      <td><a href="https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html">GearUp</a></td>
+    </tr>
+    <tr>
+      <td><code style="color:var(--tier-a)">G-H 5-6</code></td>
+      <td>밀타 파워 · 셸터</td>
+      <td>동쪽 중반 이후 빈출, 최종권 격전지로 언급.</td>
+      <td><a href="https://esportsdriven.com/gaming/guides/1528/pubg-erangel-best-drop-spots">EsportsDriven</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>에란겔 — 한국 프로 KSV_Juwon 추천 Top 3 능선</h2>
+
+<div class="panel info">
+  인벤 출처 글에서 KSV_Juwon이 직접 꼽은 명당.
+  공통점: <strong>도시 자체가 아닌 인접 능선</strong>.
+</div>
+
+<table>
+  <thead>
+    <tr><th>순위</th><th>위치</th><th>셀</th><th>특징</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1위</td>
+      <td>로족 남쪽 창고능선</td>
+      <td><code>D3 (0.44, 0.38)</code></td>
+      <td>로족 + 학교 사이 시야 통제. 엔드게임/중반 모두 유효.</td>
+    </tr>
+    <tr>
+      <td>2위</td>
+      <td>루인스 남쪽 판자집 능선</td>
+      <td><code>D3 (0.41, 0.34)</code></td>
+      <td>포친키-루인스 회전축. 엔드게임 능선 포지션.</td>
+    </tr>
+    <tr>
+      <td>3위</td>
+      <td>개미지옥(쿼리) 북쪽 능선</td>
+      <td><code>C4 (0.31, 0.44)</code></td>
+      <td>쿼리 서쪽 개미지옥 위. 조르조폴 동쪽 자기장 시 핵심.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="font-size:12px; color:var(--muted); margin-top:6px">
+출처: <a href="https://www.inven.co.kr/board/battlegrounds/5074/1962">인벤 — 프로게이머가 뽑은 에란겔 꿀자리 Top5</a>
+</p>
+
+<h2>한국 프로팀 현황 (2025~2026)</h2>
+
+<div class="panel warn">
+  <strong>주의:</strong> Gen.G(2024년 말)와 Danawa ATTACK ZERO(2025년 1월) <strong>PUBG 부문 해체</strong>.
+  PWS 2026 Korea Phase 1은 진행 중이나 팀별 엔드게임 포지션 좌표 데이터는 공개 텍스트로 추출 불가.
+  → <strong>대회 VOD 직접 분석</strong>이 한국 프로 메타 추출의 유일한 길.
+</div>
+
+<h2>태이고 — 부활(Comeback BR) 시스템 영향</h2>
+
+<div class="panel info">
+  1페이즈 사망자가 별도 아레나로 이동 → 3페이즈 시작 시 헬기로 본섬 재합류.
+  <strong>재합류 착지 위치 분석이 중반 메타의 핵심</strong>.
+  아레나 2개소는 동·서 해안에 대칭 배치되나 정확한 좌표는 공개되지 않음.
+  → 인게임 직접 확인 필요.
+</div>
+
+</div>
+
+<!-- ============ SOURCES ============ -->
+<div class="tab-panel" id="tab-sources">
+
+<h2>소스 카탈로그 (언어별)</h2>
+
+<div class="source-grid">
+
+  <div class="source-card">
+    <h3>🇰🇷 한국어 (KO)</h3>
+    <ul>
+      <li><a href="https://www.inven.co.kr/board/battlegrounds/5074/1962">인벤 — 프로게이머 에란겔 꿀자리 Top5 ★</a></li>
+      <li><a href="https://www.inven.co.kr/board/battlegrounds/5074/1828">인벤 — 에란겔 존버 장소 7곳</a></li>
+      <li><a href="https://www.inven.co.kr/webzine/news/?news=259109&site=battlegrounds">인벤 — 태이고 Terminal 리뷰</a></li>
+      <li><a href="https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977">디시 블루홀갤 — 스쿼드 오더포지션</a></li>
+      <li><a href="https://namu.wiki/w/%ED%83%9C%EC%9D%B4%EA%B3%A0">나무위키 — 태이고</a></li>
+      <li><a href="https://esportsnewskorea.com/?p=433">E스포츠코리아 — 비밀지하창고</a></li>
+      <li><a href="https://oracionspace.com/entry/PUBG-%ED%83%9C%EC%9D%B4%EA%B3%A0-%EB%A7%B5">OracionSpace — 태이고 비밀의 방</a></li>
+    </ul>
+  </div>
+
+  <div class="source-card">
+    <h3>🇺🇸 영어 (EN)</h3>
+    <ul>
+      <li><a href="https://pubg.wiki.gg/wiki/Erangel_(Remastered)">pubg.wiki.gg — Erangel</a></li>
+      <li><a href="https://liquipedia.net/pubg/Erangel_Classic">Liquipedia — Erangel</a></li>
+      <li><a href="https://liquipedia.net/pubg/Taego">Liquipedia — Taego</a></li>
+      <li><a href="https://www.dexerto.com/pubg/pubg-analyst-reveals-most-likely-final-circles-miramar-erangel-977417/">Dexerto — 최종권 통계 ★</a></li>
+      <li><a href="https://gamerant.com/pubg-battlegrounds-best-drop-spots-erangel/">GameRant — Drop Spots</a></li>
+      <li><a href="https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html">GearUp Booster — Pro Tips</a></li>
+      <li><a href="https://www.keengamer.com/articles/guides/6-of-the-best-pubg-sniping-locations-in-erangel/">Keengamer — Sniping Spots</a></li>
+      <li><a href="https://desportz.gg/landing-spots-in-erangel/">desportz.gg — Landing Spots</a></li>
+      <li><a href="https://esportsdriven.com/gaming/guides/1528/pubg-erangel-best-drop-spots">EsportsDriven — Drop Spots</a></li>
+      <li><a href="https://lootbar.gg/blog/en/best-landing-spots-on-erangel-for-ranked-matches.html">Lootbar — Ranked Guide</a></li>
+      <li><a href="https://noobs2pro.com/top-20-safest-loot-locations-in-erangel-pubg-safe-looting-guide/">noobs2pro — Safe Loot</a></li>
+      <li><a href="https://www.pubgprotips.com/articles/my-erangel-adventures-top-drop-spots-in-pubg-2025.html">pubgprotips — 2025 Update</a></li>
+      <li><a href="https://news.bittopup.com/news/pubg-mobile-erangel-late-circle-guide-75-win-rate-tips">BitTopup — Late Circle</a></li>
+      <li><a href="https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-best-landing-spots-in-taego-map">GINX — Taego Landing</a></li>
+      <li><a href="https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-12-2-patch-notes-taego-map-comeback-mechanics-new-weapons-vehicle-and-more">GINX — 12.2 Comeback Patch</a></li>
+      <li><a href="https://screenrant.com/pubg-best-drop-spots-taego-guide/">Screen Rant — Taego Drops</a></li>
+      <li><a href="https://pubgzone.com/pubg-taego-map/">PUBGZone — Taego Map</a></li>
+      <li><a href="https://pubgsecretroom.com/pubg-taego-secret-room.html">PUBG Secret Room</a></li>
+      <li><a href="https://pubgmap.io/erangel.html">pubgmap.io — Interactive Map</a></li>
+      <li><a href="https://gamermaps.net/map/pubg/erangel">gamermaps.net — Interactive</a></li>
+    </ul>
+  </div>
+
+  <div class="source-card">
+    <h3>🇯🇵 일본어 (JA) / 🇨🇳 중국어 (ZH)</h3>
+    <ul>
+      <li><a href="https://www.bilibili.com/read/cv11879489/">Bilibili — PUBG 新地图 跳点一览</a></li>
+      <li><a href="https://www.topuplive.com/news/pubg-mobile-taego-map-guide.html">TOPUPlive — Taego (EN/ZH)</a></li>
+      <li><span class="lang-badge">JA</span>일본어 PUBG 가이드는 태이고 전용 좌표 정보가 거의 없었음</li>
+    </ul>
+  </div>
+
+  <div class="source-card">
+    <h3>📊 좌표 추출 / 데이터 인프라</h3>
+    <ul>
+      <li><a href="https://documentation.pubg.com/en/index.html">PUBG API Docs ★</a></li>
+      <li><a href="https://documentation.pubg.com/en/telemetry-objects.html">Telemetry Objects</a></li>
+      <li><a href="https://documentation.pubg.com/en/telemetry.html">Telemetry Spec</a></li>
+      <li><a href="https://chicken-dinner.readthedocs.io/en/latest/models/telemetry.html">chicken-dinner — Models</a></li>
+      <li><a href="https://github.com/Schleifinho/pubg-circle-analyzer">pubg-circle-analyzer (GitHub)</a></li>
+      <li><a href="https://github.com/pubg/api-assets">pubg/api-assets (GitHub)</a></li>
+      <li><a href="https://github.com/cgcostume/pubg-maps">cgcostume/pubg-maps (지형만)</a></li>
+      <li><a href="https://pubgmap.io/telemetry">pubgmap.io Telemetry Explorer</a></li>
+    </ul>
+  </div>
+
+</div>
+
+<h2 style="margin-top:32px">데이터 신뢰도 노트</h2>
+
+<div class="panel">
+  <ul style="margin: 6px 0">
+    <li><strong>모든 x/y 좌표는 추정값.</strong> 공개 소스 중 0~1 정규화 좌표 직접 제공처 없음.</li>
+    <li><strong>일부 PUBG Mobile 가이드 포함.</strong> 맵 레이아웃은 PC와 동일하나 메타 차이 가능.</li>
+    <li><strong>능선·소형 컴파운드 명칭은 한국 커뮤니티 콜아웃 용어.</strong> 영어권 공개 가이드에는 거의 없음 — 스트리머 클립/VOD 분석이 더 정확.</li>
+    <li><strong>한국 프로 데이터 부재.</strong> Gen.G·Danawa 해체로 최신 한국 프로 메타는 PWS VOD에서만 추출 가능.</li>
+  </ul>
+</div>
+
+<h2 style="margin-top:24px">다음 액션</h2>
+
+<div class="panel good">
+  <ol style="margin:6px 0">
+    <li><strong>v1 시드 (즉시):</strong> 이 표 데이터를 <code>apps/services/location/prisma/seed.ts</code>에 그대로 주입. <code>locations</code> 60+행 채워서 D3 완료 → D4 검증 진행.</li>
+    <li><strong>v1.5 (이번 주):</strong> pubgmap.io를 Chrome DevTools로 열어 JS chunk 분석. 좌표 정밀도 ↑.</li>
+    <li><strong>v2 (다음 스프린트, 별도 이슈):</strong> PUBG API Key 발급 → 샘플 매치 200개 텔레메트리 수집 → 착지 클러스터링 파이프라인 구현. 자동 갱신.</li>
+  </ol>
+</div>
+
+</div>
+
+<script>
+// ====== 데이터 ======
+const erangel = [
+  // 포친키 권역
+  ['포친키 중심','Pochinki Center','D-E5',0.44,0.53,'랜드마크중심','S','핫드롭/엔드게임/회전 허브','https://desportz.gg/landing-spots-in-erangel/','EN+KO'],
+  ['포친키 교회 언덕','Pochinki Church Hill','D5',0.44,0.56,'능선·고지','S','엔드게임 종탑 오버워치','https://www.topuplive.com/news/pubg-pochinki-guide-loot-routes-hot-drops-pro-combat-tips.html','EN+KO'],
+  ['포친키 오른쪽 돌산','Pochinki East Rocky Hill','E5',0.56,0.56,'능선·고지','S','프로 추천 엔드게임 고지','https://www.inven.co.kr/board/battlegrounds/5074/1962','KO ★'],
+  ['포친키 동쪽 언덕','Hill East of Pochinki','E-F5',0.63,0.56,'능선·고지','S','School·포친키 동시 커버','https://www.keengamer.com/articles/guides/6-of-the-best-pubg-sniping-locations-in-erangel/','EN'],
+  ['포친키 SE 창고','Pochinki SE Warehouse','E5',0.56,0.60,'격리컴파운드','A','빠른 루팅 후 회전','https://www.topuplive.com/news/pubg-pochinki-guide-loot-routes-hot-drops-pro-combat-tips.html','EN'],
+  ['짱구집 (적 지붕 판자집)','Red-Roof Shack Compound','D4',0.44,0.44,'격리컴파운드','A','UAZ 벙커 구성, 위쪽 방어 집중','https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977','KO ★'],
+
+  // 학교 권역
+  ['학교','School','E4',0.56,0.44,'랜드마크중심','S','지하벙커 엔드게임 은신','https://gamerant.com/pubg-battlegrounds-best-drop-spots-erangel/','EN+KO'],
+  ['학교 북쪽 아파트','School North Apartments','D3',0.44,0.28,'핫드롭전용','H','학교 연계 핫드롭','https://desportz.gg/landing-spots-in-erangel/','KO'],
+  ['로족 언덕','Rozhok Hill','E4',0.56,0.44,'능선·고지','A','School·Yasnaya 회전 제압','https://news.bittopup.com/news/pubg-mobile-erangel-late-circle-guide-75-win-rate-tips','EN+KO'],
+  ['로족 남쪽 창고능선','Rozhok South Warehouse Ridge','D3',0.44,0.38,'능선·고지','S','프로 KSV_Juwon 추천 1위','https://www.inven.co.kr/board/battlegrounds/5074/1962','KO ★'],
+  ['로족 동쪽 능선','Rozhok East Ridge','E3',0.56,0.38,'능선·고지','A','로족·아파트 동시 장악','https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html','KO'],
+  ['루인스 남쪽 판자집 능선','Ruins South Shack Ridge','D3',0.41,0.34,'능선·고지','A','프로 KSV_Juwon 추천 2위','https://www.inven.co.kr/board/battlegrounds/5074/1962','KO ★'],
+  ['폐허 (루인스)','Ruins','D4',0.44,0.40,'랜드마크중심','H','포친키 회전 핫드롭','https://esportsdriven.com/gaming/guides/1528/pubg-erangel-best-drop-spots','EN+KO'],
+
+  // 조르조폴 권역
+  ['조르조폴 컨테이너','Georgopol Containers','B3',0.19,0.31,'핫드롭전용','H','최상급 루트, 컨테이너 은폐','https://desportz.gg/landing-spots-in-erangel/','EN+KO'],
+  ['조르조폴 북부 아파트','Georgopol North Apts','B2',0.19,0.19,'랜드마크중심','A','다층 건물, 서해안 통제','https://pubg.wiki.gg/wiki/Erangel/Georgopol','EN+KO'],
+  ['조르조폴 남쪽 큰 언덕','Big Hill SE of Georgopol','C4',0.31,0.44,'능선·고지','S','프로 분석 3대 지점','https://www.dexerto.com/pubg/pubg-analyst-reveals-most-likely-final-circles-miramar-erangel-977417/','EN+KO'],
+  ['개미지옥 북쪽 능선','Quarry North Ridge','C4',0.31,0.44,'능선·고지','A','프로 KSV_Juwon 추천 3위','https://www.inven.co.kr/board/battlegrounds/5074/1962','KO ★'],
+
+  // 야스나야 권역
+  ['야스나야 폴랴나','Yasnaya Polyana','F-G2',0.75,0.19,'랜드마크중심','S','북동 대도시 핫드롭','https://news.bittopup.com/news/pubg-mobile-erangel-late-circle-guide-75-win-rate-tips','EN+KO'],
+  ['야스나야 남쪽 빌라','Yasnaya South Villas','G2',0.81,0.25,'격리컴파운드','A','8개 건물, 옥상 360도 시야','https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html','KO'],
+  ['야스나야 굴뚝 갭','Yasnaya Chimney Gap','F2',0.69,0.19,'격리컴파운드','S','엔드게임 피크 포지션','https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html','EN'],
+  ['야스나야 따개비/판자집','Yasnaya West Shacks','F2',0.69,0.22,'격리컴파운드','A','원 진입 시 필수','https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977','KO'],
+
+  // 군사기지 (남쪽 섬)
+  ['소스노브카 군사기지','Sosnovka Military Base','D-E7',0.50,0.81,'핫드롭전용','S','프로 분석 3대 지점, 78% 레벨3','https://desportz.gg/landing-spots-in-erangel/','EN+KO'],
+  ['군사기지 라디오 타워 언덕','Mil Base Radio Tower Hill','E7',0.56,0.75,'능선·고지','S','군기지 전역 오버워치','https://www.keengamer.com/articles/guides/6-of-the-best-pubg-sniping-locations-in-erangel/','EN'],
+  ['군사기지 남서 언덕','Mil Base SW Hill','D7',0.44,0.81,'능선·고지','A','섬 내 최우선 포지션','https://esportsnewskorea.com/?p=433','KO'],
+
+  // 동쪽
+  ['밀타 파워','Mylta Power','G5',0.81,0.56,'격리컴파운드','A','저위험 고루트, 단독 운영','https://desportz.gg/landing-spots-in-erangel/','EN+KO'],
+  ['밀타 파워 옥상','Mylta Power Rooftop','G5',0.81,0.58,'능선·고지','A','쿼리·포친키 동시 시야','https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html','EN+KO'],
+  ['밀타 마을','Mylta Town','G5',0.75,0.58,'수계인접','B','강변 중루트 거점','https://liquipedia.net/pubg/Erangel_Classic','KO'],
+  ['셸터','Shelter','F4',0.69,0.50,'격리컴파운드','A','동쪽 레벨3 루팅 거점','https://zilliongamer.com/pubg-mobile/c/map/erangel-1','EN+KO'],
+  ['리포브카','Lipovka','G4',0.81,0.44,'격리컴파운드','B','동쪽 중반 루팅','https://liquipedia.net/pubg/Erangel_Classic','EN'],
+
+  // 북동
+  ['스탈버 산 정상','Stalber Peak','G1',0.81,0.06,'능선·고지','A','북동 광역 스나이핑','https://www.keengamer.com/articles/guides/6-of-the-best-pubg-sniping-locations-in-erangel/','EN+KO'],
+  ['맨션 북부','Mansion North','G2',0.81,0.13,'격리컴파운드','B','4인 스쿼드 풀 루팅, 저경쟁','https://noobs2pro.com/top-20-safest-loot-locations-in-erangel-pubg-safe-looting-guide/','EN'],
+  ['카메시키','Kameshki','G-H1',0.88,0.06,'격리컴파운드','B','북동 저경쟁, 스탈버 연계','https://esportsdriven.com/gaming/guides/1528/pubg-erangel-best-drop-spots','EN'],
+
+  // 북서/북부
+  ['세브나이','Severny','E1',0.56,0.06,'격리컴파운드','B','북측 저경쟁','https://liquipedia.net/pubg/Erangel_Classic','EN'],
+  ['슈팅 레인지 벙커','Shooting Range Bunker','C2',0.31,0.19,'격리컴파운드','A','다층 벙커 은신, 레벨3 루팅','https://gamerant.com/pubg-battlegrounds-best-drop-spots-erangel/','EN'],
+  ['병원 옥상','Hospital Rooftop','C3',0.31,0.31,'능선·고지','A','조르조폴 동쪽 오버워치','https://www.gearupbooster.com/blog/pubg-erangel-map-guide-pro-tips.html','EN'],
+  ['자르키 남쪽 돌산','Zharki South Rocky Hill','B2',0.13,0.19,'능선·고지','B','서북 오픈 필드 제압','https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977','EN+KO'],
+  ['강북 연속능선','North River Chain Ridge','C-D2',0.38,0.19,'능선·고지','A','삼각형 연속 능선 방어','https://gall.dcinside.com/mgallery/board/view/?id=blueholegame&no=98977','KO ★'],
+
+  // 남서/서부
+  ['감옥 (프리즌)','Prison','C7',0.31,0.75,'격리컴파운드','B','초중반 조용한 루트','https://gamerant.com/pubg-battlegrounds-best-drop-spots-erangel/','EN+KO'],
+  ['감옥 Guard Peak','Prison Guard Peak','C7',0.31,0.81,'능선·고지','A','감옥 주변 산악 오버워치','https://www.pubgprotips.com/articles/my-erangel-adventures-top-drop-spots-in-pubg-2025.html','EN'],
+  ['프리모르스크 북쪽 언덕','Primorsk North Hill','B6',0.19,0.63,'능선·고지','B','서남부 안정적 시야','https://esportsnewskorea.com/?p=433','KO'],
+  ['프리모르스크 독','Primorsk Docks','B6',0.13,0.75,'수계인접','B','보트 탈출 루트','https://www.pubgprotips.com/articles/my-erangel-adventures-top-drop-spots-in-pubg-2025.html','EN'],
+  ['페리 피어','Ferry Pier','C7',0.31,0.72,'수계인접','B','서쪽 섬 다리 제압','https://noobs2pro.com/top-20-safest-loot-locations-in-erangel-pubg-safe-looting-guide/','EN'],
+  ['늪지대 망루','Swamp Watchtower','B5',0.19,0.56,'수계인접','B','존버 최적','https://www.inven.co.kr/board/battlegrounds/5074/1828','KO'],
+
+  // 남부
+  ['가트카','Gatka','D6',0.44,0.69,'격리컴파운드','B','군기지 회전 전 루팅','https://liquipedia.net/pubg/Erangel_Classic','EN'],
+  ['노보렙노예','Novorepnoye','F8',0.69,0.94,'랜드마크중심','A','중반 루팅, 동쪽 회전','https://zilliongamer.com/pubg-mobile/c/map/erangel-1','EN'],
+  ['노보렙노예 라디오 타워','Novorepnoye Radio Tower','F7',0.69,0.81,'능선·고지','A','브릿지 제압 스나이핑','https://noobs2pro.com/top-20-safest-loot-locations-in-erangel-pubg-safe-looting-guide/','EN']
+];
+
+const taego = [
+  // 중앙 핵심
+  ['터미널','Terminal','E4',0.56,0.44,'랜드마크중심','S','핫드롭, 맞이방 옥상 명당','https://www.inven.co.kr/webzine/news/?news=259109&site=battlegrounds','KO ★'],
+  ['터미널 옥상','Terminal Rooftop','E4',0.56,0.44,'능선·고지','S','북쪽 상가 저격각, 파쿠르 경유','https://www.inven.co.kr/webzine/news/?news=259109&site=battlegrounds','KO'],
+  ['비밀 산 (중앙 산)','Secret Mountain','D4',0.44,0.44,'능선·고지','S','중앙 산악, 사방 시야, 프로 엔드게임 빈출','https://pubgzone.com/pubg-taego-map/','EN'],
+  ['추락지점','Crash Site','D5',0.44,0.56,'핫드롭전용','A','고티어 무기, 고지 확보 필수','https://www.topuplive.com/news/pubg-mobile-taego-map-guide.html','EN/ZH'],
+
+  // 호산 권역
+  ['호산','Ho San','D4',0.44,0.44,'랜드마크중심','A','다층 건물, 옥상 사격각','https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-best-landing-spots-in-taego-map','EN'],
+  ['호산 교도소','Ho San Prison','B7',0.19,0.81,'격리컴파운드','S','고티어 루팅, 담장 각 통제','https://screenrant.com/pubg-best-drop-spots-taego-guide/','EN'],
+
+  // 북부
+  ['고궁 (Palace)','Palace','C2',0.31,0.19,'랜드마크중심','A','경복궁 모티프, 비밀 열쇠 파밍','https://pubgsecretroom.com/pubg-taego-secret-room.html','EN'],
+  ['고궁 북능선','Palace North Ridge','C2',0.31,0.13,'능선·고지','A','북부 자기장 수축 시 능선','https://pubgzone.com/pubg-taego-map/','EN'],
+  ['북산사','Buk San Sa','E2',0.56,0.19,'능선·고지','A','북부 사찰, 중첩 지붕 사격 유리','https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-best-landing-spots-in-taego-map','EN'],
+  ['군사기지','Army Base','D2',0.44,0.19,'격리컴파운드','B','북부 중앙 군용 루팅, 능선 연결','https://liquipedia.net/pubg/Taego','EN'],
+
+  // 동부
+  ['선착장 (Shipyard)','Shipyard','H2',0.94,0.19,'핫드롭전용','A','북동 산업단지, CQC 격전','https://liquipedia.net/pubg/Taego','EN'],
+  ['공항','Airport','G2',0.81,0.19,'핫드롭전용','B','넓은 활주로, 군용 장비','https://www.topuplive.com/news/pubg-mobile-taego-map-guide.html','EN/ZH'],
+  ['강릉','Kang Neung','G4',0.81,0.44,'수계인접','A','공항 인근 강·산·농장 복합','https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-best-landing-spots-in-taego-map','EN'],
+  ['용천','Yong Cheon','E3',0.56,0.31,'랜드마크중심','A','맵 중앙 중반 재합류 요충지','https://liquipedia.net/pubg/Taego','EN'],
+  ['오향','Oh Hyang','F5',0.69,0.56,'수계인접','B','동남 강 접경, 농장 지형','https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-best-landing-spots-in-taego-map','EN'],
+  ['피셔타운','Fisher Town','H6',0.94,0.69,'수계인접','B','동남 해안, 솔로/듀오 추천','https://www.topuplive.com/news/pubg-mobile-taego-map-guide.html','EN/ZH'],
+  ['스튜디오','Studio','H7',0.94,0.81,'격리컴파운드','B','남동 영화 세트장, 저경쟁','https://screenrant.com/pubg-best-drop-spots-taego-guide/','EN'],
+
+  // 서부/외곽
+  ['고덕','Go Dok','C3',0.31,0.31,'랜드마크중심','A','대도시 외곽, 유저 밀도 낮음','https://namu.wiki/w/%ED%83%9C%EC%9D%B4%EA%B3%A0','KO'],
+  ['학교','School (Taego)','D3',0.44,0.31,'핫드롭전용','A','동부 소형 격전지','https://www.topuplive.com/news/pubg-mobile-taego-map-guide.html','EN/ZH'],
+  ['송암','Song Am','D3',0.44,0.34,'격리컴파운드','B','학교 핫드롭 회피 대안','https://liquipedia.net/pubg/Taego','EN'],
+  ['월송','Wol Song','B2',0.19,0.19,'수계인접','B','북서 해안, 자연 엄폐','https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-best-landing-spots-in-taego-map','EN'],
+  ['하포','Ha Po','A4',0.06,0.44,'격리컴파운드','B','서쪽 끝 외곽 안전 루팅','https://liquipedia.net/pubg/Taego','EN'],
+  ['낚시마을','Fishing Camp','C4',0.31,0.44,'수계인접','B','서부 어촌, 호산-월송 중간','https://liquipedia.net/pubg/Taego','EN'],
+  ['해무사','Hae Moo Sa','A2',0.06,0.19,'격리컴파운드','B','최서단 극외곽','https://namu.wiki/w/%ED%83%9C%EC%9D%B4%EA%B3%A0','KO'],
+
+  // 부활 시스템
+  ['부활 아레나 A','Comeback Arena A','B5',0.19,0.56,'부활타워근접','H','서부 해안 독립 전장, 헬기 재합류','https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-12-2-patch-notes-taego-map-comeback-mechanics-new-weapons-vehicle-and-more','EN'],
+  ['부활 아레나 B','Comeback Arena B','G6',0.81,0.69,'부활타워근접','H','동부 해안 독립 전장','https://www.ginx.tv/en/playerunknown-s-battlegrounds/pubg-12-2-patch-notes-taego-map-comeback-mechanics-new-weapons-vehicle-and-more','EN']
+];
+
+const tierColor = { S: '#f0c75e', A: '#6dd47e', B: '#8b97a7', H: '#f06464' };
+const tierRadius = { S: 2.5, A: 2.0, B: 1.6, H: 2.2 };
+
+// ====== 렌더링 ======
+function shortCat(cat) {
+  if (cat.startsWith('랜드마크')) return '랜드마크';
+  if (cat.startsWith('능선')) return '능선';
+  if (cat.startsWith('격리')) return '컴파운드';
+  if (cat.startsWith('수계')) return '수계';
+  if (cat.startsWith('핫드롭')) return '핫드롭';
+  if (cat.startsWith('부활')) return '부활';
+  return cat;
+}
+
+function sourceLabel(url) {
+  try {
+    const u = new URL(url);
+    let h = u.hostname.replace(/^www\./, '');
+    const map = {
+      'inven.co.kr': '인벤', 'gall.dcinside.com': '디시', 'namu.wiki': '나무위키',
+      'esportsnewskorea.com': 'E스포츠코리아', 'oracionspace.com': 'Oracion',
+      'pubg.wiki.gg': 'pubg.wiki', 'liquipedia.net': 'Liquipedia',
+      'dexerto.com': 'Dexerto', 'gamerant.com': 'GameRant',
+      'gearupbooster.com': 'GearUp', 'keengamer.com': 'Keengamer',
+      'desportz.gg': 'desportz', 'esportsdriven.com': 'EsportsDriven',
+      'lootbar.gg': 'Lootbar', 'noobs2pro.com': 'noobs2pro',
+      'pubgprotips.com': 'pubgprotips', 'news.bittopup.com': 'BitTopup',
+      'ginx.tv': 'GINX', 'screenrant.com': 'ScreenRant',
+      'pubgzone.com': 'PUBGZone', 'pubgsecretroom.com': 'SecretRoom',
+      'pubgmap.io': 'pubgmap.io', 'gamermaps.net': 'gamermaps',
+      'topuplive.com': 'TOPUPlive', 'zilliongamer.com': 'zilliongamer'
+    };
+    return map[h] || h;
+  } catch (e) { return '링크'; }
+}
+
+function renderTable(tableId, data) {
+  const tbody = document.querySelector('#' + tableId + ' tbody');
+  tbody.innerHTML = data.map((row, i) => {
+    const [name, en, cell, x, y, cat, tier, use, src, lang] = row;
+    return `<tr data-idx="${i}" data-cat="${cat}" data-tier="${tier}">
+      <td class="name">${name}<span class="en">${en}${lang ? ` · ${lang}` : ''}</span></td>
+      <td class="cell">${cell}</td>
+      <td class="coord">${x.toFixed(2)}</td>
+      <td class="coord">${y.toFixed(2)}</td>
+      <td><span class="cat-tag cat-${shortCat(cat)}">${shortCat(cat)}</span></td>
+      <td class="tier tier-${tier.toLowerCase()}">${tier}</td>
+      <td style="font-size:12px">${use}</td>
+      <td><a href="${src}" target="_blank">${sourceLabel(src)}</a></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMap(svgId, data) {
+  const svg = document.getElementById(svgId);
+  let html = '';
+  // grid lines
+  for (let i = 0; i <= 8; i++) {
+    const p = i * 12.5;
+    html += `<line class="grid-line" x1="${p}" y1="0" x2="${p}" y2="100"/>`;
+    html += `<line class="grid-line" x1="0" y1="${p}" x2="100" y2="${p}"/>`;
+  }
+  // column labels (A-H)
+  'ABCDEFGH'.split('').forEach((c, i) => {
+    html += `<text class="grid-label" x="${i * 12.5 + 6.25}" y="3.5" text-anchor="middle">${c}</text>`;
+  });
+  // row labels (1-8)
+  for (let r = 1; r <= 8; r++) {
+    html += `<text class="grid-label" x="2" y="${(r - 1) * 12.5 + 7}" text-anchor="middle">${r}</text>`;
+  }
+  // markers
+  data.forEach((row, i) => {
+    const [name, en, cell, x, y, cat, tier] = row;
+    const cx = x * 100, cy = y * 100;
+    html += `<circle class="marker" data-idx="${i}" cx="${cx}" cy="${cy}" r="${tierRadius[tier]}" fill="${tierColor[tier]}"><title>${name} (${tier}) — ${cell}</title></circle>`;
+  });
+  svg.innerHTML = html;
+
+  // marker hover → row highlight
+  svg.querySelectorAll('.marker').forEach(m => {
+    m.addEventListener('mouseenter', () => {
+      const idx = m.getAttribute('data-idx');
+      const table = svgId === 'map-erangel' ? 'table-erangel' : 'table-taego';
+      document.querySelectorAll('#' + table + ' tr').forEach(r => r.classList.remove('row-highlight'));
+      const row = document.querySelector('#' + table + ' tr[data-idx="' + idx + '"]');
+      if (row) {
+        row.classList.add('row-highlight');
+        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+  });
+}
+
+// ====== Tabs ======
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + target).classList.add('active');
+  });
+});
+
+// ====== Filters ======
+const filterState = {
+  erangel: { cat: 'all', tier: 'all' },
+  taego: { cat: 'all', tier: 'all' }
+};
+
+function applyFilter(scope) {
+  const tableId = scope === 'taego' ? 'table-taego' : 'table-erangel';
+  const { cat, tier } = filterState[scope];
+  document.querySelectorAll('#' + tableId + ' tbody tr').forEach(r => {
+    const rcat = r.getAttribute('data-cat');
+    const rtier = r.getAttribute('data-tier');
+    const catOk = cat === 'all' || rcat.startsWith(cat.replace('·고지', '').replace('타워근접', '')) || rcat === cat;
+    const tierOk = tier === 'all' || rtier === tier;
+    r.classList.toggle('row-hidden', !(catOk && tierOk));
+  });
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const filter = chip.getAttribute('data-filter');
+    const value = chip.getAttribute('data-value');
+    const scope = chip.getAttribute('data-scope') || 'erangel';
+    filterState[scope][filter] = value;
+    // toggle active among siblings with same filter+scope
+    document.querySelectorAll(`.chip[data-filter="${filter}"]`).forEach(c => {
+      const cscope = c.getAttribute('data-scope') || 'erangel';
+      if (cscope === scope) c.classList.remove('active');
+    });
+    chip.classList.add('active');
+    applyFilter(scope);
+  });
+});
+
+// ====== Sorting ======
+function sortTable(tableId, data, key, asc) {
+  const idxMap = { name: 0, cell: 2, x: 3, y: 4, cat: 5, tier: 6 };
+  const k = idxMap[key];
+  const sorted = [...data].sort((a, b) => {
+    if (typeof a[k] === 'number') return asc ? a[k] - b[k] : b[k] - a[k];
+    return asc ? String(a[k]).localeCompare(b[k]) : String(b[k]).localeCompare(a[k]);
+  });
+  renderTable(tableId, sorted);
+}
+
+let sortDir = {};
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const tableId = th.closest('table').id;
+    const key = th.getAttribute('data-sort');
+    const dirKey = tableId + ':' + key;
+    sortDir[dirKey] = !sortDir[dirKey];
+    const data = tableId === 'table-erangel' ? erangel : taego;
+    sortTable(tableId, data, key, sortDir[dirKey]);
+    // re-apply filter
+    const scope = tableId === 'table-erangel' ? 'erangel' : 'taego';
+    applyFilter(scope);
+  });
+});
+
+// ====== Initial render ======
+renderTable('table-erangel', erangel);
+renderTable('table-taego', taego);
+renderMap('map-erangel', erangel);
+renderMap('map-taego', taego);
+
+// Update sources count
+const totalSources = document.querySelectorAll('.source-card a').length;
+document.querySelectorAll('.tab').forEach(t => {
+  if (t.textContent.includes('{총}')) t.textContent = t.textContent.replace('{총}', totalSources);
+});
+</script>
+
+</div>
+</body>
+</html>

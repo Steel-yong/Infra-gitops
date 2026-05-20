@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Grafana Drill-down 6개 + Logs 미리보기 — 2026-05-19</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1f2530;
+    --panel-3: #22272e;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --orange: #ff8c42;
+    --red: #f85149;
+    --purple: #b877d9;
+    --pink: #db61a2;
+    --cyan: #79c0ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Pretendard", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.55;
+  }
+  h1 { color: var(--accent); margin: 0 0 4px; font-size: 24px; }
+  .sub { color: var(--muted); margin-bottom: 20px; font-size: 13px; }
+
+  .dashboard-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .dashboard-card.new { border-left: 4px solid var(--purple); }
+  .dashboard-card.internal { border-left: 4px solid var(--accent); }
+  .dashboard-card.downloaded { border-left: 4px solid var(--green); }
+
+  .dashboard-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .dashboard-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .dashboard-num {
+    color: var(--accent);
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    margin-right: 8px;
+  }
+  .dashboard-meta {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-left: 6px;
+  }
+  .badge.internal { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .badge.downloaded { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge.new { background: rgba(184,119,217,0.15); color: var(--purple); }
+
+  /* Mini dashboard mockup */
+  .mock {
+    background: var(--panel-2);
+    border-radius: 4px;
+    padding: 10px;
+    margin: 8px 0;
+  }
+  .mock-row { display: grid; gap: 6px; margin-bottom: 6px; }
+  .mock-row:last-child { margin-bottom: 0; }
+  .mock-r6 { grid-template-columns: repeat(6, 1fr); }
+  .mock-r5 { grid-template-columns: repeat(5, 1fr); }
+  .mock-r4 { grid-template-columns: repeat(4, 1fr); }
+  .mock-r3 { grid-template-columns: repeat(3, 1fr); }
+  .mock-r2 { grid-template-columns: 1fr 1fr; }
+  .mock-r2-wide { grid-template-columns: 2fr 1fr; }
+  .mock-r1 { grid-template-columns: 1fr; }
+
+  .cell {
+    background: var(--panel-3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px 8px;
+    min-height: 44px;
+  }
+  .cell.tall { min-height: 70px; }
+  .cell.taller { min-height: 100px; }
+  .cell .h {
+    color: var(--muted);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 3px;
+  }
+  .cell .v {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .cell .v.green { color: var(--green); }
+  .cell .v.yellow { color: var(--yellow); }
+  .cell .v.red { color: var(--red); }
+  .cell .v.dim { color: var(--muted); }
+  .cell .v.cyan { color: var(--cyan); }
+  .cell .sub-v {
+    color: var(--muted);
+    font-size: 9px;
+    margin-top: 2px;
+  }
+
+  /* Gauge */
+  .gauge {
+    background: rgba(0,0,0,0.4);
+    height: 5px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .gauge-fill {
+    height: 100%;
+    background: var(--green);
+  }
+  .gauge-fill.warn { background: var(--yellow); }
+  .gauge-fill.crit { background: var(--red); }
+
+  /* Mini chart */
+  .chart {
+    height: 50px;
+    margin-top: 4px;
+  }
+  .chart svg { width: 100%; height: 100%; }
+
+  /* Table */
+  .mini-table {
+    font-family: ui-monospace, monospace;
+    font-size: 9px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 4px;
+  }
+  .mini-table .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 1px 0;
+  }
+  .mini-table .row .name { color: var(--text); }
+
+  /* Eval block */
+  .eval {
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font-size: 12px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+  }
+  .eval .key {
+    color: var(--muted);
+    font-weight: 600;
+    min-width: 60px;
+  }
+  .eval .val {
+    color: var(--text);
+  }
+  .eval .val.good { color: var(--green); }
+  .eval .val.warn { color: var(--yellow); }
+  .eval .val.poor { color: var(--red); }
+
+  .note {
+    background: rgba(88,166,255,0.07);
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .note h4 { margin: 0 0 6px; color: var(--accent); font-size: 13px; }
+  .note.warn { background: rgba(210,153,34,0.07); border-color: rgba(210,153,34,0.3); }
+  .note.warn h4 { color: var(--yellow); }
+  .note.success { background: rgba(63,185,80,0.07); border-color: rgba(63,185,80,0.3); }
+  .note.success h4 { color: var(--green); }
+
+  h2 {
+    color: var(--accent);
+    margin: 32px 0 12px;
+    font-size: 18px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  code {
+    background: rgba(0,0,0,0.4);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--pink);
+  }
+  .legend-dots {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .legend-dots .item::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .legend-dots .item.internal::before { background: var(--accent); }
+  .legend-dots .item.downloaded::before { background: var(--green); }
+  .legend-dots .item.new::before { background: var(--purple); }
+</style>
+</head>
+<body>
+
+<h1>📐 Drill-down 6개 + Logs 디자인 미리보기</h1>
+<div class="sub">2026-05-19 · 실제 패널 구성을 압축 시각화. 각 대시보드의 메인 화면 어떻게 생겼는지 한눈에.</div>
+
+<div class="legend-dots">
+  <span class="item internal">내장 (kube-prometheus-stack 제공)</span>
+  <span class="item downloaded">다운받은 거 (grafana.com)</span>
+  <span class="item new">새로 만들 거</span>
+</div>
+
+<div class="note">
+  <h4>🎯 이 페이지 보는 법</h4>
+  <ul style="margin: 4px 0; padding-left: 18px;">
+    <li>각 대시보드 카드 = 실제 grafana에서 그 대시보드 열었을 때의 압축 mockup</li>
+    <li>각 카드 하단에 <b>디자인 평가</b> (일관성/정보 밀도/직관성) + <b>커스텀 필요 여부</b></li>
+    <li>색은 평가용: 🟢 = 그대로 OK / 🟡 = 약간 손볼 거 / 🔴 = 커스텀 필요</li>
+  </ul>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [01] Cluster Resources -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card internal">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[01]</span>Cluster Resources <span class="badge internal">내장</span></div>
+    <div class="dashboard-meta">Kubernetes / Compute Resources / Cluster</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">전체 클러스터의 CPU/메모리 요청·제한·사용량을 namespace별로 분해해 보여줌. 자원 압박 감지용.</p>
+  <div class="mock">
+    <!-- Row 1: 헤더 stat -->
+    <div class="mock-row mock-r4">
+      <div class="cell"><div class="h">CPU 사용/요청</div><div class="v cyan">3.4 / 8.0</div><div class="gauge"><div class="gauge-fill" style="width:42%;"></div></div></div>
+      <div class="cell"><div class="h">CPU 사용/제한</div><div class="v cyan">3.4 / 12.0</div><div class="gauge"><div class="gauge-fill" style="width:28%;"></div></div></div>
+      <div class="cell"><div class="h">메모리 사용/요청</div><div class="v yellow">21.4 / 24 GiB</div><div class="gauge"><div class="gauge-fill warn" style="width:89%;"></div></div></div>
+      <div class="cell"><div class="h">메모리 사용/제한</div><div class="v cyan">21.4 / 40 GiB</div><div class="gauge"><div class="gauge-fill" style="width:53%;"></div></div></div>
+    </div>
+    <!-- Row 2: 시계열 -->
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">CPU 사용량 (namespace별 stacked)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path d="M0,50 L0,40 L30,38 L60,35 L90,32 L120,30 L150,28 L180,30 L210,25 L240,28 L270,22 L300,25 L300,50 Z" fill="var(--accent)" opacity="0.5"/>
+            <path d="M0,50 L0,46 L30,45 L60,43 L90,42 L120,40 L150,38 L180,40 L210,37 L240,40 L270,35 L300,38 L300,50 Z" fill="var(--green)" opacity="0.5"/>
+            <path d="M0,50 L0,48 L30,47 L60,46 L90,45 L120,44 L150,43 L180,44 L210,42 L240,44 L270,41 L300,42 L300,50 Z" fill="var(--yellow)" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cell tall">
+        <div class="h">메모리 사용량 (namespace별 stacked)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path d="M0,50 L0,30 L30,28 L60,25 L90,22 L120,20 L150,18 L180,15 L210,17 L240,15 L270,12 L300,14 L300,50 Z" fill="var(--purple)" opacity="0.5"/>
+            <path d="M0,50 L0,40 L30,38 L60,36 L90,34 L120,32 L150,30 L180,28 L210,30 L240,28 L270,25 L300,27 L300,50 Z" fill="var(--accent)" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <!-- Row 3: 테이블 -->
+    <div class="mock-row mock-r1">
+      <div class="cell tall">
+        <div class="h">Namespace별 자원 사용 테이블 (요청/사용/제한 column)</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">vault</span><span>CPU 0.8 / 2.1 / 4.0 &nbsp;&nbsp; MEM 6.2 / 8.4 / 12 GiB</span></div>
+          <div class="row"><span class="name">harbor</span><span>CPU 0.6 / 1.5 / 3.0 &nbsp;&nbsp; MEM 4.1 / 5.8 / 8 GiB</span></div>
+          <div class="row"><span class="name">monitoring</span><span>CPU 0.9 / 2.3 / 4.0 &nbsp;&nbsp; MEM 5.5 / 7.2 / 10 GiB</span></div>
+          <div class="row"><span class="name">argocd</span><span>CPU 0.4 / 1.0 / 2.0 &nbsp;&nbsp; MEM 1.8 / 2.4 / 4 GiB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">요청 대비 사용량 비율(saturation) 한눈에. namespace drill 가능</span>
+    <span class="key">약점</span><span class="val warn">테이블이 길어지면 스크롤. 색 코딩 거의 없음(절제됨)</span>
+    <span class="key">커스텀</span><span class="val">불필요. 표준 패턴</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [02] Pod Resources -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card internal">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[02]</span>Pod Resources <span class="badge internal">내장</span></div>
+    <div class="dashboard-meta">Kubernetes / Compute Resources / Pod</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">특정 Pod 1개의 자원 사용량 깊이 보기. 상단 변수에서 namespace + pod 선택.</p>
+  <div class="mock">
+    <!-- 상단 변수 -->
+    <div class="mock-row mock-r4">
+      <div class="cell"><div class="h">data source</div><div class="v" style="font-size:11px;">[Prometheus ▼]</div></div>
+      <div class="cell"><div class="h">cluster</div><div class="v" style="font-size:11px;">[onprem-dev ▼]</div></div>
+      <div class="cell"><div class="h">namespace</div><div class="v" style="font-size:11px;">[vault ▼]</div></div>
+      <div class="cell"><div class="h">pod</div><div class="v" style="font-size:11px;">[vault-0 ▼]</div></div>
+    </div>
+    <!-- CPU 시계열 -->
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">CPU Usage (container별)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--accent); stroke-width:1.5; fill:none;" d="M0,30 L30,28 L60,32 L90,25 L120,22 L150,28 L180,20 L210,24 L240,18 L270,22 L300,20"/>
+            <line x1="0" y1="10" x2="300" y2="10" stroke="var(--red)" stroke-width="1" stroke-dasharray="3,3"/>
+          </svg>
+        </div>
+        <div class="sub-v" style="margin-top:2px;">━ usage &nbsp;&nbsp;--- limit (red dashed)</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">CPU Throttling (있으면 빨강)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,45 L300,45"/>
+          </svg>
+        </div>
+        <div class="sub-v" style="margin-top:2px;">0% throttled · 정상</div>
+      </div>
+    </div>
+    <!-- 메모리 시계열 -->
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">Memory Usage (container별)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path d="M0,50 L0,25 L30,24 L60,22 L90,20 L120,21 L150,19 L180,18 L210,20 L240,17 L270,16 L300,18 L300,50 Z" fill="var(--purple)" opacity="0.4"/>
+            <path style="stroke:var(--purple); stroke-width:1.5; fill:none;" d="M0,25 L30,24 L60,22 L90,20 L120,21 L150,19 L180,18 L210,20 L240,17 L270,16 L300,18"/>
+            <line x1="0" y1="5" x2="300" y2="5" stroke="var(--red)" stroke-width="1" stroke-dasharray="3,3"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cell tall">
+        <div class="h">Network I/O (RX/TX)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--cyan); stroke-width:1.5; fill:none;" d="M0,35 L30,33 L60,30 L90,32 L120,28 L150,30 L180,25 L210,28 L240,22 L270,25 L300,23"/>
+            <path style="stroke:var(--yellow); stroke-width:1.5; fill:none;" d="M0,42 L30,40 L60,38 L90,40 L120,36 L150,38 L180,34 L210,36 L240,32 L270,34 L300,32"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">limit 라인 표시 + throttling 별도 패널 = OOM/throttle 즉시 감지</span>
+    <span class="key">약점</span><span class="val">단일 Pod만 보임 — 비교는 [01]에서</span>
+    <span class="key">커스텀</span><span class="val">불필요</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [03] Node (Pods) -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card internal">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[03]</span>Node (Pods) <span class="badge internal">내장</span></div>
+    <div class="dashboard-meta">Kubernetes / Compute Resources / Node (Pods)</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">특정 노드 1개에 떠 있는 Pod들의 자원 분포. 노드 자원 압박 원인 추적.</p>
+  <div class="mock">
+    <div class="mock-row mock-r4">
+      <div class="cell"><div class="h">node</div><div class="v" style="font-size:11px;">[worker-2 ▼]</div></div>
+      <div class="cell"><div class="h">Pod 수</div><div class="v cyan">14</div></div>
+      <div class="cell"><div class="h">CPU req 합</div><div class="v cyan">5.2 / 8.0</div><div class="gauge"><div class="gauge-fill" style="width:65%;"></div></div></div>
+      <div class="cell"><div class="h">MEM req 합</div><div class="v yellow">28.4 / 32 GiB</div><div class="gauge"><div class="gauge-fill warn" style="width:89%;"></div></div></div>
+    </div>
+    <div class="mock-row mock-r1">
+      <div class="cell tall">
+        <div class="h">노드 위 Pod별 CPU/MEM 사용량 (stacked, top N)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path d="M0,50 L0,40 L300,38 L300,50 Z" fill="var(--accent)" opacity="0.4"/>
+            <path d="M0,50 L0,45 L300,43 L300,50 Z" fill="var(--green)" opacity="0.4"/>
+            <path d="M0,50 L0,48 L300,46 L300,50 Z" fill="var(--yellow)" opacity="0.4"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="mock-row mock-r1">
+      <div class="cell tall">
+        <div class="h">Pod별 자원 테이블 (정렬 가능)</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">vault-1</span><span>CPU 0.4 &nbsp;MEM 2.1 GiB &nbsp;Net 12 MB/s</span></div>
+          <div class="row"><span class="name">harbor-trivy-0</span><span>CPU 0.2 &nbsp;MEM 1.4 GiB &nbsp;Net 0.4 MB/s</span></div>
+          <div class="row"><span class="name">cilium-xyz</span><span>CPU 0.3 &nbsp;MEM 0.8 GiB &nbsp;Net 25 MB/s</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">"왜 이 노드만 메모리 압박?" 답변용 — Pod 분포 즉시 보임</span>
+    <span class="key">약점</span><span class="val">DaemonSet Pod가 노드마다 떠서 노이즈 (cilium, node-exporter 등)</span>
+    <span class="key">커스텀</span><span class="val">불필요. 단 노드 압박 잦으면 Top 10 패널 추가하면 좋음</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [04] Nodes -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card internal">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[04]</span>Nodes <span class="badge internal">내장</span></div>
+    <div class="dashboard-meta">Node Exporter / Nodes</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">노드 OS 메트릭 종합. 모든 노드 한 화면 또는 노드 1개 선택해서 깊이.</p>
+  <div class="mock">
+    <div class="mock-row mock-r5">
+      <div class="cell"><div class="h">CPU</div><div class="v cyan">38%</div><div class="gauge"><div class="gauge-fill" style="width:38%;"></div></div></div>
+      <div class="cell"><div class="h">Load avg (1m)</div><div class="v cyan">2.4</div><div class="sub-v">cores: 4</div></div>
+      <div class="cell"><div class="h">Memory</div><div class="v yellow">71%</div><div class="gauge"><div class="gauge-fill warn" style="width:71%;"></div></div></div>
+      <div class="cell"><div class="h">Swap</div><div class="v dim">0%</div></div>
+      <div class="cell"><div class="h">Disk (root)</div><div class="v cyan">42%</div><div class="gauge"><div class="gauge-fill" style="width:42%;"></div></div></div>
+    </div>
+    <div class="mock-row mock-r3">
+      <div class="cell tall">
+        <div class="h">CPU breakdown (user/system/iowait/idle)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path d="M0,50 L0,40 L300,38 L300,50 Z" fill="var(--accent)" opacity="0.4"/>
+            <path d="M0,50 L0,45 L300,43 L300,50 Z" fill="var(--green)" opacity="0.4"/>
+            <path d="M0,50 L0,48 L300,46 L300,50 Z" fill="var(--red)" opacity="0.4"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cell tall">
+        <div class="h">Memory breakdown</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path d="M0,50 L0,15 L300,18 L300,50 Z" fill="var(--purple)" opacity="0.4"/>
+            <path d="M0,50 L0,30 L300,28 L300,50 Z" fill="var(--cyan)" opacity="0.4"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cell tall">
+        <div class="h">Network I/O</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--cyan); stroke-width:1.5; fill:none;" d="M0,30 L30,28 L60,30 L90,25 L120,28 L150,22 L180,25 L210,20 L240,23 L270,18 L300,22"/>
+            <path style="stroke:var(--yellow); stroke-width:1.5; fill:none;" d="M0,40 L30,38 L60,40 L90,36 L120,38 L150,34 L180,36 L210,32 L240,35 L270,30 L300,33"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="mock-row mock-r3">
+      <div class="cell tall">
+        <div class="h">Disk I/O (read/write)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,40 L30,42 L60,38 L90,40 L120,35 L150,38 L180,32 L210,35 L240,30 L270,33 L300,28"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cell tall">
+        <div class="h">파일시스템별 사용률</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">/</span><span>42% (18 GB / 43 GB)</span></div>
+          <div class="row"><span class="name">/var/lib/rancher</span><span>28% (5 GB / 18 GB)</span></div>
+        </div>
+      </div>
+      <div class="cell tall">
+        <div class="h">시스템 uptime + 컨테이너 수</div>
+        <div class="v cyan" style="font-size:18px; margin-top:8px;">12d 4h</div>
+        <div class="sub-v">컨테이너: 47 · 프로세스: 312</div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">USE Method 정석. iowait/swap 시각화로 디스크/메모리 병목 잡기 좋음</span>
+    <span class="key">약점</span><span class="val">패널 많아서 첫인상 압도적. 그러나 drill-down용이라 OK</span>
+    <span class="key">커스텀</span><span class="val">불필요. 클래식 명품</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [05] Persistent Volumes -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card internal">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[05]</span>Persistent Volumes <span class="badge internal">내장</span></div>
+    <div class="dashboard-meta">Kubernetes / Persistent Volumes</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">K8s 관점의 PV 사용률·IOPS·latency. Longhorn 관점 [06]과 다른 레이어.</p>
+  <div class="mock">
+    <div class="mock-row mock-r3">
+      <div class="cell"><div class="h">namespace</div><div class="v" style="font-size:11px;">[All ▼]</div></div>
+      <div class="cell"><div class="h">PVC</div><div class="v" style="font-size:11px;">[All ▼]</div></div>
+      <div class="cell"><div class="h">PV 총 사용률 (max)</div><div class="v yellow">71%</div><div class="gauge"><div class="gauge-fill warn" style="width:71%;"></div></div></div>
+    </div>
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">PV 사용량 (시계열, multi-line)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--accent); stroke-width:1.5; fill:none;" d="M0,30 L30,29 L60,28 L90,27 L120,27 L150,26 L180,25 L210,25 L240,24 L270,24 L300,23"/>
+            <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,40 L30,40 L60,40 L90,39 L120,39 L150,38 L180,38 L210,38 L240,38 L270,37 L300,37"/>
+            <path style="stroke:var(--yellow); stroke-width:1.5; fill:none;" d="M0,15 L30,16 L60,17 L90,18 L120,19 L150,20 L180,21 L210,22 L240,23 L270,24 L300,25"/>
+          </svg>
+        </div>
+        <div class="sub-v" style="margin-top:2px;">harbor-registry · vault-data · prometheus-tsdb</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">IOPS (read/write)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--cyan); stroke-width:1.5; fill:none;" d="M0,40 L30,35 L60,38 L90,32 L120,36 L150,30 L180,33 L210,28 L240,31 L270,26 L300,29"/>
+            <path style="stroke:var(--purple); stroke-width:1.5; fill:none;" d="M0,42 L30,40 L60,38 L90,35 L120,37 L150,33 L180,35 L210,31 L240,33 L270,29 L300,30"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="mock-row mock-r1">
+      <div class="cell tall">
+        <div class="h">PV 사용률 게이지 (테이블 + threshold 색)</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">prometheus-tsdb-0</span><span style="color:var(--yellow);">71% (35.5 / 50 GiB)</span></div>
+          <div class="row"><span class="name">harbor-registry</span><span style="color:var(--accent);">53% (5.3 / 10 GiB)</span></div>
+          <div class="row"><span class="name">vault-data-0</span><span style="color:var(--green);">12% (0.6 / 5 GiB)</span></div>
+          <div class="row"><span class="name">loki-data</span><span style="color:var(--accent);">38% (3.8 / 10 GiB)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">PVC별 만땅 임박을 색 threshold로 즉시 감지</span>
+    <span class="key">약점</span><span class="val">PV가 적으면 단순하지만 ArgoCD에 stateful 많아지면 길어짐</span>
+    <span class="key">커스텀</span><span class="val">불필요</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [06] Longhorn -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card downloaded">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[06]</span>Longhorn <span class="badge downloaded">다운</span></div>
+    <div class="dashboard-meta">grafana.com — 인기 ID: 16888 (Longhorn) 또는 13032 (Longhorn Example)</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">Longhorn 자체 관점 — 볼륨/replica 상태/백업/노드 디스크. K8s PV([05])와 다른 레이어.</p>
+  <div class="mock">
+    <div class="mock-row mock-r6">
+      <div class="cell"><div class="h">노드</div><div class="v green">3</div></div>
+      <div class="cell"><div class="h">디스크</div><div class="v green">3</div></div>
+      <div class="cell"><div class="h">볼륨</div><div class="v green">8</div></div>
+      <div class="cell"><div class="h">Replica</div><div class="v green">16</div></div>
+      <div class="cell"><div class="h">Healthy</div><div class="v green">8/8</div></div>
+      <div class="cell"><div class="h">Degraded</div><div class="v dim">0</div></div>
+    </div>
+    <div class="mock-row mock-r3">
+      <div class="cell tall">
+        <div class="h">노드별 디스크 가용</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <rect x="20"  y="10" width="60" height="35" fill="var(--green)" opacity="0.5"/>
+            <rect x="100" y="15" width="60" height="30" fill="var(--green)" opacity="0.5"/>
+            <rect x="180" y="20" width="60" height="25" fill="var(--yellow)" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="sub-v">m-1: 42GB · w-1: 38GB · w-2: 24GB</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">볼륨별 크기 분포 (donut)</div>
+        <div class="chart">
+          <svg viewBox="0 0 100 50" preserveAspectRatio="xMidYMid">
+            <circle cx="50" cy="25" r="20" fill="none" stroke="var(--accent)" stroke-width="8" stroke-dasharray="60 100" transform="rotate(-90 50 25)"/>
+            <circle cx="50" cy="25" r="20" fill="none" stroke="var(--purple)" stroke-width="8" stroke-dasharray="30 100" stroke-dashoffset="-60" transform="rotate(-90 50 25)"/>
+            <circle cx="50" cy="25" r="20" fill="none" stroke="var(--yellow)" stroke-width="8" stroke-dasharray="10 100" stroke-dashoffset="-90" transform="rotate(-90 50 25)"/>
+          </svg>
+        </div>
+        <div class="sub-v">harbor 50% · prom 25% · 기타 25%</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">백업 성공/실패 (시계열)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <line x1="0" y1="45" x2="300" y2="45" stroke="var(--green)" stroke-width="2"/>
+            <circle cx="50" cy="45" r="3" fill="var(--green)"/>
+            <circle cx="150" cy="45" r="3" fill="var(--green)"/>
+            <circle cx="250" cy="45" r="3" fill="var(--green)"/>
+          </svg>
+        </div>
+        <div class="sub-v">최근 3회 백업: 모두 성공</div>
+      </div>
+    </div>
+    <div class="mock-row mock-r1">
+      <div class="cell tall">
+        <div class="h">볼륨별 상태 + replica 분포 테이블</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">harbor-registry</span><span style="color:var(--green);">Healthy · 2/2 replica · 5.3 GB</span></div>
+          <div class="row"><span class="name">vault-data-0</span><span style="color:var(--green);">Healthy · 2/2 replica · 0.6 GB</span></div>
+          <div class="row"><span class="name">prometheus-tsdb-0</span><span style="color:var(--green);">Healthy · 2/2 replica · 35.5 GB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK (인기 ID 16888이라 가정)</span>
+    <span class="key">강점</span><span class="val">stat row + 차트 + 테이블 표준 3단 구성. 색 threshold 풍부</span>
+    <span class="key">약점</span><span class="val warn">백업 타겟 미설정 상태면 백업 패널은 비어보임</span>
+    <span class="key">커스텀</span><span class="val">불필요. 단 다른 인기 ID(13032 등) 받았으면 디자인 조금 다를 수 있음</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [07] ArgoCD -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card downloaded">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[07]</span>ArgoCD <span class="badge downloaded">다운</span></div>
+    <div class="dashboard-meta">grafana.com — 인기 ID: 14584 (ArgoCD by ArgoProj)</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">Application 상태 · sync 성공/실패 · reconcile 성능. ArgoCD UI와 보완 관계 (UI는 상세, 대시보드는 트렌드).</p>
+  <div class="mock">
+    <div class="mock-row mock-r5">
+      <div class="cell"><div class="h">Apps Total</div><div class="v cyan">11</div></div>
+      <div class="cell"><div class="h">Synced</div><div class="v green">11</div></div>
+      <div class="cell"><div class="h">Healthy</div><div class="v yellow">10</div></div>
+      <div class="cell"><div class="h">OutOfSync</div><div class="v dim">0</div></div>
+      <div class="cell"><div class="h">Degraded</div><div class="v red">1</div></div>
+    </div>
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">Sync 결과 시계열 (success/failure)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <rect x="10"  y="40" width="8" height="6" fill="var(--green)"/>
+            <rect x="40"  y="35" width="8" height="11" fill="var(--green)"/>
+            <rect x="70"  y="38" width="8" height="8" fill="var(--green)"/>
+            <rect x="100" y="32" width="8" height="14" fill="var(--green)"/>
+            <rect x="130" y="42" width="8" height="4" fill="var(--red)"/>
+            <rect x="160" y="36" width="8" height="10" fill="var(--green)"/>
+            <rect x="190" y="34" width="8" height="12" fill="var(--green)"/>
+            <rect x="220" y="38" width="8" height="8" fill="var(--green)"/>
+          </svg>
+        </div>
+        <div class="sub-v">최근 24h sync 시도</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">Reconcile latency (p50/p99)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,40 L300,40"/>
+            <path style="stroke:var(--yellow); stroke-width:1.5; fill:none;" d="M0,20 L40,22 L80,18 L120,15 L160,20 L200,12 L240,18 L280,14 L300,16"/>
+          </svg>
+        </div>
+        <div class="sub-v">━ p50 (~120ms) &nbsp;━ p99 (~3.2s)</div>
+      </div>
+    </div>
+    <div class="mock-row mock-r1">
+      <div class="cell tall">
+        <div class="h">Application별 상태 테이블</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">00-namespaces</span><span style="color:var(--green);">Synced · Healthy · last: 12m ago</span></div>
+          <div class="row"><span class="name">10-harbor</span><span style="color:var(--red);">Synced · Degraded · last: 3m ago (ImagePullBackOff)</span></div>
+          <div class="row"><span class="name">11-prometheus</span><span style="color:var(--green);">Synced · Healthy · last: 5m ago</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK (인기 ID 14584이라 가정)</span>
+    <span class="key">강점</span><span class="val">trend(시계열) + state(테이블) 동시 표시. ArgoCD UI는 현재만 보여줘서 보완됨</span>
+    <span class="key">약점</span><span class="val warn">reconcile 메트릭은 controller가 활성화돼야 노출됨 (metrics endpoint)</span>
+    <span class="key">커스텀</span><span class="val">불필요</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [08] cert-manager -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card downloaded">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[08]</span>cert-manager <span class="badge downloaded">다운</span></div>
+    <div class="dashboard-meta">grafana.com — 인기 ID: 11001 또는 20842 (cert-manager)</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">인증서 발급 성공률 · 만료 임박 · ACME challenge 상태.</p>
+  <div class="mock">
+    <div class="mock-row mock-r4">
+      <div class="cell"><div class="h">Certificates</div><div class="v cyan">3</div></div>
+      <div class="cell"><div class="h">Ready</div><div class="v green">3</div></div>
+      <div class="cell"><div class="h">≤30일 내 만료</div><div class="v yellow">1</div></div>
+      <div class="cell"><div class="h">발급 실패 24h</div><div class="v dim">0</div></div>
+    </div>
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">Certificate 만료까지 남은 시간 (gauge)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="xMidYMid">
+            <rect x="20"  y="20" width="80" height="15" fill="var(--yellow)" opacity="0.7"/>
+            <rect x="110" y="20" width="80" height="15" fill="var(--green)" opacity="0.7"/>
+            <rect x="200" y="20" width="80" height="15" fill="var(--green)" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="sub-v">wildcard: 12d · harbor: 58d · argocd: 58d</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">ACME challenge 성공/실패 (시계열)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <line x1="0" y1="40" x2="300" y2="40" stroke="var(--green)" stroke-width="2"/>
+            <circle cx="80" cy="40" r="3" fill="var(--green)"/>
+            <circle cx="180" cy="40" r="3" fill="var(--green)"/>
+            <circle cx="270" cy="40" r="3" fill="var(--green)"/>
+          </svg>
+        </div>
+        <div class="sub-v">DNS-01 (Cloudflare): 최근 3회 모두 성공</div>
+      </div>
+    </div>
+    <div class="mock-row mock-r1">
+      <div class="cell tall">
+        <div class="h">Certificate 상태 테이블</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">wildcard-yongun-shop</span><span style="color:var(--yellow);">Ready · 만료 12d · staging-issuer</span></div>
+          <div class="row"><span class="name">harbor-tls</span><span style="color:var(--green);">Ready · 만료 58d · staging-issuer</span></div>
+          <div class="row"><span class="name">argocd-tls</span><span style="color:var(--green);">Ready · 만료 58d · staging-issuer</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">만료 카운트다운 + ACME challenge 결과 한 화면</span>
+    <span class="key">약점</span><span class="val warn">staging issuer 사용 중이 한눈에 안 보임 — 커스텀 패널 추가 고려</span>
+    <span class="key">커스텀</span><span class="val">issuer 종류별 stat 패널 1개 추가하면 staging/prod 즉시 구분 가능</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [09] API Server -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card internal">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[09]</span>API Server <span class="badge internal">내장</span></div>
+    <div class="dashboard-meta">Kubernetes / API server</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">control plane 헬스. 요청률·latency·error rate. 클러스터 이상 첫 증상은 보통 여기서.</p>
+  <div class="mock">
+    <div class="mock-row mock-r4">
+      <div class="cell"><div class="h">Availability</div><div class="v green">99.98%</div></div>
+      <div class="cell"><div class="h">Read SLI</div><div class="v green">99.99%</div></div>
+      <div class="cell"><div class="h">Write SLI</div><div class="v green">99.95%</div></div>
+      <div class="cell"><div class="h">Error budget</div><div class="v cyan">28d 12h</div></div>
+    </div>
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">요청률 (verb별)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--accent); stroke-width:1.5; fill:none;" d="M0,30 L30,28 L60,32 L90,25 L120,30 L150,22 L180,28 L210,20 L240,25 L270,18 L300,22"/>
+            <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,40 L30,38 L60,40 L90,36 L120,38 L150,34 L180,36 L210,32 L240,34 L270,30 L300,32"/>
+          </svg>
+        </div>
+        <div class="sub-v">━ LIST/GET &nbsp;━ POST/PUT</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">Latency p50/p99</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--green); stroke-width:1.5; fill:none;" d="M0,45 L300,45"/>
+            <path style="stroke:var(--yellow); stroke-width:1.5; fill:none;" d="M0,30 L40,28 L80,32 L120,25 L160,28 L200,22 L240,26 L280,20 L300,24"/>
+          </svg>
+        </div>
+        <div class="sub-v">━ p50 (~5ms) &nbsp;━ p99 (~80ms)</div>
+      </div>
+    </div>
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">Errors (4xx/5xx)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--yellow); stroke-width:1.5; fill:none;" d="M0,42 L300,42"/>
+            <path style="stroke:var(--red); stroke-width:1.5; fill:none;" d="M0,48 L300,48"/>
+          </svg>
+        </div>
+        <div class="sub-v">━ 4xx (~0.2/s) &nbsp;━ 5xx (~0/s)</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">Etcd 응답시간</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--purple); stroke-width:1.5; fill:none;" d="M0,40 L30,38 L60,40 L90,36 L120,38 L150,34 L180,36 L210,32 L240,34 L270,30 L300,32"/>
+          </svg>
+        </div>
+        <div class="sub-v">backend commit p99 (~30ms)</div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">SLI/SLO + error budget 표시 = 운영 성숙도 어필</span>
+    <span class="key">약점</span><span class="val">너무 자세해서 평시엔 잘 안 봄. 장애 시 진가</span>
+    <span class="key">커스텀</span><span class="val">불필요</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [10] Prometheus Overview -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card internal">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[10]</span>Prometheus Overview <span class="badge internal">내장</span></div>
+    <div class="dashboard-meta">Prometheus 자체 헬스 — scrape · TSDB · 메모리</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">"모니터링 도구 자체를 모니터링" — Prometheus가 죽으면 다른 대시보드도 다 죽음.</p>
+  <div class="mock">
+    <div class="mock-row mock-r4">
+      <div class="cell"><div class="h">Active series</div><div class="v cyan">412 k</div></div>
+      <div class="cell"><div class="h">Scrape targets</div><div class="v green">68 / 68</div></div>
+      <div class="cell"><div class="h">Memory</div><div class="v yellow">3.4 / 4 GiB</div><div class="gauge"><div class="gauge-fill warn" style="width:85%;"></div></div></div>
+      <div class="cell"><div class="h">WAL size</div><div class="v cyan">1.2 GiB</div></div>
+    </div>
+    <div class="mock-row mock-r2">
+      <div class="cell tall">
+        <div class="h">Scrape duration (target별 p99)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--cyan); stroke-width:1.5; fill:none;" d="M0,40 L300,38"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cell tall">
+        <div class="h">TSDB head series 증가</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path style="stroke:var(--accent); stroke-width:1.5; fill:none;" d="M0,40 L30,38 L60,36 L90,34 L120,32 L150,30 L180,28 L210,26 L240,24 L270,22 L300,20"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val good">🟢 그대로 OK</span>
+    <span class="key">강점</span><span class="val">cardinality 증가 추적 가능 — 메모리 OOM 예방</span>
+    <span class="key">약점</span><span class="val">평시엔 흥미 없음. 분기에 한 번 보는 정도</span>
+    <span class="key">커스텀</span><span class="val">불필요</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- [11] Logs (Loki) -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="dashboard-card new">
+  <div class="dashboard-head">
+    <div class="dashboard-title"><span class="dashboard-num">[11]</span>Logs (Loki) <span class="badge new">NEW · 직접 만듦</span></div>
+    <div class="dashboard-meta">로그 통합 검색 + 에러 패턴</div>
+  </div>
+  <p style="color:var(--muted); font-size:12px; margin: 4px 0 8px;">Loki 이미 깔려 있으니 활용. Overview에서 "에러 발생" 알람 보면 → 여기로 와서 "왜" 답을 찾음.</p>
+  <div class="mock">
+    <!-- 변수 필터 -->
+    <div class="mock-row mock-r4">
+      <div class="cell"><div class="h">namespace</div><div class="v" style="font-size:11px;">[All ▼]</div></div>
+      <div class="cell"><div class="h">pod</div><div class="v" style="font-size:11px;">[All ▼]</div></div>
+      <div class="cell"><div class="h">level</div><div class="v" style="font-size:11px;">[error,warn ▼]</div></div>
+      <div class="cell"><div class="h">search</div><div class="v" style="font-size:11px;">[ keyword ]</div></div>
+    </div>
+    <!-- 볼륨 시계열 -->
+    <div class="mock-row mock-r2-wide">
+      <div class="cell tall">
+        <div class="h">레벨별 로그 발생률 (stacked bar)</div>
+        <div class="chart">
+          <svg viewBox="0 0 300 50" preserveAspectRatio="none">
+            <path d="M0,50 L0,30 L40,28 L80,32 L120,20 L160,25 L200,15 L240,18 L280,10 L300,15 L300,50 Z" fill="var(--accent)" opacity="0.4"/>
+            <path d="M0,50 L0,42 L40,40 L80,43 L120,36 L160,38 L200,32 L240,34 L280,28 L300,32 L300,50 Z" fill="var(--yellow)" opacity="0.5"/>
+            <path d="M0,50 L0,48 L40,47 L80,48 L120,44 L160,45 L200,42 L240,43 L280,40 L300,42 L300,50 Z" fill="var(--red)" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="sub-v">━ info(accent) &nbsp;━ warn(yellow) &nbsp;━ error(red)</div>
+      </div>
+      <div class="cell tall">
+        <div class="h">에러 Top 5 namespace</div>
+        <div class="mini-table">
+          <div class="row"><span class="name">harbor</span><span style="color:var(--red);">42</span></div>
+          <div class="row"><span class="name">cert-manager</span><span style="color:var(--yellow);">8</span></div>
+          <div class="row"><span class="name">vault</span><span style="color:var(--yellow);">5</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- 로그 라인 -->
+    <div class="mock-row mock-r1">
+      <div class="cell taller">
+        <div class="h">최근 로그 (LogQL, 자동 스크롤)</div>
+        <div style="font-family:monospace; font-size:9px; color:var(--muted); margin-top:4px; line-height:1.4;">
+          <span style="color:var(--muted);">12:34:01</span> <span style="color:var(--red);">ERR</span> harbor/trivy ImagePullBackOff: timeout pulling oci://ghcr.io/aquasecurity/trivy-db<br>
+          <span style="color:var(--muted);">12:33:58</span> <span style="color:var(--yellow);">WARN</span> vault/vault-1 raft: leader election in progress, no requests served<br>
+          <span style="color:var(--muted);">12:33:55</span> <span style="color:var(--accent);">INFO</span> argocd/server reconcile started for application 10-harbor<br>
+          <span style="color:var(--muted);">12:33:50</span> <span style="color:var(--yellow);">WARN</span> cilium/cilium-xyz BPF map approaching limit (90%)<br>
+          <span style="color:var(--muted);">12:33:42</span> <span style="color:var(--red);">ERR</span> cert-manager DNS-01 propagation check failed (Cloudflare API rate limit)<br>
+          <span style="color:var(--muted);">12:33:38</span> <span style="color:var(--accent);">INFO</span> longhorn-mgr volume harbor-registry healthy<br>
+          <span style="color:var(--muted);">12:33:30</span> <span style="color:var(--accent);">INFO</span> envoy-gateway upstream cluster updated<br>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="eval">
+    <span class="key">평가</span><span class="val warn">🟡 새로 만들 거 — 디자인 일관성 신경 써야 함</span>
+    <span class="key">강점</span><span class="val">메트릭 이상 → 로그 원인 추적 흐름 완성</span>
+    <span class="key">약점</span><span class="val">LogQL 작성 비용 (예: <code>{namespace=~".+"} |~ "(?i)error|warn"</code>)</span>
+    <span class="key">커스텀</span><span class="val">직접 작성 필요. JSON 작업 1~2시간 예상</span>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<h2>📊 디자인 일관성 평가</h2>
+
+<table style="width:100%; border-collapse:collapse; font-size:13px;">
+  <thead>
+    <tr style="border-bottom:1px solid var(--border); background:#1f2937;">
+      <th style="padding:10px; text-align:left; color:var(--muted);">측면</th>
+      <th style="padding:10px; text-align:left; color:var(--muted);">평가</th>
+      <th style="padding:10px; text-align:left; color:var(--muted);">대처</th>
+    </tr>
+  </thead>
+  <tbody style="background:var(--panel);">
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;"><b>색 코딩</b> (green/yellow/red threshold)</td>
+      <td style="padding:10px; color:var(--green);">🟢 일관됨 — Grafana 기본 threshold가 9.x부터 통일</td>
+      <td style="padding:10px;">불필요</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;"><b>레이아웃 패턴</b> (헤더 stat + 시계열 + 테이블)</td>
+      <td style="padding:10px; color:var(--green);">🟢 다운받은 거도 비슷한 패턴</td>
+      <td style="padding:10px;">불필요</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;"><b>패널 폰트/스타일</b></td>
+      <td style="padding:10px; color:var(--green);">🟢 grafana 테마가 통일하므로 자동 일관</td>
+      <td style="padding:10px;">불필요</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;"><b>패널 밀도</b></td>
+      <td style="padding:10px; color:var(--yellow);">🟡 [04] Nodes는 패널 많고, [10] Prometheus는 적음 — 살짝 들쭉날쭉</td>
+      <td style="padding:10px;">감수 (drill-down은 깊은 정보 우선)</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;"><b>한국어 vs 영어</b></td>
+      <td style="padding:10px; color:var(--yellow);">🟡 다 영어. Overview만 한국어로 만들 거면 톤 차이</td>
+      <td style="padding:10px;">Overview도 영어로 통일 권장</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;"><b>변수(template variable) 위치</b></td>
+      <td style="padding:10px; color:var(--green);">🟢 모두 상단 좌측 통일</td>
+      <td style="padding:10px;">불필요</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note success">
+  <h4>✅ 결론</h4>
+  <p>11개 대시보드의 디자인 일관성은 <b>90% 일관됨</b>. 5초 스캔용 Overview(직접 만듦) + Logs(직접 만듦)만 신경 쓰면 됨. 6개 기존 대시보드는 그대로 사용해도 시각적으로 어색하지 않음. 사용자가 외부에서 받은 이유였던 <b>"디자인 괜찮음"</b>이 내장 대시보드에도 동등하게 적용됨.</p>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<h2>❓ 결정 필요 4가지</h2>
+
+<table style="width:100%; border-collapse:collapse; font-size:13px;">
+  <tbody style="background:var(--panel);">
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px; width:40%;"><b>① 11개 다 OK?</b></td>
+      <td style="padding:10px;">"이 대시보드 빼고 싶다 / 추가하고 싶다" 있나? Vault 전용 대시보드 등 추가 후보 있음</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;"><b>② cert-manager 커스텀</b></td>
+      <td style="padding:10px;">"issuer 종류별 stat" 추가하면 staging/prod 즉시 구분. 필요?</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;"><b>③ 언어 통일</b></td>
+      <td style="padding:10px;">기존 6개가 영어니까 Overview/Logs도 영어로 통일 vs 한국어</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;"><b>④ 다운받은 거 ID 확인</b></td>
+      <td style="padding:10px;">argocd / cert-manager / longhorn의 정확한 dashboard ID 알려줄 수 있나? 위 평가는 인기 ID 가정한 거라 다를 수 있음</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

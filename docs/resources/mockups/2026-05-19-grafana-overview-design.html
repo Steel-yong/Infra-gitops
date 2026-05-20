@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Grafana Overview 대시보드 디자인 — 2026-05-19</title>
+<style>
+  :root {
+    --bg: #111217;
+    --panel: #181b1f;
+    --panel-2: #22252b;
+    --border: #2a2d33;
+    --text: #d8d9da;
+    --muted: #8a8d90;
+    --accent: #5794f2;
+    --green: #56a64b;
+    --yellow: #f2cc0c;
+    --orange: #ff780a;
+    --red: #e02f44;
+    --purple: #b877d9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Pretendard", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    line-height: 1.5;
+  }
+  .title {
+    color: #fff;
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  .row {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .row-5 { grid-template-columns: repeat(5, 1fr); }
+  .row-4 { grid-template-columns: repeat(4, 1fr); }
+  .row-3 { grid-template-columns: repeat(3, 1fr); }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-2-wide { grid-template-columns: 2fr 1fr; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    min-height: 100px;
+    position: relative;
+  }
+  .panel .header {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .panel.tall { min-height: 200px; }
+  .panel.taller { min-height: 260px; }
+
+  /* Stat panel (big number) */
+  .stat {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .stat.ok { color: var(--green); }
+  .stat.warn { color: var(--yellow); }
+  .stat.crit { color: var(--red); }
+  .stat.info { color: var(--accent); }
+
+  /* Gauge bar */
+  .gauge {
+    background: var(--panel-2);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .gauge-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.3s;
+  }
+  .gauge-fill.warn { background: var(--yellow); }
+  .gauge-fill.crit { background: var(--red); }
+
+  /* List/table */
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item .label { color: var(--text); }
+  .list-item .value { color: var(--muted); font-family: ui-monospace, monospace; }
+  .list-item .value.crit { color: var(--red); }
+  .list-item .value.warn { color: var(--yellow); }
+  .list-item .value.ok { color: var(--green); }
+
+  /* Chart placeholder */
+  .chart {
+    height: 140px;
+    background: linear-gradient(180deg, rgba(87,148,242,0.15), rgba(87,148,242,0));
+    border-bottom: 1px solid var(--accent);
+    position: relative;
+    margin-top: 8px;
+  }
+  .chart::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 25% 25%;
+  }
+  .sparkline {
+    stroke: var(--accent);
+    stroke-width: 2;
+    fill: none;
+  }
+  .sparkline-fill { fill: rgba(87,148,242,0.15); }
+
+  /* Promql snippet under panel */
+  .query {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 3px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 10px;
+    color: var(--purple);
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  /* Section divider */
+  .section-title {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 16px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Alert severity dots */
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+  .dot.crit { background: var(--red); }
+  .dot.warn { background: var(--yellow); }
+  .dot.info { background: var(--accent); }
+
+  .legend {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .legend-item {
+    display: inline-block;
+    margin-right: 12px;
+  }
+  .legend-item::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .legend-item.green::before { background: var(--green); }
+  .legend-item.red::before { background: var(--red); }
+  .legend-item.yellow::before { background: var(--yellow); }
+  .legend-item.accent::before { background: var(--accent); }
+
+  .note {
+    background: rgba(87,148,242,0.07);
+    border: 1px solid rgba(87,148,242,0.3);
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .note h4 { margin: 0 0 4px; color: var(--accent); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="title">📊 onprem-dev — Overview</div>
+<div class="subtitle">단일 클러스터 한눈에 보기 · 5초 안에 이상 감지 · 이상 시 클릭 → drill-down</div>
+
+<div class="note">
+  <h4>💡 디자인 원칙</h4>
+  <ul style="margin: 4px 0; padding-left: 18px;">
+    <li><b>위쪽 = 헬스 요약</b> (큰 숫자, 색으로 즉시 판단)</li>
+    <li><b>중간 = 트렌드</b> (시계열, 비정상 패턴 감지)</li>
+    <li><b>아래쪽 = 디테일 리스트</b> (Top N 문제 항목)</li>
+    <li>패널 클릭 = drill-down 대시보드로 이동 (Grafana data link)</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════ ROW 1: 헬스 요약 ═══════════════════════════ -->
+<div class="section-title">Tier 1 — 클러스터 헬스 한눈에 (Stat)</div>
+<div class="row row-5">
+  <div class="panel">
+    <div class="header">노드 상태</div>
+    <div class="stat ok">3 / 3</div>
+    <div class="stat-sub">Ready / Total</div>
+    <div class="query">sum(kube_node_status_condition{condition="Ready",status="true"})</div>
+  </div>
+  <div class="panel">
+    <div class="header">CPU 사용률</div>
+    <div class="stat info">38%</div>
+    <div class="gauge"><div class="gauge-fill" style="width: 38%"></div></div>
+    <div class="query">1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))</div>
+  </div>
+  <div class="panel">
+    <div class="header">메모리 사용률</div>
+    <div class="stat warn">71%</div>
+    <div class="gauge"><div class="gauge-fill warn" style="width: 71%"></div></div>
+    <div class="query">1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)</div>
+  </div>
+  <div class="panel">
+    <div class="header">디스크 사용률 (max)</div>
+    <div class="stat info">42%</div>
+    <div class="gauge"><div class="gauge-fill" style="width: 42%"></div></div>
+    <div class="query">max(1 - node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes)</div>
+  </div>
+  <div class="panel">
+    <div class="header">활성 Alert</div>
+    <div class="stat crit">2</div>
+    <div class="stat-sub"><span class="dot crit"></span>1 critical &nbsp;<span class="dot warn"></span>1 warning</div>
+    <div class="query">count(ALERTS{alertstate="firing"})</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ROW 2: ArgoCD ═══════════════════════════ -->
+<div class="section-title">Tier 2 — GitOps (ArgoCD)</div>
+<div class="row row-4">
+  <div class="panel">
+    <div class="header">Application 동기화</div>
+    <div class="stat ok">11 / 11</div>
+    <div class="stat-sub">Synced / Total</div>
+    <div class="query">sum(argocd_app_info{sync_status="Synced"})</div>
+  </div>
+  <div class="panel">
+    <div class="header">Application 헬스</div>
+    <div class="stat warn">10 / 11</div>
+    <div class="stat-sub">Healthy / Total — 1 Degraded</div>
+    <div class="query">sum(argocd_app_info{health_status="Healthy"})</div>
+  </div>
+  <div class="panel taller" style="grid-column: span 2;">
+    <div class="header">OutOfSync 또는 Degraded App (있을 때만)</div>
+    <div class="list-item"><span class="label">harbor</span><span class="value warn">Degraded · ImagePullBackOff</span></div>
+    <div class="list-item"><span class="label">(없음)</span><span class="value ok">모두 정상</span></div>
+    <div class="query">argocd_app_info{health_status!="Healthy"} or argocd_app_info{sync_status!="Synced"}</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ROW 3: 인증서 + 스토리지 ═══════════════════════════ -->
+<div class="section-title">Tier 3 — 인증서 만료 & 스토리지</div>
+<div class="row row-4">
+  <div class="panel">
+    <div class="header">30일 내 만료 인증서</div>
+    <div class="stat warn">1</div>
+    <div class="stat-sub">wildcard-yongun-shop (12일)</div>
+    <div class="query">count((certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 30)</div>
+  </div>
+  <div class="panel">
+    <div class="header">Longhorn 볼륨 헬스</div>
+    <div class="stat ok">8 / 8</div>
+    <div class="stat-sub">Healthy / Total</div>
+    <div class="query">sum(longhorn_volume_robustness{robustness="healthy"})</div>
+  </div>
+  <div class="panel">
+    <div class="header">Longhorn 가용 용량</div>
+    <div class="stat info">42 GB</div>
+    <div class="gauge"><div class="gauge-fill" style="width: 65%"></div></div>
+    <div class="stat-sub">65 GB used / 107 GB total</div>
+    <div class="query">sum(longhorn_node_storage_available_bytes)</div>
+  </div>
+  <div class="panel">
+    <div class="header">PV 사용률 (max)</div>
+    <div class="stat info">53%</div>
+    <div class="gauge"><div class="gauge-fill" style="width: 53%"></div></div>
+    <div class="stat-sub">harbor-registry (5.3GB/10GB)</div>
+    <div class="query">max(kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes)</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ROW 4: 트렌드 (시계열) ═══════════════════════════ -->
+<div class="section-title">Tier 4 — 트렌드 (시계열, 6시간)</div>
+<div class="row row-2">
+  <div class="panel tall">
+    <div class="header">노드별 CPU 사용률</div>
+    <div class="chart">
+      <svg width="100%" height="140" viewBox="0 0 400 140" preserveAspectRatio="none">
+        <path class="sparkline-fill" d="M0,90 L40,85 L80,70 L120,75 L160,60 L200,55 L240,65 L280,50 L320,55 L360,45 L400,50 L400,140 L0,140 Z"/>
+        <path class="sparkline" d="M0,90 L40,85 L80,70 L120,75 L160,60 L200,55 L240,65 L280,50 L320,55 L360,45 L400,50"/>
+        <path style="stroke: var(--green); stroke-width: 2; fill: none;" d="M0,110 L40,105 L80,100 L120,95 L160,100 L200,90 L240,95 L280,85 L320,80 L360,90 L400,85"/>
+        <path style="stroke: var(--yellow); stroke-width: 2; fill: none;" d="M0,70 L40,75 L80,55 L120,60 L160,50 L200,45 L240,55 L280,40 L320,45 L360,35 L400,40"/>
+      </svg>
+    </div>
+    <div class="legend">
+      <span class="legend-item accent">master</span>
+      <span class="legend-item green">worker-1</span>
+      <span class="legend-item yellow">worker-2</span>
+    </div>
+    <div class="query">1 - avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))</div>
+  </div>
+  <div class="panel tall">
+    <div class="header">네트워크 트래픽 (Pod-to-Pod, Cilium)</div>
+    <div class="chart">
+      <svg width="100%" height="140" viewBox="0 0 400 140" preserveAspectRatio="none">
+        <path class="sparkline-fill" d="M0,100 L30,95 L60,80 L90,90 L120,70 L150,75 L180,60 L210,50 L240,65 L270,55 L300,40 L330,50 L360,35 L400,45 L400,140 L0,140 Z"/>
+        <path class="sparkline" d="M0,100 L30,95 L60,80 L90,90 L120,70 L150,75 L180,60 L210,50 L240,65 L270,55 L300,40 L330,50 L360,35 L400,45"/>
+      </svg>
+    </div>
+    <div class="legend"><span class="legend-item accent">ingress</span></div>
+    <div class="query">sum(rate(hubble_flows_processed_total{verdict="FORWARDED"}[5m])) by (destination_workload)</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ROW 5: 워크로드 이슈 ═══════════════════════════ -->
+<div class="section-title">Tier 5 — 워크로드 이슈 (있을 때만 표시)</div>
+<div class="row row-3">
+  <div class="panel">
+    <div class="header">Pending Pod</div>
+    <div class="stat ok">0</div>
+    <div class="query">count(kube_pod_status_phase{phase="Pending"})</div>
+  </div>
+  <div class="panel">
+    <div class="header">CrashLoopBackOff</div>
+    <div class="stat ok">0</div>
+    <div class="query">count(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"})</div>
+  </div>
+  <div class="panel">
+    <div class="header">최근 1시간 재시작 Top 5</div>
+    <div class="list-item"><span class="label">harbor-trivy-0</span><span class="value warn">3</span></div>
+    <div class="list-item"><span class="label">vault-1</span><span class="value">1</span></div>
+    <div class="list-item"><span class="label">cilium-xyz</span><span class="value">1</span></div>
+    <div class="query">topk(5, increase(kube_pod_container_status_restarts_total[1h]))</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ROW 6: ESO & Cert health ═══════════════════════════ -->
+<div class="section-title">Tier 6 — 보안 컴포넌트 헬스</div>
+<div class="row row-4">
+  <div class="panel">
+    <div class="header">Vault Sealed</div>
+    <div class="stat ok">Unsealed</div>
+    <div class="stat-sub">3 active replicas</div>
+    <div class="query">vault_core_unsealed</div>
+  </div>
+  <div class="panel">
+    <div class="header">ESO Sync 실패</div>
+    <div class="stat ok">0</div>
+    <div class="stat-sub">최근 24h</div>
+    <div class="query">sum(increase(externalsecret_sync_calls_error[24h]))</div>
+  </div>
+  <div class="panel">
+    <div class="header">cert-manager 발급 실패</div>
+    <div class="stat ok">0</div>
+    <div class="stat-sub">최근 24h</div>
+    <div class="query">sum(increase(certmanager_certificate_request_failed_total[24h]))</div>
+  </div>
+  <div class="panel">
+    <div class="header">최근 활성 Alert</div>
+    <div class="list-item"><span class="label"><span class="dot crit"></span>HighMemUsage</span><span class="value crit">worker-2</span></div>
+    <div class="list-item"><span class="label"><span class="dot warn"></span>CertExpiringSoon</span><span class="value warn">12d</span></div>
+    <div class="query">ALERTS{alertstate="firing"}</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ ROW 7: API & Gateway ═══════════════════════════ -->
+<div class="section-title">Tier 7 — Control Plane & Gateway</div>
+<div class="row row-2">
+  <div class="panel tall">
+    <div class="header">API Server 응답시간 (p50/p99)</div>
+    <div class="chart">
+      <svg width="100%" height="140" viewBox="0 0 400 140" preserveAspectRatio="none">
+        <path style="stroke: var(--green); stroke-width: 2; fill: none;" d="M0,115 L40,113 L80,116 L120,114 L160,112 L200,115 L240,113 L280,114 L320,112 L360,113 L400,114"/>
+        <path style="stroke: var(--yellow); stroke-width: 2; fill: none;" d="M0,80 L40,75 L80,85 L120,70 L160,65 L200,75 L240,60 L280,68 L320,55 L360,60 L400,55"/>
+      </svg>
+    </div>
+    <div class="legend">
+      <span class="legend-item green">p50</span>
+      <span class="legend-item yellow">p99</span>
+    </div>
+    <div class="query">histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket[5m])) by (le))</div>
+  </div>
+  <div class="panel tall">
+    <div class="header">Envoy Gateway 요청률 / 에러율</div>
+    <div class="chart">
+      <svg width="100%" height="140" viewBox="0 0 400 140" preserveAspectRatio="none">
+        <path class="sparkline-fill" d="M0,90 L40,85 L80,70 L120,80 L160,60 L200,65 L240,50 L280,55 L320,45 L360,50 L400,40 L400,140 L0,140 Z"/>
+        <path class="sparkline" d="M0,90 L40,85 L80,70 L120,80 L160,60 L200,65 L240,50 L280,55 L320,45 L360,50 L400,40"/>
+        <path style="stroke: var(--red); stroke-width: 2; fill: none;" d="M0,130 L400,130"/>
+      </svg>
+    </div>
+    <div class="legend">
+      <span class="legend-item accent">req/s</span>
+      <span class="legend-item red">5xx rate</span>
+    </div>
+    <div class="query">sum(rate(envoy_http_downstream_rq_total[5m])) by (envoy_http_conn_manager_prefix)</div>
+  </div>
+</div>
+
+<div class="section-title">📦 GitOps 박는 방법</div>
+<div class="note">
+  <h4>kube-prometheus-stack의 grafana sidecar 자동 import 활용</h4>
+  <ol style="margin: 4px 0; padding-left: 18px;">
+    <li>이 대시보드 JSON을 <code style="background:rgba(0,0,0,0.3); padding:1px 4px; border-radius:3px;">components/monitoring/dashboards/onprem-dev-overview.json</code>에 저장</li>
+    <li>ConfigMap 매니페스트로 wrap, label <code>grafana_dashboard: "1"</code> 부여</li>
+    <li>kube-prometheus-stack values에 이미 sidecar가 활성화돼 있으면 grafana pod이 자동 import</li>
+    <li>다운받았던 6개 대시보드도 같은 방식으로 ConfigMap 박기 → UI import 의존 제거</li>
+  </ol>
+  <p style="margin: 8px 0 0; color: var(--muted);">즉, <b>UI에서 import → ConfigMap에 박힌 GitOps 자동 import</b>로 패턴 통일.</p>
+</div>
+
+<div class="section-title">🗂 Drill-down 연결 (Grafana data link)</div>
+<table style="width:100%; border-collapse:collapse; font-size:12px;">
+  <tr style="border-bottom:1px solid var(--border);">
+    <th style="text-align:left; padding:8px; color:var(--muted);">Overview 패널</th>
+    <th style="text-align:left; padding:8px; color:var(--muted);">클릭 시 이동할 대시보드</th>
+  </tr>
+  <tr><td style="padding:6px 8px;">노드 상태 / CPU / 메모리 / 디스크</td><td style="padding:6px 8px; color:var(--accent);">node-exporter 대시보드</td></tr>
+  <tr><td style="padding:6px 8px;">ArgoCD 동기화 / 헬스</td><td style="padding:6px 8px; color:var(--accent);">argocd 대시보드</td></tr>
+  <tr><td style="padding:6px 8px;">인증서 만료</td><td style="padding:6px 8px; color:var(--accent);">cert-manager 대시보드</td></tr>
+  <tr><td style="padding:6px 8px;">Longhorn 볼륨 / 용량</td><td style="padding:6px 8px; color:var(--accent);">longhorn 대시보드</td></tr>
+  <tr><td style="padding:6px 8px;">Pod / Workload 이슈</td><td style="padding:6px 8px; color:var(--accent);">kube-state-metrics 대시보드</td></tr>
+  <tr><td style="padding:6px 8px;">API Server 응답시간</td><td style="padding:6px 8px; color:var(--accent);">k8s-cluster 대시보드</td></tr>
+</table>
+
+<div class="section-title">❓ 결정 필요 (이거 OK면 JSON 작성 진행)</div>
+<ol style="font-size:13px; line-height:1.7;">
+  <li><b>이 패널 구성 OK?</b> 빼고 싶은 거 / 추가하고 싶은 거 있어?</li>
+  <li><b>PUBG Helper 앱 패널은 머지 후 추가?</b> (latency p99, error rate, frame analysis throughput, websocket connection count 등)</li>
+  <li><b>다운받은 6개 대시보드도 ConfigMap화 같이 진행할까?</b></li>
+  <li><b>저장 위치:</b> <code style="background:rgba(0,0,0,0.3); padding:1px 4px;">components/monitoring/dashboards/</code> 신설 OK?</li>
+</ol>
+
+</body>
+</html>

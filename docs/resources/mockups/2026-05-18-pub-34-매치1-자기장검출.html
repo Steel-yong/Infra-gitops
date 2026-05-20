@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PUB-34 매치 1 자기장 검출 — Phase 7 프로토타입</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+         background: #0d1117; color: #c9d1d9; }
+  .container { max-width: 1400px; margin: 0 auto; }
+  header { margin-bottom: 16px; }
+  h1 { margin: 0 0 6px; color: #58a6ff; font-size: 20px; }
+  .meta { color: #8b949e; font-size: 13px; }
+  .stats { display: flex; gap: 12px; margin: 14px 0; }
+  .stat { background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+          padding: 10px 14px; flex: 1; }
+  .stat .num { font-size: 22px; font-weight: 700; color: #58a6ff; }
+  .stat .label { font-size: 11px; color: #8b949e; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+  .card img { width: 100%; height: auto; display: block; }
+  .card .info { padding: 8px 12px; font-size: 12px; }
+  .card .info strong { color: #58a6ff; }
+  .info .coords { color: #8b949e; font-family: monospace; }
+  .note { margin: 12px 0; padding: 12px 16px; background: #1f2a44; border-left: 3px solid #58a6ff;
+          border-radius: 4px; font-size: 13px; line-height: 1.6; }
+  .note strong { color: #58a6ff; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>PUB-34 매치 1 자기장 + 팀 마커 검출 — Phase 7 프로토타입 v2</h1>
+  <div class="meta">2026-05-18 · PUBG Esports KR (MAP) 파이널 DAY 2 ⎮ 2025 PWS · <strong>720p</strong> · 60~88분 매치 1, 30초 간격 57프레임</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num">57</div><div class="label">분석 프레임</div></div>
+  <div class="stat"><div class="num">100%</div><div class="label">자기장 검출</div></div>
+  <div class="stat"><div class="num">14.1</div><div class="label">평균 팀 마커/프레임</div></div>
+  <div class="stat"><div class="num">CPU</div><div class="label">GPU 불필요</div></div>
+</div>
+
+<div class="note">
+  <strong>검출 알고리즘:</strong> 회색~흰색 마스킹 (V > 130, 채도 &lt; 60) + Hough Circle (minRadius 화면의 15%).
+  자기장 흰 선만 큰 원으로 추출. 노란 원 = 검출 결과, 빨간 점 = 자기장 중심.
+</div>
+<div class="note">
+  <strong>다음 단계:</strong> ① 720p 다운로드 (1GB, 진행 중) → 해상도 ↑로 정확도 ↑.
+  ② PHASE/시간 OCR (Tesseract) → 줌 자동 보정.
+  ③ 팀 위치 마커 색상 픽셀 추출 → 명당 클러스터링.
+  ④ 6개 매치 전체 자동 처리.
+</div>
+
+<h2 style="color:#58a6ff;font-size:16px;margin-top:24px">매치 1 — 30초 간격 57프레임 자기장 검출 결과</h2>
+<div class="grid" id="grid"></div>
+</div>
+
+<script>
+const RESULTS = [{"sec": 3600, "ts": "60:00", "best": {"x": 0.3857, "y": 0.4302, "r": 0.2865, "px": [577.25, 309.75, 206.25]}, "n_markers": 7}, {"sec": 3630, "ts": "60:30", "best": {"x": 0.4502, "y": 0.4781, "r": 0.3498, "px": [626.75, 344.25, 251.85000610351562]}, "n_markers": 18}, {"sec": 3660, "ts": "61:00", "best": {"x": 0.708, "y": 0.2781, "r": 0.2485, "px": [824.75, 200.25, 178.9499969482422]}, "n_markers": 22}, {"sec": 3690, "ts": "61:30", "best": {"x": 0.708, "y": 0.2781, "r": 0.2485, "px": [824.75, 200.25, 178.9499969482422]}, "n_markers": 26}, {"sec": 3720, "ts": "62:00", "best": {"x": 0.7041, "y": 0.2781, "r": 0.2485, "px": [821.75, 200.25, 178.9499969482422]}, "n_markers": 27}, {"sec": 3750, "ts": "62:30", "best": {"x": 0.7041, "y": 0.276, "r": 0.2485, "px": [821.75, 198.75, 178.9499969482422]}, "n_markers": 28}, {"sec": 3780, "ts": "63:00", "best": {"x": 0.7041, "y": 0.276, "r": 0.2483, "px": [821.75, 198.75, 178.8000030517578]}, "n_markers": 23}, {"sec": 3810, "ts": "63:30", "best": {"x": 0.7041, "y": 0.2802, "r": 0.2508, "px": [821.75, 201.75, 180.60000610351562]}, "n_markers": 26}, {"sec": 3840, "ts": "64:00", "best": {"x": 0.708, "y": 0.2802, "r": 0.2506, "px": [824.75, 201.75, 180.4499969482422]}, "n_markers": 21}, {"sec": 3870, "ts": "64:30", "best": {"x": 0.7041, "y": 0.274, "r": 0.2508, "px": [821.75, 197.25, 180.60000610351562]}, "n_markers": 15}, {"sec": 3900, "ts": "65:00", "best": {"x": 0.71, "y": 0.276, "r": 0.2504, "px": [826.25, 198.75, 180.3000030517578]}, "n_markers": 21}, {"sec": 3930, "ts": "65:30", "best": {"x": 0.7041, "y": 0.2781, "r": 0.2483, "px": [821.75, 200.25, 178.8000030517578]}, "n_markers": 13}, {"sec": 3960, "ts": "66:00", "best": {"x": 0.7041, "y": 0.2781, "r": 0.2485, "px": [821.75, 200.25, 178.9499969482422]}, "n_markers": 9}, {"sec": 3990, "ts": "66:30", "best": {"x": 0.708, "y": 0.274, "r": 0.2502, "px": [824.75, 197.25, 180.14999389648438]}, "n_markers": 13}, {"sec": 4020, "ts": "67:00", "best": {"x": 0.7041, "y": 0.2802, "r": 0.2508, "px": [821.75, 201.75, 180.60000610351562]}, "n_markers": 18}, {"sec": 4050, "ts": "67:30", "best": {"x": 0.7041, "y": 0.274, "r": 0.2483, "px": [821.75, 197.25, 178.8000030517578]}, "n_markers": 11}, {"sec": 4080, "ts": "68:00", "best": {"x": 0.7041, "y": 0.274, "r": 0.2479, "px": [821.75, 197.25, 178.5]}, "n_markers": 9}, {"sec": 4110, "ts": "68:30", "best": {"x": 0.7041, "y": 0.274, "r": 0.2506, "px": [821.75, 197.25, 180.4499969482422]}, "n_markers": 12}, {"sec": 4140, "ts": "69:00", "best": {"x": 0.7041, "y": 0.274, "r": 0.2506, "px": [821.75, 197.25, 180.4499969482422]}, "n_markers": 7}, {"sec": 4170, "ts": "69:30", "best": {"x": 0.4482, "y": 0.4781, "r": 0.351, "px": [625.25, 344.25, 252.75]}, "n_markers": 1}, {"sec": 4200, "ts": "70:00", "best": {"x": 0.5596, "y": 0.4927, "r": 0.3579, "px": [710.75, 354.75, 257.70001220703125]}, "n_markers": 24}, {"sec": 4230, "ts": "70:30", "best": {"x": 0.5596, "y": 0.4927, "r": 0.3585, "px": [710.75, 354.75, 258.1499938964844]}, "n_markers": 15}, {"sec": 4260, "ts": "71:00", "best": {"x": 0.5088, "y": 0.4635, "r": 0.425, "px": [671.75, 333.75, 306.0]}, "n_markers": 24}, {"sec": 4290, "ts": "71:30", "best": {"x": 0.5088, "y": 0.4635, "r": 0.425, "px": [671.75, 333.75, 306.0]}, "n_markers": 27}, {"sec": 4320, "ts": "72:00", "best": {"x": 0.5088, "y": 0.4635, "r": 0.4248, "px": [671.75, 333.75, 305.8499755859375]}, "n_markers": 28}, {"sec": 4350, "ts": "72:30", "best": {"x": 0.5088, "y": 0.4635, "r": 0.4248, "px": [671.75, 333.75, 305.8499755859375]}, "n_markers": 25}, {"sec": 4380, "ts": "73:00", "best": {"x": 0.5479, "y": 0.501, "r": 0.2554, "px": [701.75, 360.75, 183.89999389648438]}, "n_markers": 12}, {"sec": 4410, "ts": "73:30", "best": {"x": 0.5498, "y": 0.501, "r": 0.2552, "px": [703.25, 360.75, 183.75]}, "n_markers": 12}, {"sec": 4440, "ts": "74:00", "best": {"x": 0.499, "y": 0.4969, "r": 0.3054, "px": [664.25, 357.75, 219.89999389648438]}, "n_markers": 19}, {"sec": 4470, "ts": "74:30", "best": {"x": 0.4932, "y": 0.4969, "r": 0.3033, "px": [659.75, 357.75, 218.39999389648438]}, "n_markers": 16}, {"sec": 4500, "ts": "75:00", "best": {"x": 0.4932, "y": 0.4969, "r": 0.3073, "px": [659.75, 357.75, 221.25]}, "n_markers": 15}, {"sec": 4530, "ts": "75:30", "best": {"x": 0.4268, "y": 0.5052, "r": 0.369, "px": [608.75, 363.75, 265.6499938964844]}, "n_markers": 18}, {"sec": 4560, "ts": "76:00", "best": {"x": 0.415, "y": 0.5844, "r": 0.221, "px": [599.75, 420.75, 159.14999389648438]}, "n_markers": 12}, {"sec": 4590, "ts": "76:30", "best": {"x": 0.4463, "y": 0.549, "r": 0.266, "px": [623.75, 395.25, 191.5500030517578]}, "n_markers": 13}, {"sec": 4620, "ts": "77:00", "best": {"x": 0.4463, "y": 0.5469, "r": 0.264, "px": [623.75, 393.75, 190.0500030517578]}, "n_markers": 12}, {"sec": 4650, "ts": "77:30", "best": {"x": 0.4307, "y": 0.5594, "r": 0.3192, "px": [611.75, 402.75, 229.79998779296875]}, "n_markers": 15}, {"sec": 4680, "ts": "78:00", "best": {"x": 0.4326, "y": 0.5635, "r": 0.319, "px": [613.25, 405.75, 229.64999389648438]}, "n_markers": 19}, {"sec": 4710, "ts": "78:30", "best": {"x": 0.4307, "y": 0.5594, "r": 0.3192, "px": [611.75, 402.75, 229.79998779296875]}, "n_markers": 15}, {"sec": 4740, "ts": "79:00", "best": {"x": 0.5283, "y": 0.5719, "r": 0.2523, "px": [686.75, 411.75, 181.64999389648438]}, "n_markers": 7}, {"sec": 4770, "ts": "79:30", "best": {"x": 0.5322, "y": 0.5719, "r": 0.2517, "px": [689.75, 411.75, 181.1999969482422]}, "n_markers": 9}, {"sec": 4800, "ts": "80:00", "best": {"x": 0.5283, "y": 0.5719, "r": 0.2521, "px": [686.75, 411.75, 181.5]}, "n_markers": 11}, {"sec": 4830, "ts": "80:30", "best": {"x": 0.5283, "y": 0.576, "r": 0.2544, "px": [686.75, 414.75, 183.14999389648438]}, "n_markers": 11}, {"sec": 4860, "ts": "81:00", "best": {"x": 0.5322, "y": 0.574, "r": 0.2523, "px": [689.75, 413.25, 181.64999389648438]}, "n_markers": 10}, {"sec": 4890, "ts": "81:30", "best": {"x": 0.5283, "y": 0.476, "r": 0.3835, "px": [686.75, 342.75, 276.1499938964844]}, "n_markers": 11}, {"sec": 4920, "ts": "82:00", "best": {"x": 0.6377, "y": 0.4844, "r": 0.2483, "px": [770.75, 348.75, 178.8000030517578]}, "n_markers": 3}, {"sec": 4950, "ts": "82:30", "best": {"x": 0.6377, "y": 0.4844, "r": 0.2504, "px": [770.75, 348.75, 180.3000030517578]}, "n_markers": 6}, {"sec": 4980, "ts": "83:00", "best": {"x": 0.6377, "y": 0.4844, "r": 0.2506, "px": [770.75, 348.75, 180.4499969482422]}, "n_markers": 6}, {"sec": 5010, "ts": "83:30", "best": {"x": 0.5635, "y": 0.5094, "r": 0.2977, "px": [713.75, 366.75, 214.35000610351562]}, "n_markers": 12}, {"sec": 5040, "ts": "84:00", "best": {"x": 0.5635, "y": 0.5052, "r": 0.2981, "px": [713.75, 363.75, 214.64999389648438]}, "n_markers": 9}, {"sec": 5070, "ts": "84:30", "best": {"x": 0.4775, "y": 0.5135, "r": 0.3346, "px": [647.75, 369.75, 240.89999389648438]}, "n_markers": 9}, {"sec": 5100, "ts": "85:00", "best": {"x": 0.4209, "y": 0.4344, "r": 0.2169, "px": [604.25, 312.75, 156.14999389648438]}, "n_markers": 5}, {"sec": 5130, "ts": "85:30", "best": {"x": 0.4209, "y": 0.4344, "r": 0.2167, "px": [604.25, 312.75, 156.0]}, "n_markers": 11}, {"sec": 5160, "ts": "86:00", "best": {"x": 0.4229, "y": 0.4323, "r": 0.2165, "px": [605.75, 311.25, 155.85000610351562]}, "n_markers": 10}, {"sec": 5190, "ts": "86:30", "best": {"x": 0.4229, "y": 0.4323, "r": 0.2165, "px": [605.75, 311.25, 155.85000610351562]}, "n_markers": 7}, {"sec": 5220, "ts": "87:00", "best": {"x": 0.4209, "y": 0.4344, "r": 0.2154, "px": [604.25, 312.75, 155.10000610351562]}, "n_markers": 5}, {"sec": 5250, "ts": "87:30", "best": {"x": 0.4111, "y": 0.426, "r": 0.1515, "px": [596.75, 306.75, 109.05000305175781]}, "n_markers": 8}, {"sec": 5280, "ts": "88:00", "best": {"x": 0.415, "y": 0.424, "r": 0.1515, "px": [599.75, 305.25, 109.05000305175781]}, "n_markers": 4}];
+const grid = document.getElementById('grid');
+RESULTS.forEach(r => {
+  if (!r.best) return;
+  const card = document.createElement('div');
+  card.className = 'card';
+  const ts = r.ts;
+  const mm = parseInt(ts.split(':')[0]).toString().padStart(3, '0');
+  const ss = ts.split(':')[1];
+  const imgSrc = `pub34-match1/r_${mm}m${ss}s.jpg`;
+  card.innerHTML = `
+    <img src="${imgSrc}" alt="${r.ts}">
+    <div class="info">
+      <strong>${r.ts}</strong>
+      <div>중심 <span class="coords">x=${r.best.x.toFixed(3)} y=${r.best.y.toFixed(3)}</span></div>
+      <div>반경 <span class="coords">r=${r.best.r.toFixed(3)}</span></div>
+      <div>팀 마커 <span class="coords">${r.n_markers}개</span></div>
+    </div>`;
+  grid.appendChild(card);
+});
+</script>
+</body>
+</html>

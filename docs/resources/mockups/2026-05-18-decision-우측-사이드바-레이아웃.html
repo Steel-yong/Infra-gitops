@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>위치 추천 UI 우측 사이드바 분리 — 레이아웃 결정안 — 2026-05-18</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2028;
+    --panel-2: #232a35;
+    --border: #2c3441;
+    --text: #e1e7ee;
+    --muted: #8b97a7;
+    --accent: #4cc9f0;
+    --good: #6dd47e;
+    --warn: #f0c75e;
+    --bad: #f06464;
+    --code-bg: #0d1117;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.55;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
+  header { border-bottom: 2px solid var(--accent); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  h2 {
+    color: var(--accent);
+    margin: 28px 0 10px;
+    font-size: 19px;
+    border-left: 4px solid var(--accent);
+    padding-left: 10px;
+  }
+  h3 { margin: 18px 0 8px; font-size: 15px; color: var(--text); }
+  p { margin: 8px 0; color: var(--text); }
+  .muted { color: var(--muted); font-size: 13px; }
+  code, kbd {
+    font-family: "JetBrains Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #b9d4f1;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 13px; }
+  th, td {
+    text-align: left;
+    padding: 9px 11px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { background: var(--panel-2); color: var(--accent); font-weight: 600; }
+  tr:nth-child(odd) td { background: rgba(255,255,255,0.012); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card.recommended { border-color: var(--good); box-shadow: 0 0 0 1px rgba(109,212,126,0.18); }
+  .card.recommended::before {
+    content: "★ 추천";
+    display: inline-block;
+    background: var(--good);
+    color: #0f1419;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .card h3 { margin-top: 0; color: var(--text); }
+  /* 레이아웃 미니 도식 */
+  .layout {
+    display: grid;
+    gap: 4px;
+    margin: 10px 0 14px;
+    background: var(--code-bg);
+    padding: 10px;
+    border-radius: 6px;
+  }
+  .layout .header-bar {
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 5px 6px;
+    border-radius: 3px;
+    text-align: center;
+  }
+  .layout .body {
+    display: grid;
+    gap: 4px;
+    min-height: 140px;
+  }
+  .layout .block {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-size: 10px;
+    padding: 5px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .layout .block.left  { background: rgba(76,201,240,0.10); border-color: rgba(76,201,240,0.30); }
+  .layout .block.mid   { background: rgba(109,212,126,0.10); border-color: rgba(109,212,126,0.30); }
+  .layout .block.right { background: rgba(240,199,94,0.10); border-color: rgba(240,199,94,0.30); }
+  .layout .block.map   { background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
+  .layout-a .body { grid-template-columns: 60px 1fr 60px; }
+  .layout-b .body { grid-template-columns: 60px 50px 1fr 60px; }
+  .layout-c .body { grid-template-columns: 60px 1fr 60px; grid-template-rows: 30px 1fr; }
+  .layout-c .block.span2 { grid-column: span 3; }
+
+  .pros, .cons { margin: 8px 0; padding-left: 0; list-style: none; }
+  .pros li::before { content: "✓ "; color: var(--good); font-weight: 700; }
+  .cons li::before { content: "✗ "; color: var(--bad); font-weight: 700; }
+  li { margin: 4px 0; font-size: 13px; }
+
+  .risk { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+  .risk-low { background: rgba(109,212,126,0.18); color: var(--good); }
+  .risk-med { background: rgba(240,199,94,0.18); color: var(--warn); }
+  .risk-high{ background: rgba(240,100,100,0.20); color: var(--bad); }
+
+  .impact-list { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; }
+  .next-actions { background: rgba(76,201,240,0.06); border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 6px; }
+  .next-actions ol { margin: 6px 0 6px 16px; padding: 0; }
+  .next-actions li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>위치 추천 UI 우측 사이드바 분리 — 레이아웃 결정안</h1>
+  <p class="subtitle">2026-05-18 · PUB-30 컨텍스트 §7.2 후속 · <code>apps/frontend/src/app/page.tsx</code> 변경</p>
+</header>
+
+<h2>1. 현재 상태</h2>
+
+<div class="layout layout-b">
+  <div class="header-bar">Header — PUBG · Helper</div>
+  <div class="body">
+    <div class="block left">
+      좌측 사이드바<br>
+      <span class="muted">맵선택 / Timer / 알림 / <strong style="color:var(--warn)">LocationPanel</strong></span>
+    </div>
+    <div class="block mid">캡처<br>섹션</div>
+    <div class="block map">Map (Leaflet)<br>+ 자기장 원 + 마커</div>
+  </div>
+</div>
+
+<p>좌측 사이드바 하단에 <code>LocationPanel</code>이 있어, 자기장 락 → 추천 위치 확인까지 시선이 좌측 위→아래로 이동해야 함. 좌측이 입력(맵 선택 / 알림) + 출력(위치 추천)이 섞여 있어 역할이 모호하다.</p>
+
+<h2>2. 옵션 비교</h2>
+
+<div class="grid">
+
+  <!-- 옵션 A -->
+  <div class="card">
+    <h3>A. 노트 기본안 (3분할 완전 재구성)</h3>
+    <div class="layout layout-a">
+      <div class="header-bar">Header</div>
+      <div class="body">
+        <div class="block left">좌 280px<br>맵·Timer<br>·알림</div>
+        <div class="block map">Map<br>(중앙 가변)</div>
+        <div class="block right">우 280px<br>LocationPanel<br>+ 자기장 정보</div>
+      </div>
+    </div>
+    <p class="muted">PUB-30 §7.2의 명시안. 캡처 미리보기는 우측 사이드바 상단 PiP 또는 토글.</p>
+    <ul class="pros">
+      <li>역할 가장 명확 (좌=설정 / 중앙=시각화 / 우=결과)</li>
+      <li>맵이 가장 넓게 사용 가능</li>
+    </ul>
+    <ul class="cons">
+      <li>캡처 미리보기 위치를 새로 정해야 함 (OCR 디버깅용으로 크게 보고 싶을 때 불편)</li>
+      <li>3개 영역 + 캡처 → 변경 폭 가장 큼</li>
+    </ul>
+    <p><span class="risk risk-high">위험: 높음</span> · 변경 라인 ~200줄+</p>
+  </div>
+
+  <!-- 옵션 B -->
+  <div class="card recommended">
+    <h3>B. 최소 변경 (LocationPanel만 우측으로)</h3>
+    <div class="layout layout-b">
+      <div class="header-bar">Header</div>
+      <div class="body">
+        <div class="block left">좌측<br>맵·Timer<br>·알림</div>
+        <div class="block mid">캡처<br>섹션</div>
+        <div class="block map">Map</div>
+        <div class="block right">우측<br>Location<br>Panel</div>
+      </div>
+    </div>
+    <p class="muted">현재 캡처/맵 위치는 유지. LocationPanel만 좌측에서 떼서 신설된 우측 패널로.</p>
+    <ul class="pros">
+      <li>변경 폭 최소 (좌측 섹션 1개 제거 + 우측 신설)</li>
+      <li>캡처 미리보기 위치 안 건드림 — OCR 디버깅 흐름 유지</li>
+      <li>위치 추천 ↔ 자기장 락 정보를 우측에 모아 시선 한쪽 고정</li>
+      <li>1주 안에 사용자 체감 가능한 UX 개선</li>
+    </ul>
+    <ul class="cons">
+      <li>4개 컬럼이 되어 1920 미만 해상도에서 좁아질 수 있음 → 미디어쿼리 필요</li>
+    </ul>
+    <p><span class="risk risk-low">위험: 낮음</span> · 변경 라인 ~80줄</p>
+  </div>
+
+  <!-- 옵션 C -->
+  <div class="card">
+    <h3>C. 우측 사이드바 + 미리보기 토글</h3>
+    <div class="layout layout-c">
+      <div class="header-bar">Header</div>
+      <div class="body">
+        <div class="block left">좌측<br>설정</div>
+        <div class="block map">Map (캡처는 좌상단 작은 PiP, 토글로 확장)</div>
+        <div class="block right">우측<br>Location<br>+ 자기장</div>
+      </div>
+    </div>
+    <p class="muted">캡처 섹션을 좌상단 작은 PiP로 축소, 사용자가 토글 시 확장.</p>
+    <ul class="pros">
+      <li>맵 면적 최대화</li>
+      <li>UI 미니멀</li>
+    </ul>
+    <ul class="cons">
+      <li>토글 상태 관리 추가 → 잡 상태 늘어남</li>
+      <li>OCR 디버깅용 미리보기 항상 보이지 않음 → 자기장 검출 튜닝 시 불편</li>
+      <li>변경 폭은 B보다 큼</li>
+    </ul>
+    <p><span class="risk risk-med">위험: 중간</span> · 변경 라인 ~150줄</p>
+  </div>
+
+</div>
+
+<h2>3. 영향 범위 비교</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>항목</th><th>A</th><th>B</th><th>C</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><code>page.tsx</code> 구조 변경</td><td>대</td><td>소</td><td>중</td></tr>
+    <tr><td><code>page.module.css</code> 변경</td><td>대 (grid 재구성)</td><td>소 (.rightSidebar 추가)</td><td>중 (PiP 스타일)</td></tr>
+    <tr><td>캡처 미리보기 위치 결정 필요</td><td>예</td><td>아니오</td><td>예</td></tr>
+    <tr><td>새 상태(useState)</td><td>없음</td><td>없음</td><td>previewExpanded</td></tr>
+    <tr><td>기존 테스트 영향</td><td><code>MainLayout.test</code> 거의 다 재작성</td><td>일부 셀렉터 수정</td><td>일부 + 토글 테스트 추가</td></tr>
+    <tr><td>구현 예상 시간</td><td>1~2일</td><td><strong style="color:var(--good)">2~3시간</strong></td><td>4~6시간</td></tr>
+  </tbody>
+</table>
+
+<h2>4. 추천 — B</h2>
+
+<div class="impact-list">
+  <p><strong>이유:</strong></p>
+  <ul>
+    <li>이번 작업의 본질은 "위치 추천을 시선상 분리"이지 "전체 레이아웃 재설계"가 아니다. 가장 작은 변경으로 그 효과를 달성한다.</li>
+    <li>OCR 디버깅용 캡처 미리보기는 자기장 검출 튜닝이 끝날 때까지(7.1 완료) 항상 보이는 게 안전하다.</li>
+    <li>변경 폭이 작아 회귀 가능성 낮음 — 자기장 검출 시스템이 PUB-30에서 막 안정화된 시점에 큰 UI 재구성은 위험.</li>
+    <li>B로 진행 후 7.1(맵 확대 자기장 인식) 완료 시점에 A 또는 C로 추가 진화 가능. 즉 <strong>B는 A로 가는 디딤돌</strong>이지, A의 대안이 아님.</li>
+  </ul>
+</div>
+
+<h2>5. 결정 후 다음 액션</h2>
+
+<div class="next-actions">
+  <ol>
+    <li>워크트리 생성: <code>git worktree add ../feature-PUB-XX feature/PUB-XX</code> (Linear 이슈 번호 확정 후)</li>
+    <li><code>page.module.css</code>에 <code>.rightSidebar</code> 추가 (좌측 사이드바 스타일 복제 시작).</li>
+    <li><code>page.tsx</code>: 좌측 사이드바의 마지막 <code>sideSection</code>(LocationPanel 감싼) 제거 → 새 <code>&lt;aside className=&#123;styles.rightSidebar&#125;&gt;</code>로 이동.</li>
+    <li><code>page.module.css</code>의 <code>.body</code> grid를 4열로 변경: <code>auto 1fr 1fr auto</code>.</li>
+    <li>1366×768 / 1920×1080 / 2560×1440 미디어쿼리 검증.</li>
+    <li>관련 테스트 셀렉터 업데이트 (<code>MainLayout.test.tsx</code>).</li>
+    <li>checklist.md + context-notes.md 작성 → 구현 → 커밋 → PR.</li>
+  </ol>
+</div>
+
+</div>
+</body>
+</html>

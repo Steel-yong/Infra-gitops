@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PUB-34 Phase 7 — 영상 분석 v2 (6 매치 완전 처리)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; font-family: -apple-system, "Noto Sans KR", sans-serif;
+         background: #0d1117; color: #c9d1d9; }
+  .container { max-width: 1400px; margin: 0 auto; }
+  h1 { color: #58a6ff; margin: 0 0 8px; font-size: 22px; }
+  h2 { color: #58a6ff; font-size: 16px; margin: 24px 0 8px; }
+  .meta { color: #8b949e; font-size: 13px; margin-bottom: 16px; }
+  .stats { display: flex; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
+  .stat { background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+          padding: 10px 14px; flex: 1; min-width: 140px; }
+  .stat .num { font-size: 22px; font-weight: 700; color: #58a6ff; }
+  .stat .label { font-size: 11px; color: #8b949e; text-transform: uppercase; }
+  .note { padding: 12px 16px; background: #1f2a44; border-left: 3px solid #58a6ff;
+          border-radius: 4px; font-size: 13px; line-height: 1.6; margin: 10px 0; }
+  .note strong { color: #58a6ff; }
+  img { max-width: 100%; border: 1px solid #30363d; border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid #30363d; }
+  th { background: #161b22; color: #58a6ff; text-align: left; }
+  td.coord { font-family: monospace; color: #8b949e; }
+  .tier-S { color: #ffd700; font-weight: 700; }
+  .tier-A { color: #c0c0c0; font-weight: 700; }
+  .tier-B { color: #cd7f32; font-weight: 700; }
+  pre { background: #161b22; padding: 12px; border-radius: 4px; overflow-x: auto;
+        font-size: 12px; color: #8b949e; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>PUB-34 Phase 7 — 영상 분석 v2 (6 매치 완전 처리)</h1>
+<div class="meta">2026-05-19 · PUBG Esports KR PWS 파이널 DAY 2 · 4.7시간 6 매치 자동 분석</div>
+
+<div class="stats">
+  <div class="stat"><div class="num">6/6</div><div class="label">처리 매치</div></div>
+  <div class="stat"><div class="num">100%</div><div class="label">자기장 검출률</div></div>
+  <div class="stat"><div class="num">41</div><div class="label">DBSCAN 클러스터</div></div>
+  <div class="stat"><div class="num">9</div><div class="label">S tier (3매치+ 공통)</div></div>
+  <div class="stat"><div class="num">3</div><div class="label">6매치 전부 공통</div></div>
+</div>
+
+<div class="note">
+  <strong>좌표 변환식 (격자 라벨 OCR + 사용자 매핑 I=1..P=8):</strong>
+  <pre>PUBG_x = 1.0657 × px + 0.0475 (오차 0.0002)
+PUBG_y = 1.0000 × py + 0.0416 (오차 0.0006)</pre>
+</div>
+
+<h2>매치별 페이즈 1 첫 자기장 락</h2>
+<table>
+  <tr><th>매치</th><th>시점(분)</th><th>게임 좌표</th><th>격자</th></tr>
+  <tr><td>매치 1</td><td>60</td><td class="coord">(0.521, 0.524)</td><td>D5</td></tr>
+  <tr><td>매치 2</td><td>93</td><td class="coord">(0.398, 0.655)</td><td>C6</td></tr>
+  <tr><td>매치 3</td><td>140</td><td class="coord">(0.398, 0.670)</td><td>C6</td></tr>
+  <tr><td>매치 4</td><td>182</td><td class="coord">(0.398, 0.678)</td><td>C6</td></tr>
+  <tr><td>매치 5</td><td>221</td><td class="coord">(0.421, 0.555)</td><td>C5</td></tr>
+  <tr><td>매치 6</td><td>256</td><td class="coord">(0.523, 0.526)</td><td>D5</td></tr>
+</table>
+
+<h2>핫스팟 — 6매치 전부 공통 (최고 신뢰)</h2>
+<table>
+  <tr><th>좌표</th><th>격자</th><th>tier</th><th>마커</th><th>해석</th></tr>
+  <tr><td class="coord">(0.735, 0.601)</td><td>F5</td><td class="tier-S">S</td><td>92</td><td>Lipovka 동쪽</td></tr>
+  <tr><td class="coord">(0.522, 0.780)</td><td>E7</td><td class="tier-S">S</td><td>50</td><td>군사기지 위 본토 가장자리</td></tr>
+  <tr><td class="coord">(0.781, 0.451)</td><td>G4</td><td class="tier-S">S</td><td>48</td><td>Mylta Power 권역</td></tr>
+</table>
+
+<h2>핫스팟 — 5매치 공통</h2>
+<table>
+  <tr><th>좌표</th><th>격자</th><th>tier</th><th>마커</th><th>참여 매치</th></tr>
+  <tr><td class="coord">(0.411, 0.600)</td><td>D6</td><td class="tier-S">S</td><td>72</td><td>2,3,4,5,6</td></tr>
+  <tr><td class="coord">(0.635, 0.391)</td><td>F4</td><td class="tier-S">S</td><td>54</td><td>1,2,3,4,5</td></tr>
+  <tr><td class="coord">(0.407, 0.779)</td><td>D7</td><td class="tier-S">S</td><td>29</td><td>1,3,4,5,6</td></tr>
+  <tr><td class="coord">(0.561, 0.576)</td><td>E5</td><td class="tier-S">S</td><td>18</td><td>2,3,4,5,6</td></tr>
+  <tr><td class="coord">(0.648, 0.785)</td><td>F7</td><td class="tier-S">S</td><td>16</td><td>2,3,4,5,6</td></tr>
+  <tr><td class="coord">(0.678, 0.890)</td><td>F8</td><td class="tier-S">S</td><td>13</td><td>1,2,3,4,6</td></tr>
+  <tr><td class="coord">(0.609, 0.469)</td><td>E4</td><td class="tier-S">S</td><td>8</td><td>1,2,3,4,5</td></tr>
+</table>
+
+<h2>에란겔 맵 시각화</h2>
+<img src="pub34-final-v2.jpg" alt="6 매치 결과">
+<div class="note">
+  6 매치 자기장 락 (M1~M6 큰 원, 매치별 색상) + 페이즈 1 마커 + 핫스팟(노란 작은 원)
+</div>
+
+<h2>코드 정식화 — apps/services/video-analyzer/</h2>
+<pre>
+download.py        — yt-dlp wrapper (360p/720p/1080p purpose별)
+frames.py          — ffmpeg 30s 간격 프레임 추출
+match_classifier.py — 인트로 vs 매치 분류 (좌가장자리 G 채널 < 25)
+zone_detector.py   — Hough 자기장 검출 (흰 마스킹, minRadius 15%)
+marker_extractor.py — 채도 100+ DBSCAN 클러스터링
+grid_ocr.py        — easyocr 격자 라벨 + 변환식 도출
+clustering.py      — 핫스팟 + tier 매핑
+pipeline.py        — 통합 실행 진입점
+batch_analyze.py   — 15개 영상 배치 분석
+seed_writer.py     — 클러스터 → seed.ts 자동 갱신
+</pre>
+
+<h2>이번 세션 자율 진척 (2026-05-19)</h2>
+<ul style="line-height: 1.8; font-size: 13px;">
+  <li>✅ PR #80 — Phase 7 영상 분석 파이프라인 인프라 (PUB-34)</li>
+  <li>✅ PR #81 — 에란겔 명당 시드 v1 mockup 46+Agent 22 (PUB-33)</li>
+  <li>✅ Linear PUB-35 이슈 등록 — 배치 처리 + 페이즈 2~5 zoom 보정</li>
+  <li>✅ match_classifier 임계값 fix 추가 commit (다른 PWS 영상 인트로 색조 robust)</li>
+  <li>🔄 sanity check 백그라운드 (PWS 파이널 DAY 3, fix 검증)</li>
+  <li>📝 PUB-36 후보: 인트로 OCR 개선 (세로 글자)</li>
+  <li>📝 PUB-37 후보: seed.ts 자동 갱신 (seed_writer 적용)</li>
+  <li>📝 PUB-38 후보: PUBG Telemetry API 통합</li>
+</ul>
+
+<h2>매치별 맵 분류 (PWS 파이널 DAY 2)</h2>
+<table>
+  <tr><th>매치</th><th>맵</th><th>분 (시작~끝)</th><th>핫스팟</th></tr>
+  <tr><td>1</td><td>ERANGEL</td><td>60~88</td><td rowspan="2" style="text-align:center">8+ S tier (2매치 공통)</td></tr>
+  <tr><td>6</td><td>ERANGEL</td><td>256~283</td></tr>
+  <tr><td>2</td><td>MIRAMAR</td><td>93~124</td><td rowspan="2" style="text-align:center">17 S tier (2매치 공통)</td></tr>
+  <tr><td>5</td><td>MIRAMAR</td><td>221~250</td></tr>
+  <tr><td>3</td><td>RONDO</td><td>140~167</td><td>8 A tier</td></tr>
+  <tr><td>4</td><td>TAEGO</td><td>182~206</td><td>5 A tier</td></tr>
+</table>
+</div>
+</body>
+</html>
