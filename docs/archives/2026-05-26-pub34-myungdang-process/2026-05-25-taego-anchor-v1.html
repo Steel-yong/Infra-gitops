@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>태이고 지명 anchor v1 — 검증</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--accent:#58a6ff;--bad:#f85149}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",sans-serif;line-height:1.6;padding:28px 18px;max-width:1300px;margin:0 auto}
+  h1{font-size:24px}h2{font-size:18px;color:var(--accent);margin:26px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:20px}
+  .verdict{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:16px 18px;margin-bottom:18px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+  .card h3{font-size:14px;margin-bottom:8px}
+  img{width:100%;border:1px solid var(--border);border-radius:6px;display:block}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+  th,td{padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase}
+  td.r{text-align:right}
+  .note{font-size:13px;color:var(--dim);margin-top:8px}
+  code{background:#1c2230;padding:1px 6px;border-radius:4px;color:#ffa657;font-size:12.5px}
+  ol{margin-left:20px}
+</style>
+</head>
+<body>
+<h1>🗺️ 태이고 지명 anchor v1 — 검증 요청</h1>
+<p class="sub">2026-05-25 · 에란겔 27도시 방식 그대로 · 좌표 엔진은 이미 0.32px 확정, 이제 지명 라벨만</p>
+
+<div class="verdict">
+  <b>왼쪽 = 정답</b>(liquipedia 지명 라벨 맵), <b>오른쪽 = 내가 찍은 1차 anchor</b>(taego.jpg에 빨간 점 17개). 두 지도가 같은 구도라 좌표를 그대로 옮겼어. <b>빨간 점이 왼쪽 라벨 위치와 어긋난 게 있으면 알려줘</b> — 바로 보정할게 (에란겔 city-names v1~v12처럼).
+</div>
+
+<div class="g2">
+  <div class="card"><h3>① 정답 — liquipedia 라벨 맵</h3><img src="2026-05-25-taego-named-ref.jpg" alt="정답"></div>
+  <div class="card"><h3>② 1차 anchor — taego.jpg + 빨간 점</h3><img src="2026-05-25-taego-anchor-v1.png" alt="anchor v1"></div>
+</div>
+
+<h2>1차 anchor 좌표 (17개)</h2>
+<table>
+  <tr><th>지명</th><th class="r">gx</th><th class="r">gy</th><th>위치</th></tr>
+  <tr><td>Army Base</td><td class="r">0.42</td><td class="r">0.13</td><td>북중앙 상단</td></tr>
+  <tr><td>Shipyard</td><td class="r">0.67</td><td class="r">0.17</td><td>북동</td></tr>
+  <tr><td>Wol Song</td><td class="r">0.17</td><td class="r">0.20</td><td>북서</td></tr>
+  <tr><td>Hae Moo Sa</td><td class="r">0.10</td><td class="r">0.30</td><td>서</td></tr>
+  <tr><td>Go Dok</td><td class="r">0.30</td><td class="r">0.31</td><td>중서</td></tr>
+  <tr><td>Yong Cheon</td><td class="r">0.52</td><td class="r">0.30</td><td>중앙 상</td></tr>
+  <tr><td>Airport</td><td class="r">0.86</td><td class="r">0.38</td><td>동쪽 격자지대</td></tr>
+  <tr><td>Terminal</td><td class="r">0.57</td><td class="r">0.45</td><td>중앙</td></tr>
+  <tr><td>Ha Po</td><td class="r">0.07</td><td class="r">0.55</td><td>서쪽 끝</td></tr>
+  <tr><td>Fishing Camp</td><td class="r">0.28</td><td class="r">0.53</td><td>중서 하</td></tr>
+  <tr><td>Kang Neung</td><td class="r">0.74</td><td class="r">0.55</td><td>동중</td></tr>
+  <tr><td>Ho San</td><td class="r">0.40</td><td class="r">0.63</td><td>중앙 하</td></tr>
+  <tr><td>Buk San Sa</td><td class="r">0.58</td><td class="r">0.63</td><td>중하</td></tr>
+  <tr><td>Ho San Prison</td><td class="r">0.19</td><td class="r">0.79</td><td>남서</td></tr>
+  <tr><td>Song Am</td><td class="r">0.48</td><td class="r">0.83</td><td>남중</td></tr>
+  <tr><td>Oh Hyang</td><td class="r">0.62</td><td class="r">0.78</td><td>남동중</td></tr>
+  <tr><td>School</td><td class="r">0.36</td><td class="r">0.81</td><td>남</td></tr>
+</table>
+<p class="note">이 좌표가 확정되면 <code>myungdang_pov_v3.py</code>의 에란겔 <code>CITIES</code>처럼 <code>TAEGO_CITIES</code>로 코드에 넣어서, 태이고 검출 결과에 도시 라벨·자기장 거리를 붙일 수 있어.</p>
+
+<h2>검증 방법</h2>
+<ol>
+  <li>왼쪽 라벨 맵에서 지명 위치를 보고, 오른쪽 빨간 점이 같은 자리인지 비교.</li>
+  <li>어긋난 지명 이름 + "어느 방향으로 얼마나" 알려주기 (예: "Terminal이 좀 더 왼쪽").</li>
+  <li>또는 누락/추가할 지명 알려주기.</li>
+</ol>
+<p class="note">정밀 검증은 IP 풀려 고해상도 태이고 전체맵을 받으면 영상 좌표와 직접 대조해 확정할 수 있어. 지금은 라벨 맵 기준 1차.</p>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>좌표 검증 — 영상 vs 데이터 (sec=4230)</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--accent:#58a6ff;--good:#3fb950;--warn:#d29922;--bad:#f85149}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",sans-serif;line-height:1.6;padding:28px 18px;max-width:1100px;margin:0 auto}
+  h1{font-size:24px}h2{font-size:18px;color:var(--accent);margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:20px}
+  .verdict{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:16px 18px;margin-bottom:8px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+  .card h3{font-size:14px;margin-bottom:8px;color:var(--text)}
+  img{max-width:100%;border:1px solid var(--border);border-radius:6px;display:block}
+  .zoomgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:10px}
+  .zoom{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px}
+  .zoom img{image-rendering:pixelated}
+  .zoom .meta{font-size:12.5px;margin-top:8px;line-height:1.5}
+  .num{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;background:#000;color:#ff5;border:1px solid var(--bad);border-radius:50%;font-weight:700;font-size:12px;margin-right:6px}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase}
+  td.r{text-align:right}
+  .tag{padding:1px 7px;border-radius:9px;font-size:11px;font-weight:700}
+  .hi{background:rgba(63,185,80,.18);color:var(--good)}
+  .mid{background:rgba(210,153,34,.18);color:var(--warn)}
+  .lo{background:rgba(248,81,73,.18);color:var(--bad)}
+  .note{font-size:13px;color:var(--dim);margin-top:8px}
+  .legend span{margin-right:14px;font-size:13px}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:middle;margin-right:4px}
+  code{background:#1c2230;padding:1px 6px;border-radius:4px;color:#ffa657;font-size:12.5px}
+</style>
+</head>
+<body>
+<h1>🔬 좌표 검증 — 영상 장면 vs 넣은 데이터</h1>
+<p class="sub">영상 <code>GO25rM_CoHo</code> · <b>sec=4230 (1시간 10분 30초 지점)</b> · SIFT reprojection 오차 0.30px (≈2m)</p>
+
+<div class="verdict">
+  왼쪽은 <b>영상 원본 그대로</b>, 오른쪽은 <b>우리 파이프라인이 찍은 데이터</b>(빨간 동그라미 = 검출한 선수 위치, 청록 원 = 자기장). 두 그림을 비교해서 <b>빨간 동그라미가 진짜 선수 위에 있는지</b> 네 눈으로 확인하면 돼. 아래 줌인으로 하나씩 크게 볼 수 있어.
+</div>
+<p class="legend"><span><span class="dot" style="background:#f85149"></span>검출 선수 마커</span><span><span class="dot" style="background:#2ff"></span>자기장 원</span></p>
+
+<h2>① 원본 vs 데이터 오버레이</h2>
+<div class="g2">
+  <div class="card"><h3>영상 원본 (아무것도 안 그림)</h3><img src="2026-05-25-verify-raw.png" alt="원본"></div>
+  <div class="card"><h3>데이터 오버레이 (마커 6 + 자기장)</h3><img src="2026-05-25-verify-overlay.png" alt="오버레이"></div>
+</div>
+
+<h2>② 마커별 줌인 — 동그라미 중심이 선수 위인지 확인</h2>
+<div class="zoomgrid">
+  <div class="zoom"><img src="2026-05-25-verify-zoom-1.png"><div class="meta"><span class="num">1</span><span class="tag hi">conf 0.93</span><br>vehicle · 파랑팀 · Gatka 741m</div></div>
+  <div class="zoom"><img src="2026-05-25-verify-zoom-2.png"><div class="meta"><span class="num">2</span><span class="tag mid">conf 0.67</span><br>airplane · 파랑팀 · Ruins 272m</div></div>
+  <div class="zoom"><img src="2026-05-25-verify-zoom-3.png"><div class="meta"><span class="num">3</span><span class="tag lo">conf 0.48</span><br>player · 노랑팀 · Gatka 484m</div></div>
+  <div class="zoom"><img src="2026-05-25-verify-zoom-4.png"><div class="meta"><span class="num">4</span><span class="tag lo">conf 0.36</span><br>vehicle · 파랑팀 · Ruins 274m <span style="color:var(--bad)">(2와 같은 위치 — 중복)</span></div></div>
+  <div class="zoom"><img src="2026-05-25-verify-zoom-5.png"><div class="meta"><span class="num">5</span><span class="tag lo">conf 0.34</span><br>player · 주황팀 · Hospital 472m</div></div>
+  <div class="zoom"><img src="2026-05-25-verify-zoom-6.png"><div class="meta"><span class="num">6</span><span class="tag lo">conf 0.34</span><br>vehicle · 초록팀 · Gatka 681m</div></div>
+</div>
+<p class="note">줌인은 360p 영상을 5배 확대한 거라 거칠어. 동그라미 한가운데에 선수 마커(작은 점·삼각형)가 있으면 정확히 찍힌 거야.</p>
+
+<h2>③ 넣은 데이터 전체</h2>
+<table>
+  <tr><th>#</th><th>종류</th><th>신뢰도</th><th>화면 픽셀(px,py)</th><th>지도 좌표(gx,gy)</th><th>가까운 도시</th><th>자기장 거리</th><th>팀색</th></tr>
+  <tr><td>1</td><td>vehicle</td><td><span class="tag hi">0.93</span></td><td>326, 171</td><td>0.259, 0.570</td><td>Gatka</td><td class="r">741 m</td><td>blue</td></tr>
+  <tr><td>2</td><td>airplane</td><td><span class="tag mid">0.67</span></td><td>401, 70</td><td>0.361, 0.432</td><td>Ruins</td><td class="r">272 m</td><td>blue</td></tr>
+  <tr><td>3</td><td>player</td><td><span class="tag lo">0.48</span></td><td>292, 91</td><td>0.211, 0.460</td><td>Gatka</td><td class="r">484 m</td><td>yellow</td></tr>
+  <tr style="opacity:.6"><td>4</td><td>vehicle</td><td><span class="tag lo">0.36</span></td><td>401, 70</td><td>0.361, 0.432</td><td>Ruins</td><td class="r">274 m</td><td>blue</td></tr>
+  <tr><td>5</td><td>player</td><td><span class="tag lo">0.34</span></td><td>316, 58</td><td>0.244, 0.415</td><td>Hospital</td><td class="r">472 m</td><td>orange</td></tr>
+  <tr><td>6</td><td>vehicle</td><td><span class="tag lo">0.34</span></td><td>337, 166</td><td>0.273, 0.563</td><td>Gatka</td><td class="r">681 m</td><td>green</td></tr>
+</table>
+
+<h2>④ 이 프레임에서 보이는 것</h2>
+<ul style="margin-left:20px;font-size:14px;line-height:1.8">
+  <li><b>좌표 정렬은 정확</b> — SIFT 오차 0.30px(≈2m). 지도 좌표(gx,gy)는 믿을 만해.</li>
+  <li><b>중복 검출 1건</b> — 마커 2·4가 같은 픽셀(401,70)을 airplane/vehicle로 두 번 잡음(둘 다 저conf). 명당 클러스터링에선 둘 다 제외(static 아님)되니 영향 없음.</li>
+  <li><b>저conf 비중</b> — 6개 중 4개가 conf 0.5 미만. 검출 threshold가 낮아서(0.25) 약한 것도 포함돼. 명당은 위치 반복으로 거르니 단발 노이즈는 자연 소거돼.</li>
+  <li><b>명당에 실제 쓰이는 건</b> — <code>kind=player</code>(static)인 3·5번만. 나머지(vehicle/airplane)는 이동 중이라 명당 계산에서 빠져.</li>
+</ul>
+<p class="note">검증 기준: 동그라미가 선수 위에 정확히 있고, 도시·거리가 맞으면 통과. 어긋나면 알려줘 — 좌표 파이프라인을 다시 봐야 해.</p>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUB-34 데이터 중간점검 — 2026-05-25</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --border:#30363d;
+    --text:#e6edf3; --dim:#8b949e; --accent:#58a6ff;
+    --good:#3fb950; --warn:#d29922; --bad:#f85149;
+    --s:#f85149; --a:#d29922; --b:#e3b341; --c:#8b949e;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",sans-serif;line-height:1.6;padding:32px 20px;max-width:1080px;margin:0 auto}
+  h1{font-size:26px;margin-bottom:4px}
+  h2{font-size:19px;margin:32px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--accent)}
+  h3{font-size:15px;margin:18px 0 8px;color:var(--text)}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:24px}
+  .verdict{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--warn);border-radius:8px;padding:18px 20px;margin-bottom:8px}
+  .verdict b{color:var(--warn)}
+  .grid{display:grid;gap:14px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g2{grid-template-columns:1fr 1fr}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+  .stat{text-align:center}
+  .stat .num{font-size:30px;font-weight:700;color:var(--accent)}
+  .stat .lbl{font-size:12px;color:var(--dim);margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13.5px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  td.r,th.r{text-align:right}
+  .bar{height:9px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:4px}
+  .bar > span{display:block;height:100%}
+  .tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  .tag.S{background:rgba(248,81,73,.18);color:var(--s)}
+  .tag.A{background:rgba(210,153,34,.18);color:var(--a)}
+  .tag.B{background:rgba(227,179,65,.15);color:var(--b)}
+  .tag.ok{background:rgba(63,185,80,.18);color:var(--good)}
+  .tag.warn{background:rgba(210,153,34,.18);color:var(--warn)}
+  .tag.bad{background:rgba(248,81,73,.18);color:var(--bad)}
+  img{max-width:100%;border:1px solid var(--border);border-radius:8px;display:block;margin:10px auto}
+  .note{font-size:13px;color:var(--dim);margin-top:6px}
+  .rec{background:linear-gradient(135deg,rgba(63,185,80,.10),rgba(88,166,255,.06));border:1px solid var(--good);border-radius:8px;padding:18px 20px;margin-top:14px}
+  .rec b{color:var(--good)}
+  ul{margin:6px 0 6px 20px}
+  li{margin:3px 0}
+  .pill{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--panel2);color:var(--dim)}
+  code{background:var(--panel2);padding:1px 6px;border-radius:4px;font-size:12.5px;color:#ffa657}
+</style>
+</head>
+<body>
+
+<h1>PUB-34 데이터 중간점검 🔍</h1>
+<p class="sub">2026-05-25 · (MAP) chain <b>33/98편</b> 진행 중 시점 · 검수자 확인용</p>
+
+<div class="verdict">
+  <b>한 줄 결론.</b> 개별 마커 추출·좌표변환·자기장 필터는 정상 작동한다. 그러나 <b>명당 클러스터가 오염</b>돼 있다 — 클러스터 입력 1,671개 중 <b>1,021개(61%)가 단일 weekly_test 영상의 중복 카운트</b>다. chain의 검출 데이터(<code>results_chain_map/</code>)는 깨끗하니, <b>combiner만 MAP 정품으로 좁히면</b> 명당 품질이 크게 좋아진다.
+</div>
+
+<h2>① chain 진행 상태</h2>
+<div class="grid g4">
+  <div class="card stat"><div class="num">33<span style="font-size:16px;color:var(--dim)">/98</span></div><div class="lbl">(MAP) 영상 분석 완료</div></div>
+  <div class="card stat"><div class="num">47.2</div><div class="lbl">영상당 평균 마커 <span class="pill">1차=0.4</span></div></div>
+  <div class="card stat"><div class="num">1,419</div><div class="lbl">자기장 내 마커 (raw)</div></div>
+  <div class="card stat"><div class="num" style="color:var(--good)">정상</div><div class="lbl">프로세스·sanity</div></div>
+</div>
+<p class="note">컴퓨터 재시작에도 chain이 살아남아 자동 재개됨. 내부 watchdog(30분 정체 시 정지)·GPU 과열 safety 작동 중. 나머지 65편은 약 6~8시간 뒤 완료 예정.</p>
+
+<h2>② 마커 추출 품질 (raw 검출)</h2>
+<div class="grid g2">
+  <div class="card">
+    <h3>종류(kind) 분포</h3>
+    <table>
+      <tr><td>airplane (비행 중)</td><td class="r">660</td><td class="r" style="color:var(--warn)">46.5%</td></tr>
+      <tr><td>player (착지/정지)</td><td class="r">451</td><td class="r">31.8%</td></tr>
+      <tr><td>vehicle (차량)</td><td class="r">308</td><td class="r">21.7%</td></tr>
+    </table>
+    <p class="note">⚠️ airplane이 절반 — 비행 단계 프레임이 많거나 과검출. <b>단, 명당 계산에서는 airplane·vehicle 모두 제외</b>되므로 명당 품질엔 영향 없음(아래 ③).</p>
+  </div>
+  <div class="card">
+    <h3>신뢰도(conf) 분포</h3>
+    <table>
+      <tr><td><span class="tag ok">0.9+</span></td><td class="r">87</td><td class="r">6.1%</td></tr>
+      <tr><td>0.7–0.9</td><td class="r">388</td><td class="r">27.3%</td></tr>
+      <tr><td>0.5–0.7</td><td class="r">343</td><td class="r">24.2%</td></tr>
+      <tr><td><span class="tag warn">0.3–0.5</span></td><td class="r">453</td><td class="r">31.9%</td></tr>
+      <tr><td><span class="tag bad">&lt;0.3</span></td><td class="r">148</td><td class="r">10.4%</td></tr>
+    </table>
+    <p class="note">추론 threshold가 <code>conf=0.25</code>로 낮아 저신뢰가 42% 포함. 명당은 위치 반복으로 거르므로 일부 노이즈는 클러스터에서 자연 소거됨.</p>
+  </div>
+</div>
+<div class="card" style="margin-top:14px">
+  <h3>색(팀 추정) 분포 — gray가 1위인 점 검수 필요</h3>
+  <table>
+    <tr><td>gray</td><td class="r">445</td><td style="width:55%"><div class="bar"><span style="width:100%;background:#8b949e"></span></div></td></tr>
+    <tr><td>green</td><td class="r">316</td><td><div class="bar"><span style="width:71%;background:#3fb950"></span></div></td></tr>
+    <tr><td>yellow</td><td class="r">284</td><td><div class="bar"><span style="width:64%;background:#e3b341"></span></div></td></tr>
+    <tr><td>blue</td><td class="r">191</td><td><div class="bar"><span style="width:43%;background:#58a6ff"></span></div></td></tr>
+    <tr><td>orange / purple / red / other</td><td class="r">183</td><td><div class="bar"><span style="width:41%;background:#db6d28"></span></div></td></tr>
+  </table>
+  <p class="note">⚠️ <b>gray(채도 낮음)가 최다</b>. 죽은 마커·관전 UI·흐린 마커가 player로 잡혔을 가능성. 색은 명당 위치 계산엔 안 쓰이지만, 클러스터 "주색"이 gray면 죽은 자리일 수 있어 ④ 시각 검수 대상.</p>
+</div>
+
+<h2>③ 명당 클러스터 결과 (DBSCAN)</h2>
+<div class="grid g4" style="margin-bottom:8px">
+  <div class="card stat"><div class="num">1,671</div><div class="lbl">static만 사용 <span class="pill">raw 3902</span></div></div>
+  <div class="card stat"><div class="num">103</div><div class="lbl">클러스터</div></div>
+  <div class="card stat"><div class="num" style="color:var(--s)">6 / 3</div><div class="lbl">S등급 / A등급</div></div>
+  <div class="card stat"><div class="num" style="color:var(--c)">80</div><div class="lbl">C등급 (78%, 약함)</div></div>
+</div>
+<p class="note">✅ 클러스터링은 vehicle(893)·airplane(1338)을 <b>제외</b>하고 static 1,671만 사용 — 설계가 올바르다. DBSCAN <code>eps=0.004</code>(≈32m), <code>min_samples=3</code>.</p>
+
+<img src="2026-05-24-pub34-myungdang-chain.png" alt="명당 클러스터 맵 오버레이">
+<p class="note" style="text-align:center">에란겔 맵 위 클러스터 (S=빨강, A/B=노랑 계열, C=회색). 중앙(Pochinki/School/Rozhok)에 집중, 외곽까지 산재.</p>
+
+<h3>S·A 등급 명당 (count 높은순)</h3>
+<table>
+  <tr><th>등급</th><th>도시</th><th class="r">count</th><th class="r">기여 영상수</th><th class="r">분산(spread)</th><th>주색</th></tr>
+  <tr><td><span class="tag S">S</span></td><td>Pochinki</td><td class="r">60</td><td class="r">2</td><td class="r" style="color:var(--bad)">460 m</td><td>orange</td></tr>
+  <tr><td><span class="tag S">S</span></td><td>Pochinki</td><td class="r">59</td><td class="r">4</td><td class="r" style="color:var(--good)">48 m</td><td>green</td></tr>
+  <tr><td><span class="tag S">S</span></td><td>Pochinki</td><td class="r">58</td><td class="r">3</td><td class="r">233 m</td><td>red</td></tr>
+  <tr><td><span class="tag S">S</span></td><td>Pochinki</td><td class="r">51</td><td class="r">3</td><td class="r">184 m</td><td>red</td></tr>
+  <tr><td><span class="tag S">S</span></td><td>Pochinki</td><td class="r">46</td><td class="r">3</td><td class="r">80 m</td><td>yellow</td></tr>
+  <tr><td><span class="tag S">S</span></td><td>Farm</td><td class="r">43</td><td class="r">3</td><td class="r">194 m</td><td>blue</td></tr>
+  <tr><td><span class="tag A">A</span></td><td>Pochinki</td><td class="r">36</td><td class="r">6</td><td class="r" style="color:var(--bad)">744 m</td><td>orange</td></tr>
+  <tr><td><span class="tag A">A</span></td><td>Pochinki</td><td class="r">33</td><td class="r">2</td><td class="r">353 m</td><td>red</td></tr>
+  <tr><td><span class="tag A">A</span></td><td>Pochinki</td><td class="r">27</td><td class="r">2</td><td class="r">228 m</td><td>red</td></tr>
+</table>
+<p class="note">⚠️ <b>S등급 6개 중 5개가 Pochinki</b> 한 도시에 몰림 + <b>spread 460m·744m</b>는 명당 한 자리치곤 과도하게 넓음. 같은 자리가 여러 조각으로 쪼개진 <b>과분할</b> 신호다. 기여 영상수가 2~4로 낮은 것도 함께 본다.</p>
+
+<h2>④ ⚠️ 핵심 발견 — 클러스터 입력 오염</h2>
+<div class="card">
+  <h3>static 1,671개의 진짜 출처</h3>
+  <table>
+    <tr><th>소스</th><th class="r">static</th><th>정체</th><th>판정</th></tr>
+    <tr><td><code>full_results_weekly_10s</code></td><td class="r">761</td><td>weekly_test <b>단일 영상</b>, 10초 샘플</td><td><span class="tag bad">중복</span></td></tr>
+    <tr><td><code>full_results_weekly_v8zone</code></td><td class="r">260</td><td><b>같은</b> weekly_test, 30초 샘플</td><td><span class="tag bad">중복</span></td></tr>
+    <tr><td><code>full_results_1080_v8zone</code></td><td class="r">33</td><td>1080p 단일 영상</td><td><span class="tag warn">단일</span></td></tr>
+    <tr><td><code>results_chain/</code> (1차)</td><td class="r" colspan="1">~</td><td>일반영상 109편 (영상당 0.4마커, "무의미")</td><td><span class="tag warn">노이즈</span></td></tr>
+    <tr><td><code>results_chain_map/</code> (정품)</td><td class="r">617*</td><td>진짜 (MAP) 33편 — <b>우리가 원하는 데이터</b></td><td><span class="tag ok">정품</span></td></tr>
+  </table>
+  <p class="note">* MAP+1차 디렉토리 합산 617. 즉 <b>같은 weekly_test 영상 하나가 761+260=1,021 static(전체의 61%)으로 이중 카운트</b>되어 클러스터를 지배하고 있다. <code>cluster_chain_combined.py</code>의 <code>SRC_DIRS</code>·<code>EXTRA_SOURCES</code>가 옛 테스트 결과와 중복본을 모두 합치는 게 원인.</p>
+  <p class="note">→ <b>Pochinki S 5개 과분할은 이 단일 영상 중복 편향의 결과일 가능성이 높다.</b> 한 영상에서 한 자리가 시간축으로 수십 번 잡혀 한 도시에 뭉친 것.</p>
+</div>
+
+<h2>⑤ 권고 + 결정 옵션</h2>
+<table>
+  <tr><th>옵션</th><th>내용</th><th>품질</th><th>비용</th></tr>
+  <tr>
+    <td><b>A. combiner 정품화</b> <span class="tag ok">추천</span></td>
+    <td><code>cluster_chain_combined.py</code>가 <code>results_chain_map/</code>만 쓰도록 수정. weekly 중복·1차·1080 제외</td>
+    <td><span style="color:var(--good)">오염 제거, 명당 신뢰↑</span></td>
+    <td>코드 1곳 수정 + 재클러스터링 (수초)</td>
+  </tr>
+  <tr>
+    <td>B. eps만 키우기</td>
+    <td>DBSCAN eps 상향으로 과분할 완화</td>
+    <td><span style="color:var(--warn)">증상만 완화, 오염 잔존</span></td>
+    <td>파라미터 튜닝 반복</td>
+  </tr>
+  <tr>
+    <td>C. 그대로 두고 98편 완료 후 판단</td>
+    <td>지금은 손대지 않음</td>
+    <td><span style="color:var(--dim)">중간점검 의미 약함</span></td>
+    <td>0</td>
+  </tr>
+</table>
+
+<div class="rec">
+  <b>추천 = A + 시각 검수 1건.</b>
+  <ul>
+    <li><b>A</b>: combiner를 MAP 정품만 쓰게 고치고 즉시 재클러스터링 → 깨끗한 명당 png를 다시 본다. chain 검출은 그대로 도니 안전.</li>
+    <li><b>시각 검수</b>: 영상 1편을 재다운(GPU 불필요, 저장된 px/py로 overlay)해 <b>gray·airplane이 진짜 오검출인지</b> 프레임에서 눈으로 확인. 미시 정확도 확정.</li>
+  </ul>
+  <b>결정 후 다음 액션.</b> A 적용 → 재클러스터 png 검수 → (통과 시) 98편 완료까지 대기 → 최종 명당 시드를 PUB-33으로 전달.
+</div>
+
+<p class="sub" style="margin-top:28px">생성 <code>docs/resources/mockups/2026-05-25-decision-pub34-data-midcheck.html</code> · 데이터 출처 <code>results_chain_map/*.json</code>, <code>2026-05-24-pub34-myungdang-chain.json</code></p>
+
+</body>
+</html>

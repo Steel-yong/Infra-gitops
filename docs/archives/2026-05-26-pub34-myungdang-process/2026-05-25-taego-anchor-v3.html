@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>태이고 지명 anchor v3 — OCR + 에란겔 격자</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--accent:#58a6ff;--good:#3fb950;--bad:#f85149}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",sans-serif;line-height:1.6;padding:28px 18px;max-width:1400px;margin:0 auto}
+  h1{font-size:24px}h2{font-size:18px;color:var(--accent);margin:26px 0 10px;border-bottom:1px solid var(--border);padding-bottom:6px}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:18px}
+  .verdict{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--good);border-radius:8px;padding:16px 18px;margin-bottom:18px}
+  .verdict b{color:var(--good)}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px}
+  .card h3{font-size:14px;margin-bottom:8px}
+  img{width:100%;border:1px solid var(--border);border-radius:6px;display:block}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+  th,td{padding:6px 9px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase}
+  td.r{text-align:right}
+  .ocr{color:var(--good);font-size:11px}
+  .est{color:var(--bad);font-size:11px}
+  .note{font-size:13px;color:var(--dim);margin-top:8px}
+  code{background:#1c2230;padding:1px 6px;border-radius:4px;color:#ffa657;font-size:12.5px}
+</style>
+</head>
+<body>
+<h1>🗺️ 태이고 지명 anchor v3 — OCR 추출 + 에란겔 격자</h1>
+<p class="sub">2026-05-25 · 고해상도 OCR(easyocr)로 위치 자동 추출 · 에란겔식 A~I/I~Q 격자 (1km 청록 + 100m 흰선)</p>
+
+<div class="verdict">
+  v1·v2는 눈대중이라 전체적으로 왼쪽으로 치우쳤어. <b>v3는 OCR로 지명 위치를 자동 추출</b>했고, 네 지적대로 모두 오른쪽으로 이동했어 (Army Base +0.06, Oh Hyang +0.13). 격자도 에란겔과 똑같이 만들었어. <b>왼쪽 정답과 오른쪽 anchor가 같은 칸인지 확인</b>해줘.
+</div>
+
+<div class="g2">
+  <div class="card"><h3>① 정답 — liquipedia 라벨 + 에란겔 격자</h3><img src="2026-05-25-taego-named-grid-v3.png" alt="정답"></div>
+  <div class="card"><h3>② anchor v3 — taego.jpg + OCR 위치</h3><img src="2026-05-25-taego-anchor-v3.png" alt="anchor v3"></div>
+</div>
+
+<h2>anchor v3 좌표 (16개)</h2>
+<table>
+  <tr><th>지명</th><th class="r">gx</th><th class="r">gy</th><th>출처</th></tr>
+  <tr><td>Army Base</td><td class="r">0.493</td><td class="r">0.126</td><td class="ocr">OCR 1.00</td></tr>
+  <tr><td>Shipyard</td><td class="r">0.699</td><td class="r">0.182</td><td class="ocr">OCR</td></tr>
+  <tr><td>Wol Song</td><td class="r">0.203</td><td class="r">0.197</td><td class="ocr">OCR</td></tr>
+  <tr><td>Hae Moo Sa</td><td class="r">0.133</td><td class="r">0.297</td><td class="ocr">OCR 0.79</td></tr>
+  <tr><td>Go Dok</td><td class="r">0.335</td><td class="r">0.295</td><td class="est">추정(OCR 누락)</td></tr>
+  <tr><td>Yong Cheon</td><td class="r">0.566</td><td class="r">0.300</td><td class="ocr">OCR 0.79</td></tr>
+  <tr><td>Terminal</td><td class="r">0.565</td><td class="r">0.450</td><td class="est">추정(OCR 누락)</td></tr>
+  <tr><td>Fishing Camp</td><td class="r">0.316</td><td class="r">0.519</td><td class="ocr">OCR 0.94</td></tr>
+  <tr><td>Ha Po</td><td class="r">0.082</td><td class="r">0.545</td><td class="ocr">OCR 0.89</td></tr>
+  <tr><td>Kang Neung</td><td class="r">0.794</td><td class="r">0.553</td><td class="ocr">OCR 0.70</td></tr>
+  <tr><td>Ho San</td><td class="r">0.428</td><td class="r">0.625</td><td class="ocr">OCR</td></tr>
+  <tr><td>Buk San Sa</td><td class="r">0.618</td><td class="r">0.629</td><td class="ocr">OCR</td></tr>
+  <tr><td>Ho San Prison</td><td class="r">0.232</td><td class="r">0.749</td><td class="ocr">OCR 0.97</td></tr>
+  <tr><td>Oh Hyang</td><td class="r">0.710</td><td class="r">0.730</td><td class="ocr">OCR</td></tr>
+  <tr><td>School</td><td class="r">0.386</td><td class="r">0.786</td><td class="ocr">OCR</td></tr>
+  <tr><td>Song Am</td><td class="r">0.499</td><td class="r">0.827</td><td class="ocr">OCR 1.00</td></tr>
+</table>
+
+<h2>확인 필요</h2>
+<p class="note">
+  ① <b>Go Dok·Terminal은 OCR이 못 잡아 추정값</b>이야 — 이 둘만 특히 확인해줘.<br>
+  ② liquipedia 목록의 <code>Airport·Studio·Palace</code>는 OCR에도 안 잡혔어. named 맵에 라벨이 없거나 작아서야. 위치 알면 알려줘.<br>
+  ③ 나머지 14개는 OCR 자동 추출이라 꽤 정확할 거야. 칸 어긋난 것만 알려줘.
+</p>
+<p class="note">확정되면 <code>myungdang_pov_v3.py</code>에 <code>TAEGO_CITIES</code>로 넣어서 태이고 검출에 도시 라벨·자기장 거리를 붙여.</p>
+</body>
+</html>

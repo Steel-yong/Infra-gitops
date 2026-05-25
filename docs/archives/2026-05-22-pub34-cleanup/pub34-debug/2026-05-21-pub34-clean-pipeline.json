@@ -1,0 +1,62 @@
+{
+  "class_counts": {
+    "intro": 427,
+    "erangel_fullmap": 483,
+    "ui_heavy": 672,
+    "flight_dark": 14
+  },
+  "sift": {
+    "candidates": 855,
+    "matched": 361,
+    "pass_rate": 0.4222222222222222,
+    "mean_err_px": 0.4289148152231689,
+    "mean_cities_inside": 26.8005540166205
+  },
+  "markers": {
+    "raw": 10407,
+    "kept": 218,
+    "self_rejected": 10189,
+    "self_center_gxgy": [
+      0.4795585158829735,
+      0.45952563466849633
+    ]
+  },
+  "clusters": [
+    {
+      "gx": 0.6433386107285818,
+      "gy": 0.9452607598569658,
+      "count": 18,
+      "city": "MilBase",
+      "dist_m": 1345.7451547200394
+    },
+    {
+      "gx": 0.6531735012928644,
+      "gy": 0.9875425000985464,
+      "count": 12,
+      "city": "MilBase",
+      "dist_m": 1676.6428687117764
+    },
+    {
+      "gx": 0.048993566632270814,
+      "gy": 0.4725392282009125,
+      "count": 10,
+      "city": "Hospital",
+      "dist_m": 1265.6435773738253
+    },
+    {
+      "gx": 0.8397206664085388,
+      "gy": 0.9196095764636993,
+      "count": 8,
+      "city": "Novorepnoye",
+      "dist_m": 1621.1369202085175
+    }
+  ],
+  "params": {
+    "nfeatures": 8000,
+    "ratio_thresh": 0.75,
+    "ransac_thresh": 3.0,
+    "inlier_min": 25,
+    "error_max": 5.0,
+    "base_size": 1200
+  }
+}

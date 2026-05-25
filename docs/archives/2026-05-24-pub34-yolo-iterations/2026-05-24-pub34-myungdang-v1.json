@@ -1,0 +1,536 @@
+{
+  "source": "/tmp/pub34/yolo/full_results_weekly.json",
+  "n_raw_markers": 645,
+  "dbscan": {
+    "eps": 0.012,
+    "min_samples": 5
+  },
+  "clusters": [
+    {
+      "id": 8,
+      "gx": 0.4308,
+      "gy": 0.484,
+      "count": 33,
+      "city": "Pochinki",
+      "dist_m": 141.7,
+      "colors": {
+        "green": 2,
+        "red": 28,
+        "yellow": 3
+      },
+      "tier": "S"
+    },
+    {
+      "id": 5,
+      "gx": 0.7226,
+      "gy": 0.7403,
+      "count": 28,
+      "city": "Novorepnoye",
+      "dist_m": 171.2,
+      "colors": {
+        "gray": 28
+      },
+      "tier": "S"
+    },
+    {
+      "id": 2,
+      "gx": 0.5703,
+      "gy": 0.5101,
+      "count": 22,
+      "city": "Farm",
+      "dist_m": 785.2,
+      "colors": {
+        "yellow": 6,
+        "blue": 16
+      },
+      "tier": "A"
+    },
+    {
+      "id": 11,
+      "gx": 0.4662,
+      "gy": 0.5813,
+      "count": 21,
+      "city": "Pochinki",
+      "dist_m": 724.7,
+      "colors": {
+        "orange": 19,
+        "yellow": 2
+      },
+      "tier": "A"
+    },
+    {
+      "id": 0,
+      "gx": 0.5298,
+      "gy": 0.5486,
+      "count": 19,
+      "city": "Pochinki",
+      "dist_m": 804.6,
+      "colors": {
+        "green": 1,
+        "yellow": 18
+      },
+      "tier": "A"
+    },
+    {
+      "id": 12,
+      "gx": 0.4508,
+      "gy": 0.4417,
+      "count": 17,
+      "city": "Pochinki",
+      "dist_m": 412.2,
+      "colors": {
+        "green": 16,
+        "yellow": 1
+      },
+      "tier": "A"
+    },
+    {
+      "id": 7,
+      "gx": 0.4563,
+      "gy": 0.5077,
+      "count": 16,
+      "city": "Pochinki",
+      "dist_m": 143.7,
+      "colors": {
+        "red": 14,
+        "orange": 1,
+        "other": 1
+      },
+      "tier": "A"
+    },
+    {
+      "id": 29,
+      "gx": 0.1979,
+      "gy": 0.3476,
+      "count": 15,
+      "city": "Georgopol",
+      "dist_m": 350.7,
+      "colors": {
+        "blue": 15
+      },
+      "tier": "A"
+    },
+    {
+      "id": 16,
+      "gx": 0.7597,
+      "gy": 0.7459,
+      "count": 14,
+      "city": "Novorepnoye",
+      "dist_m": 131.7,
+      "colors": {
+        "gray": 14
+      },
+      "tier": "A"
+    },
+    {
+      "id": 6,
+      "gx": 0.733,
+      "gy": 0.5892,
+      "count": 13,
+      "city": "Mylta",
+      "dist_m": 91.0,
+      "colors": {
+        "yellow": 13
+      },
+      "tier": "B"
+    },
+    {
+      "id": 19,
+      "gx": 0.4596,
+      "gy": 0.1509,
+      "count": 13,
+      "city": "Severny",
+      "dist_m": 70.9,
+      "colors": {
+        "gray": 13
+      },
+      "tier": "B"
+    },
+    {
+      "id": 21,
+      "gx": 0.3991,
+      "gy": 0.4854,
+      "count": 13,
+      "city": "Pochinki",
+      "dist_m": 380.1,
+      "colors": {
+        "orange": 1,
+        "red": 12
+      },
+      "tier": "B"
+    },
+    {
+      "id": 22,
+      "gx": 0.3994,
+      "gy": 0.6436,
+      "count": 11,
+      "city": "Ferry",
+      "dist_m": 630.3,
+      "colors": {
+        "purple": 7,
+        "gray": 3,
+        "other": 1
+      },
+      "tier": "B"
+    },
+    {
+      "id": 24,
+      "gx": 0.3592,
+      "gy": 0.5453,
+      "count": 11,
+      "city": "Pochinki",
+      "dist_m": 810.9,
+      "colors": {
+        "orange": 10,
+        "yellow": 1
+      },
+      "tier": "B"
+    },
+    {
+      "id": 37,
+      "gx": 0.4312,
+      "gy": 0.6292,
+      "count": 11,
+      "city": "Ferry",
+      "dist_m": 900.3,
+      "colors": {
+        "gray": 6,
+        "purple": 5
+      },
+      "tier": "B"
+    },
+    {
+      "id": 28,
+      "gx": 0.4493,
+      "gy": 0.6078,
+      "count": 10,
+      "city": "Pochinki",
+      "dist_m": 918.6,
+      "colors": {
+        "orange": 4,
+        "gray": 1,
+        "purple": 5
+      },
+      "tier": "B"
+    },
+    {
+      "id": 3,
+      "gx": 0.5298,
+      "gy": 0.8706,
+      "count": 9,
+      "city": "MilBase",
+      "dist_m": 561.2,
+      "colors": {
+        "red": 9
+      },
+      "tier": "B"
+    },
+    {
+      "id": 20,
+      "gx": 0.4116,
+      "gy": 0.3945,
+      "count": 9,
+      "city": "Boatyard",
+      "dist_m": 127.8,
+      "colors": {
+        "gray": 9
+      },
+      "tier": "B"
+    },
+    {
+      "id": 27,
+      "gx": 0.3678,
+      "gy": 0.618,
+      "count": 8,
+      "city": "Ferry",
+      "dist_m": 663.8,
+      "colors": {
+        "gray": 1,
+        "purple": 5,
+        "red": 2
+      },
+      "tier": "B"
+    },
+    {
+      "id": 1,
+      "gx": 0.5363,
+      "gy": 0.5181,
+      "count": 7,
+      "city": "Pochinki",
+      "dist_m": 749.8,
+      "colors": {
+        "purple": 1,
+        "yellow": 6
+      },
+      "tier": "B"
+    },
+    {
+      "id": 9,
+      "gx": 0.6946,
+      "gy": 0.4257,
+      "count": 7,
+      "city": "Shelter",
+      "dist_m": 460.0,
+      "colors": {
+        "blue": 7
+      },
+      "tier": "B"
+    },
+    {
+      "id": 13,
+      "gx": 0.3634,
+      "gy": 0.1618,
+      "count": 7,
+      "city": "Shooting",
+      "dist_m": 590.3,
+      "colors": {
+        "gray": 7
+      },
+      "tier": "B"
+    },
+    {
+      "id": 17,
+      "gx": 0.4144,
+      "gy": 0.2042,
+      "count": 7,
+      "city": "Shooting",
+      "dist_m": 65.2,
+      "colors": {
+        "gray": 7
+      },
+      "tier": "B"
+    },
+    {
+      "id": 38,
+      "gx": 0.5183,
+      "gy": 0.6172,
+      "count": 7,
+      "city": "SosnovkaIsl",
+      "dist_m": 984.8,
+      "colors": {
+        "yellow": 7
+      },
+      "tier": "B"
+    },
+    {
+      "id": 39,
+      "gx": 0.5082,
+      "gy": 0.5885,
+      "count": 7,
+      "city": "Pochinki",
+      "dist_m": 911.9,
+      "colors": {
+        "yellow": 7
+      },
+      "tier": "B"
+    },
+    {
+      "id": 4,
+      "gx": 0.4394,
+      "gy": 0.21,
+      "count": 6,
+      "city": "Shooting",
+      "dist_m": 171.7,
+      "colors": {
+        "gray": 6
+      },
+      "tier": "C"
+    },
+    {
+      "id": 15,
+      "gx": 0.4363,
+      "gy": 0.3814,
+      "count": 6,
+      "city": "Boatyard",
+      "dist_m": 116.4,
+      "colors": {
+        "gray": 6
+      },
+      "tier": "C"
+    },
+    {
+      "id": 18,
+      "gx": 0.6724,
+      "gy": 0.4443,
+      "count": 6,
+      "city": "Shelter",
+      "dist_m": 375.4,
+      "colors": {
+        "blue": 6
+      },
+      "tier": "C"
+    },
+    {
+      "id": 23,
+      "gx": 0.5141,
+      "gy": 0.3576,
+      "count": 6,
+      "city": "Rozhok",
+      "dist_m": 177.1,
+      "colors": {
+        "red": 6
+      },
+      "tier": "C"
+    },
+    {
+      "id": 25,
+      "gx": 0.3383,
+      "gy": 0.6857,
+      "count": 6,
+      "city": "Ferry",
+      "dist_m": 89.3,
+      "colors": {
+        "purple": 5,
+        "gray": 1
+      },
+      "tier": "C"
+    },
+    {
+      "id": 26,
+      "gx": 0.3838,
+      "gy": 0.4347,
+      "count": 6,
+      "city": "Ruins",
+      "dist_m": 186.1,
+      "colors": {
+        "green": 5,
+        "gray": 1
+      },
+      "tier": "C"
+    },
+    {
+      "id": 10,
+      "gx": 0.7815,
+      "gy": 0.5746,
+      "count": 5,
+      "city": "Mylta",
+      "dist_m": 405.1,
+      "colors": {
+        "yellow": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 14,
+      "gx": 0.5998,
+      "gy": 0.4261,
+      "count": 5,
+      "city": "School",
+      "dist_m": 659.9,
+      "colors": {
+        "blue": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 30,
+      "gx": 0.4806,
+      "gy": 0.3465,
+      "count": 5,
+      "city": "Rozhok",
+      "dist_m": 105.3,
+      "colors": {
+        "red": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 31,
+      "gx": 0.2617,
+      "gy": 0.334,
+      "count": 5,
+      "city": "Georgopol",
+      "dist_m": 327.6,
+      "colors": {
+        "blue": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 32,
+      "gx": 0.3657,
+      "gy": 0.6887,
+      "count": 5,
+      "city": "Ferry",
+      "dist_m": 207.5,
+      "colors": {
+        "gray": 2,
+        "purple": 3
+      },
+      "tier": "C"
+    },
+    {
+      "id": 33,
+      "gx": 0.4691,
+      "gy": 0.375,
+      "count": 5,
+      "city": "Rozhok",
+      "dist_m": 271.2,
+      "colors": {
+        "red": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 34,
+      "gx": 0.6075,
+      "gy": 0.5077,
+      "count": 5,
+      "city": "Farm",
+      "dist_m": 558.9,
+      "colors": {
+        "blue": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 35,
+      "gx": 0.41,
+      "gy": 0.2687,
+      "count": 5,
+      "city": "Shooting",
+      "dist_m": 462.3,
+      "colors": {
+        "gray": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 36,
+      "gx": 0.4463,
+      "gy": 0.7414,
+      "count": 5,
+      "city": "SosnovkaIsl",
+      "dist_m": 863.3,
+      "colors": {
+        "red": 3,
+        "gray": 2
+      },
+      "tier": "C"
+    },
+    {
+      "id": 40,
+      "gx": 0.54,
+      "gy": 0.6066,
+      "count": 5,
+      "city": "Farm",
+      "dist_m": 1006.0,
+      "colors": {
+        "yellow": 5
+      },
+      "tier": "C"
+    },
+    {
+      "id": 41,
+      "gx": 0.5436,
+      "gy": 0.7135,
+      "count": 5,
+      "city": "SosnovkaIsl",
+      "dist_m": 191.1,
+      "colors": {
+        "gray": 5
+      },
+      "tier": "C"
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "stats": {
+    "frames": 2060,
+    "erangel": 552,
+    "sift": 145,
+    "pov": 116,
+    "segments": 116
+  },
+  "hotspots": [
+    {
+      "gx": 0.4861544221639633,
+      "gy": 0.5852168179475344,
+      "city": "Pochinki",
+      "dist_m": 804.6393132504725,
+      "duration": 130,
+      "n_segments": 26,
+      "n_matches": 1,
+      "n_videos": 1
+    },
+    {
+      "gx": 0.43162183165550233,
+      "gy": 0.7243247628211975,
+      "city": "Ferry",
+      "dist_m": 735.267667315751,
+      "duration": 25,
+      "n_segments": 5,
+      "n_matches": 2,
+      "n_videos": 2
+    },
+    {
+      "gx": 0.7114999055862427,
+      "gy": 0.44063987731933596,
+      "city": "Shelter",
+      "dist_m": 353.32728245055864,
+      "duration": 25,
+      "n_segments": 5,
+      "n_matches": 2,
+      "n_videos": 2
+    },
+    {
+      "gx": 0.3832731544971466,
+      "gy": 0.5594336688518524,
+      "city": "Pochinki",
+      "dist_m": 730.9430403573258,
+      "duration": 20,
+      "n_segments": 4,
+      "n_matches": 1,
+      "n_videos": 1
+    },
+    {
+      "gx": 0.2774009108543396,
+      "gy": 0.41612353175878525,
+      "city": "Gatka",
+      "dist_m": 499.55324842510174,
+      "duration": 20,
+      "n_segments": 4,
+      "n_matches": 1,
+      "n_videos": 1
+    },
+    {
+      "gx": 0.2546866089105606,
+      "gy": 0.36342213302850723,
+      "city": "Georgopol",
+      "dist_m": 457.1542419009091,
+      "duration": 20,
+      "n_segments": 4,
+      "n_matches": 2,
+      "n_videos": 2
+    },
+    {
+      "gx": 0.18486878275871277,
+      "gy": 0.36653267592191696,
+      "city": "Hospital",
+      "dist_m": 245.02242939173698,
+      "duration": 20,
+      "n_segments": 4,
+      "n_matches": 1,
+      "n_videos": 1
+    },
+    {
+      "gx": 0.7087941318750381,
+      "gy": 0.3649347797036171,
+      "city": "Mansion",
+      "dist_m": 483.05788554842263,
+      "duration": 20,
+      "n_segments": 4,
+      "n_matches": 1,
+      "n_videos": 1
+    },
+    {
+      "gx": 0.4287220239639282,
+      "gy": 0.6042749285697937,
+      "city": "Pochinki",
+      "dist_m": 900.866718101745,
+      "duration": 15,
+      "n_segments": 3,
+      "n_matches": 1,
+      "n_videos": 1
+    },
+    {
+      "gx": 0.2120029628276825,
+      "gy": 0.2553772379954656,
+      "city": "Georgopol",
+      "dist_m": 482.16480333718414,
+      "duration": 15,
+      "n_segments": 3,
+      "n_matches": 3,
+      "n_videos": 2
+    }
+  ]
+}

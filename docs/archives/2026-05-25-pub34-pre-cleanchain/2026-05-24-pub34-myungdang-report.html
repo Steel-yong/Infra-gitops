@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PUB-34 명당 1차 추출 보고서</title>
+<style>
+  body { background:#0d1117; color:#e6edf3; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; margin:0; padding:32px; line-height:1.6; }
+  .container { max-width:1100px; margin:0 auto; }
+  h1 { color:#58a6ff; border-bottom:2px solid #30363d; padding-bottom:12px; margin-top:0; }
+  h2 { color:#7ee787; margin-top:32px; border-left:4px solid #7ee787; padding-left:12px; }
+  h3 { color:#ffa657; }
+  .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; }
+  .stat-box { background:#161b22; border:1px solid #30363d; border-radius:6px; padding:14px; text-align:center; }
+  .stat-box .label { color:#8b949e; font-size:12px; text-transform:uppercase; }
+  .stat-box .value { color:#e6edf3; font-size:24px; font-weight:600; margin-top:4px; }
+  .tier-S { color:#ff7b72; font-weight:bold; }
+  .tier-A { color:#ffa657; font-weight:bold; }
+  .tier-B { color:#d29922; font-weight:bold; }
+  .tier-C { color:#8b949e; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; background:#161b22; border-radius:6px; overflow:hidden; }
+  th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #30363d; }
+  th { background:#1f2937; color:#58a6ff; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; }
+  td.rank { color:#8b949e; font-weight:bold; width:40px; }
+  td.count { color:#7ee787; font-weight:bold; font-size:16px; }
+  td.city { color:#79c0ff; font-weight:600; }
+  td.coord { color:#8b949e; font-family:monospace; font-size:12px; }
+  td.src { color:#ffa657; font-family:monospace; font-weight:bold; }
+  td.colors { color:#8b949e; font-size:12px; }
+  img { max-width:100%; border-radius:6px; border:1px solid #30363d; }
+  .caption { color:#8b949e; font-size:13px; text-align:center; margin-top:6px; }
+  .pipeline { background:#161b22; border:1px solid #30363d; padding:16px; border-radius:6px; font-family:monospace; font-size:13px; white-space:pre; overflow-x:auto; }
+  .warn { background:#3d1f1f; border-left:4px solid #f85149; padding:12px; margin:12px 0; border-radius:4px; }
+  .note { background:#1c2541; border-left:4px solid #58a6ff; padding:12px; margin:12px 0; border-radius:4px; }
+  .grade-legend { display:flex; gap:16px; margin:8px 0; font-size:13px; }
+  ul { padding-left:20px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>PUB-34 명당 1차 추출 보고서</h1>
+<p style="color:#8b949e">PUBG 프로 대회 영상 자동 분석 — YOLOv11 + SIFT homography 파이프라인. 2026-05-24.</p>
+
+<h2>요약</h2>
+<div class="stat-grid">
+  <div class="stat-box"><div class="label">분석 영상</div><div class="value">2개</div></div>
+  <div class="stat-box"><div class="label">총 영상 시간</div><div class="value">535분</div></div>
+  <div class="stat-box"><div class="label">추출 마커</div><div class="value">889</div></div>
+  <div class="stat-box"><div class="label">명당 클러스터</div><div class="value">51</div></div>
+</div>
+<div class="grade-legend">
+  <div><span class="tier-S">●</span> S 등급 2개</div>
+  <div><span class="tier-A">●</span> A 등급 10개</div>
+  <div><span class="tier-B">●</span> B 등급 14개</div>
+  <div><span class="tier-C">●</span> C 등급 25개</div>
+</div>
+
+<h2>TOP 10 명당 (두 영상 교집합 우선)</h2>
+<p style="color:#8b949e">두 다른 대회 영상에서 모두 등장 = 진짜 명당 후보. <code>src=W+T</code>가 그것.</p>
+<table>
+  <thead>
+    <tr><th>#</th><th>등급</th><th>마커수</th><th>가까운 도시</th><th>거리</th><th>게임 좌표</th><th>출처</th><th>주요 팀색</th></tr>
+  </thead>
+  <tbody>
+        <tr>
+          <td class="rank">1</td>
+          <td class="tier-S">S</td>
+          <td class="count">37</td>
+          <td class="city">Pochinki</td>
+          <td>135m</td>
+          <td class="coord">(0.4319, 0.4836)</td>
+          <td class="src">W+T</td>
+          <td class="colors">red:30, blue:3, yellow:2</td>
+        </tr>
+        <tr>
+          <td class="rank">2</td>
+          <td class="tier-S">S</td>
+          <td class="count">32</td>
+          <td class="city">Novorepnoye</td>
+          <td>193m</td>
+          <td class="coord">(0.72, 0.7385)</td>
+          <td class="src">W+T</td>
+          <td class="colors">gray:25, other:7</td>
+        </tr>
+        <tr>
+          <td class="rank">3</td>
+          <td class="tier-A">A</td>
+          <td class="count">21</td>
+          <td class="city">Pochinki</td>
+          <td>800m</td>
+          <td class="coord">(0.5293, 0.5483)</td>
+          <td class="src">W+T</td>
+          <td class="colors">yellow:19, red:2</td>
+        </tr>
+        <tr>
+          <td class="rank">4</td>
+          <td class="tier-A">A</td>
+          <td class="count">20</td>
+          <td class="city">Pochinki</td>
+          <td>158m</td>
+          <td class="coord">(0.4589, 0.5079)</td>
+          <td class="src">W+T</td>
+          <td class="colors">red:11, blue:3, other:2</td>
+        </tr>
+        <tr>
+          <td class="rank">5</td>
+          <td class="tier-A">A</td>
+          <td class="count">20</td>
+          <td class="city">Pochinki</td>
+          <td>729m</td>
+          <td class="coord">(0.4658, 0.5819)</td>
+          <td class="src">W+T</td>
+          <td class="colors">orange:17, yellow:3</td>
+        </tr>
+        <tr>
+          <td class="rank">6</td>
+          <td class="tier-A">A</td>
+          <td class="count">19</td>
+          <td class="city">Pochinki</td>
+          <td>924m</td>
+          <td class="coord">(0.4497, 0.6084)</td>
+          <td class="src">W+T</td>
+          <td class="colors">orange:7, purple:5, gray:4</td>
+        </tr>
+        <tr>
+          <td class="rank">7</td>
+          <td class="tier-A">A</td>
+          <td class="count">18</td>
+          <td class="city">Mylta</td>
+          <td>109m</td>
+          <td class="coord">(0.7389, 0.5891)</td>
+          <td class="src">W+T</td>
+          <td class="colors">yellow:13, red:3, gray:2</td>
+        </tr>
+        <tr>
+          <td class="rank">8</td>
+          <td class="tier-A">A</td>
+          <td class="count">18</td>
+          <td class="city">Pochinki</td>
+          <td>412m</td>
+          <td class="coord">(0.4528, 0.442)</td>
+          <td class="src">W+T</td>
+          <td class="colors">green:16, yellow:1, gray:1</td>
+        </tr>
+        <tr>
+          <td class="rank">9</td>
+          <td class="tier-A">A</td>
+          <td class="count">17</td>
+          <td class="city">Novorepnoye</td>
+          <td>161m</td>
+          <td class="coord">(0.7633, 0.7467)</td>
+          <td class="src">W+T</td>
+          <td class="colors">gray:13, other:4</td>
+        </tr>
+        <tr>
+          <td class="rank">10</td>
+          <td class="tier-A">A</td>
+          <td class="count">16</td>
+          <td class="city">Shelter</td>
+          <td>528m</td>
+          <td class="coord">(0.6967, 0.4171)</td>
+          <td class="src">W+T</td>
+          <td class="colors">purple:8, blue:6, red:2</td>
+        </tr>
+  </tbody>
+</table>
+<p style="color:#8b949e; font-size:12px">출처: W=weekly_test 영상, T=video1080 영상. W+T = 두 영상 모두 등장. 거리=27도시 anchor 기준.</p>
+
+<h2>전체 명당 시각화</h2>
+<img src="2026-05-24-pub34-myungdang-v3-v7combined.png" alt="명당 전체 시각화">
+<div class="caption">에란겔 베이스맵 + 27도시 anchor(녹색) + 명당 클러스터(등급별 색). 회색 점=raw 마커. 빨간/주황/노란/회색 원=S/A/B/C 등급.</div>
+
+<h2>어떻게 만들었나 — 파이프라인</h2>
+<div class="pipeline">
+[1] PUBG Esports 대회 영상 2개 다운로드 (총 535분)
+       ↓
+[2] 30초 간격 1070 frame 자동 추출
+       ↓
+[3] 각 frame "에란겔 매치 진행 중?" 자동 분류 (HSV 색조 분석)
+       ↓ (143 frame 통과)
+[4] SIFT keypoint 매칭 → 우리 베이스맵과 homography 변환
+       ↓ (23 frame 매칭 성공, reprojection error 1.6m)
+[5] YOLOv11 추론 — player marker / name_box / vehicle / airplane 검출
+    (학습 데이터: 합성 5000장. 사용자 라벨링 0건)
+       ↓
+[6] 박스 픽셀 좌표 → 게임 좌표 (gx, gy) 변환
+       ↓
+[7] 색 분류 (6 팀 색 + gray) + 가장 가까운 27도시 매핑
+       ↓
+[8] DBSCAN 클러스터링 (eps=100m, min_samples=5)
+       ↓
+[9] 마커 수 기반 S/A/B/C 등급 분류 → 명당 좌표 확정
+</div>
+
+<h2>왜 합성 데이터로 학습했나</h2>
+<p>실제 영상 frame에는 "정답(박스 좌표)"이 없어서 그대로는 학습 불가. 사람이 손으로 박스 5000장 그리면 약 300시간 노동. 비현실적.</p>
+<p>대신 우리가 코드로 가짜 marker를 그릴 때 좌표를 알고 있으므로 <b>정답 자동 생성</b>. 사용자 라벨링 0건으로 학습 시작 가능. 합성이 실제와 충분히 비슷하면 모델은 차이 모르고 학습 → 실제 영상 적용 시 작동.</p>
+
+<h3>학습 모델 성능 (합성 val 기준)</h3>
+<table>
+  <tr><th>metric</th><th>v1</th><th>v6 (gray 추가)</th><th>v7 (taego 추가)</th></tr>
+  <tr><td>precision</td><td>99.64%</td><td>99.69%</td><td>99.68%</td></tr>
+  <tr><td>recall</td><td>98.53%</td><td>98.86%</td><td>98.88%</td></tr>
+  <tr><td>mAP50</td><td>99.45%</td><td>99.46%</td><td>99.47%</td></tr>
+  <tr><td>mAP50-95</td><td>99.24%</td><td>99.30%</td><td>99.33%</td></tr>
+</table>
+
+<h2>한계 (정직히)</h2>
+<div class="warn">
+<ul>
+  <li><b>영상 2개만 분석</b> — Pochinki 등 특정 도시 자기장이 잡힌 매치에 bias. 영상 추가 시 데이터 다양성 ↑</li>
+  <li><b>에란겔만 작동</b> — 다른 맵(미라마/태이고/사녹) 매치는 skip. 다른 맵 베이스맵 + 27도시 anchor 별도 작업 필요</li>
+  <li><b>매치 분류 통과율 낮음</b> — 1070 frame 중 erangel 분류 통과 143 frame. classify_frame이 빡빡한 가능성</li>
+  <li><b>SIFT 매칭 통과율 더 낮음</b> — 143 erangel match 중 23 frame만 매칭 성공. 줌인 강한 frame 매칭 어려움</li>
+</ul>
+</div>
+
+<h2>다음 단계</h2>
+<div class="note">
+<ol>
+  <li><b>현재 결과 commit + PR</b> — 모델·코드·데이터·이 보고서 PUB-34 워크트리에 보존</li>
+  <li><b>에란겔 영상 추가 다운로드</b> (PGS, PGC 등) → 같은 파이프라인 적용으로 데이터 풍부화</li>
+  <li><b>매치 분류기 + SIFT 통과율 개선</b> — frame 손실 줄이면 마커 수 5~10배 가능</li>
+  <li><b>다른 맵 확장</b> — taego/miramar 베이스맵 + 27도시 anchor 수동 좌표 추출 (사용자 클릭 작업 1~2시간)</li>
+  <li><b>최종 명당 → PUB-33 시드</b> — `packages/shared/src/data/erangel-pro-positions.ts` 갱신</li>
+</ol>
+</div>
+
+<h2>핵심 산출물 위치</h2>
+<table>
+  <tr><th>파일</th><th>의미</th></tr>
+  <tr><td><code>/tmp/pub34/yolo/runs/pub34_v7/weights/best.pt</code></td><td>학습된 모델 (6MB, 보관 필수)</td></tr>
+  <tr><td><code>2026-05-24-pub34-myungdang-v3-v7combined.json</code></td><td>명당 클러스터 좌표 데이터</td></tr>
+  <tr><td><code>2026-05-24-pub34-myungdang-v3-v7combined.png</code></td><td>전체 명당 지도 시각화</td></tr>
+  <tr><td><code>docs/projects/2026-05-23-pub34-yolo-pipeline.md</code></td><td>전체 파이프라인 진행 문서</td></tr>
+  <tr><td><code>docs/resources/solutions/architecture-patterns/2026-05-23-pub34-classical-cv-detection-failure.md</code></td><td>2주 시도 회고 + 교훈</td></tr>
+</table>
+
+</div>
+</body>
+</html>

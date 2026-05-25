@@ -1,0 +1,393 @@
+{
+  "sources": [
+    "/tmp/pub34/yolo/full_results_weekly_v8zone.json",
+    "/tmp/pub34/yolo/full_results_1080_v8zone.json"
+  ],
+  "n_raw_markers": 293,
+  "dbscan": {
+    "eps": 0.004,
+    "min_samples": 3,
+    "note": "building-level, in-zone only"
+  },
+  "clusters": [
+    {
+      "id": 3,
+      "gx": 0.4661,
+      "gy": 0.5818,
+      "count": 16,
+      "city": "Pochinki",
+      "dist_m": 728.4,
+      "colors": {
+        "orange": 15,
+        "yellow": 1
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 460.7,
+      "tier": "S"
+    },
+    {
+      "id": 1,
+      "gx": 0.4527,
+      "gy": 0.44175,
+      "count": 14,
+      "city": "Pochinki",
+      "dist_m": 413.5,
+      "colors": {
+        "green": 13,
+        "yellow": 1
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 46.3,
+      "tier": "S"
+    },
+    {
+      "id": 2,
+      "gx": 0.42355,
+      "gy": 0.48125,
+      "count": 14,
+      "city": "Pochinki",
+      "dist_m": 202.7,
+      "colors": {
+        "other": 1,
+        "red": 13
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 228.2,
+      "tier": "S"
+    },
+    {
+      "id": 4,
+      "gx": 0.44255,
+      "gy": 0.48515,
+      "count": 12,
+      "city": "Pochinki",
+      "dist_m": 68.6,
+      "colors": {
+        "yellow": 2,
+        "red": 10
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 173.4,
+      "tier": "S"
+    },
+    {
+      "id": 0,
+      "gx": 0.56695,
+      "gy": 0.518,
+      "count": 10,
+      "city": "Farm",
+      "dist_m": 781.0,
+      "colors": {
+        "yellow": 3,
+        "blue": 7
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 195.4,
+      "tier": "A"
+    },
+    {
+      "id": 9,
+      "gx": 0.528,
+      "gy": 0.5473,
+      "count": 9,
+      "city": "Pochinki",
+      "dist_m": 786.8,
+      "colors": {
+        "yellow": 9
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 87.0,
+      "tier": "A"
+    },
+    {
+      "id": 12,
+      "gx": 0.3978,
+      "gy": 0.4873,
+      "count": 8,
+      "city": "Pochinki",
+      "dist_m": 388.3,
+      "colors": {
+        "red": 8
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 358.1,
+      "tier": "A"
+    },
+    {
+      "id": 14,
+      "gx": 0.5783,
+      "gy": 0.4939,
+      "count": 5,
+      "city": "Farm",
+      "dist_m": 805.8,
+      "colors": {
+        "blue": 5
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 338.4,
+      "tier": "B"
+    },
+    {
+      "id": 16,
+      "gx": 0.4294,
+      "gy": 0.6357,
+      "count": 5,
+      "city": "Ferry",
+      "dist_m": 858.3,
+      "colors": {
+        "gray": 1,
+        "purple": 4
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 828.7,
+      "tier": "B"
+    },
+    {
+      "id": 18,
+      "gx": 0.5061,
+      "gy": 0.5878,
+      "count": 5,
+      "city": "Pochinki",
+      "dist_m": 898.0,
+      "colors": {
+        "yellow": 5
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 324.2,
+      "tier": "B"
+    },
+    {
+      "id": 5,
+      "gx": 0.3849,
+      "gy": 0.43635,
+      "count": 4,
+      "city": "Ruins",
+      "dist_m": 197.5,
+      "colors": {
+        "green": 4
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 206.9,
+      "tier": "B"
+    },
+    {
+      "id": 7,
+      "gx": 0.3612,
+      "gy": 0.54545,
+      "count": 4,
+      "city": "Pochinki",
+      "dist_m": 797.7,
+      "colors": {
+        "orange": 4
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 737.7,
+      "tier": "B"
+    },
+    {
+      "id": 8,
+      "gx": 0.4531,
+      "gy": 0.50735,
+      "count": 4,
+      "city": "Pochinki",
+      "dist_m": 128.1,
+      "colors": {
+        "red": 4
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 216.5,
+      "tier": "B"
+    },
+    {
+      "id": 11,
+      "gx": 0.447,
+      "gy": 0.7433,
+      "count": 4,
+      "city": "SosnovkaIsl",
+      "dist_m": 858.6,
+      "colors": {
+        "red": 4
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 1182.7,
+      "tier": "B"
+    },
+    {
+      "id": 15,
+      "gx": 0.5194,
+      "gy": 0.61455,
+      "count": 4,
+      "city": "SosnovkaIsl",
+      "dist_m": 1002.6,
+      "colors": {
+        "yellow": 4
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 378.0,
+      "tier": "B"
+    },
+    {
+      "id": 6,
+      "gx": 0.4531,
+      "gy": 0.6137,
+      "count": 3,
+      "city": "Pochinki",
+      "dist_m": 967.3,
+      "colors": {
+        "orange": 1,
+        "gray": 1,
+        "purple": 1
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 641.6,
+      "tier": "C"
+    },
+    {
+      "id": 10,
+      "gx": 0.447,
+      "gy": 0.5076,
+      "count": 3,
+      "city": "Pochinki",
+      "dist_m": 117.1,
+      "colors": {
+        "red": 3
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 243.9,
+      "tier": "C"
+    },
+    {
+      "id": 13,
+      "gx": 0.6071,
+      "gy": 0.5083,
+      "count": 3,
+      "city": "Farm",
+      "dist_m": 557.8,
+      "colors": {
+        "blue": 3
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 396.7,
+      "tier": "C"
+    },
+    {
+      "id": 17,
+      "gx": 0.2901,
+      "gy": 0.5126,
+      "count": 3,
+      "city": "Gatka",
+      "dist_m": 324.2,
+      "colors": {
+        "gray": 3
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 893.4,
+      "tier": "C"
+    },
+    {
+      "id": 19,
+      "gx": 0.4477,
+      "gy": 0.6014,
+      "count": 3,
+      "city": "Pochinki",
+      "dist_m": 867.3,
+      "colors": {
+        "purple": 3
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 609.8,
+      "tier": "C"
+    },
+    {
+      "id": 20,
+      "gx": 0.54,
+      "gy": 0.6066,
+      "count": 3,
+      "city": "Farm",
+      "dist_m": 1006.2,
+      "colors": {
+        "yellow": 3
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 266.4,
+      "tier": "C"
+    },
+    {
+      "id": 21,
+      "gx": 0.3885,
+      "gy": 0.5554,
+      "count": 3,
+      "city": "Pochinki",
+      "dist_m": 678.8,
+      "colors": {
+        "orange": 2,
+        "gray": 1
+      },
+      "sources": [
+        "full_results_weekly_v8zone"
+      ],
+      "spread_m": 668.3,
+      "tier": "C"
+    },
+    {
+      "id": 22,
+      "gx": 0.783,
+      "gy": 0.2416,
+      "count": 3,
+      "city": "Kameshki",
+      "dist_m": 887.6,
+      "colors": {
+        "gray": 1,
+        "purple": 1,
+        "blue": 1
+      },
+      "sources": [
+        "full_results_1080_v8zone"
+      ],
+      "spread_m": 2168.3,
+      "tier": "C"
+    }
+  ]
+}
