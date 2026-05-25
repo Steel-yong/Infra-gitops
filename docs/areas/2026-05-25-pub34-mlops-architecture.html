@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUB-34 MLOps 아키텍처 — 현재(로컬) → 미래(인프라)</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--accent:#58a6ff;--good:#3fb950;--warn:#d29922;--harbor:#60a5fa;--argo:#f59e0b;--k8s:#326ce5}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",sans-serif;line-height:1.6;padding:28px 20px;max-width:1100px;margin:0 auto}
+  h1{font-size:25px}h2{font-size:19px;color:var(--accent);margin:30px 0 12px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:22px}
+  .flow{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+  .stage{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative}
+  .stage .n{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:var(--accent);color:#000;border-radius:50%;font-weight:700;margin-right:8px;font-size:13px}
+  .stage h3{display:inline;font-size:15px}
+  .stage .body{margin-top:8px;font-size:13.5px;color:var(--dim)}
+  .tools{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+  .tool{font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:12px}
+  .t-harbor{background:rgba(96,165,250,.18);color:var(--harbor)}
+  .t-argo{background:rgba(245,158,11,.18);color:var(--argo)}
+  .t-k8s{background:rgba(50,108,229,.22);color:#6f9bff}
+  .t-store{background:rgba(63,185,80,.16);color:var(--good)}
+  .t-mon{background:rgba(210,153,34,.18);color:var(--warn)}
+  .t-new{background:rgba(248,81,73,.16);color:#f85149}
+  .arrow{text-align:center;color:var(--dim);font-size:18px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px}
+  .card.now{border-left:4px solid var(--dim)}
+  .card.fut{border-left:4px solid var(--good)}
+  .card h3{font-size:15px;margin-bottom:10px}
+  code{background:var(--panel2);padding:1px 6px;border-radius:4px;color:#ffa657;font-size:12.5px}
+  ul{margin:6px 0 6px 18px;font-size:13.5px}li{margin:3px 0}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--dim);font-size:11px;text-transform:uppercase}
+  .legend{font-size:12px;color:var(--dim);margin-top:6px}
+  .note{font-size:13px;color:var(--dim);margin-top:10px}
+</style>
+</head>
+<body>
+<h1>🔧 PUB-34 MLOps 아키텍처</h1>
+<p class="sub">2026-05-25 · 지금(로컬 수동) → MLOps(인프라 자동) 전환 그림 · 인프라 학습용</p>
+
+<h2>지금 vs MLOps — 한눈에</h2>
+<div class="cols">
+  <div class="card now">
+    <h3>🖥️ 지금 (로컬 연구 단계)</h3>
+    <ul>
+      <li>WSL 로컬 <code>/tmp/pub34/yolo/</code></li>
+      <li><code>python3 full_pipeline.py</code> 수동 실행</li>
+      <li>학습: 로컬 GPU 한 번 → <code>best.pt</code> 파일</li>
+      <li>영상 분석: <code>chain.sh</code> bash 루프</li>
+      <li>결과: 로컬 JSON 파일</li>
+      <li>모니터링: 사람이 직접 png 확인</li>
+    </ul>
+    <p class="legend">→ 빠르고 간단. 일회성 실험엔 충분. 자동화·재현성·협업은 약함.</p>
+  </div>
+  <div class="card fut">
+    <h3>☸️ MLOps (인프라 단계)</h3>
+    <ul>
+      <li>K8s 클러스터 위에서 모든 단계 자동</li>
+      <li>학습/분석 = K8s Job (GPU 노드)</li>
+      <li>모델 = Harbor에 버전별 보관</li>
+      <li>배포 = ArgoCD GitOps 자동</li>
+      <li>결과 = PostgreSQL + 객체스토리지</li>
+      <li>모니터링 = Grafana 대시보드</li>
+    </ul>
+    <p class="legend">→ 자동·재현가능·협업·재학습. 데이터 쌓일수록 진가.</p>
+  </div>
+</div>
+
+<h2>MLOps 파이프라인 6단계 (우리 인프라 매핑)</h2>
+<div class="flow">
+  <div class="stage">
+    <span class="n">1</span><h3>데이터 (Data)</h3>
+    <div class="body">합성 데이터 생성(<code>synth_gen.py</code>) + 영상 수집(yt-dlp). 데이터셋을 버전으로 관리해 "어떤 데이터로 학습했는지" 추적.</div>
+    <div class="tools"><span class="tool t-store">Longhorn (PVC)</span><span class="tool t-new">DVC (신규)</span><span class="tool t-harbor">Vault (쿠키·키)</span></div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="stage">
+    <span class="n">2</span><h3>학습 (Training)</h3>
+    <div class="body">GPU 노드에서 YOLO fine-tune을 K8s Job으로 실행. 하이퍼파라미터·정확도(mAP)를 실험마다 자동 기록 → 어떤 설정이 좋았는지 비교.</div>
+    <div class="tools"><span class="tool t-k8s">K8s Job (GPU)</span><span class="tool t-new">MLflow / W&B (실험추적)</span></div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="stage">
+    <span class="n">3</span><h3>모델 레지스트리 (Registry)</h3>
+    <div class="body"><code>best.pt</code>를 버전(v7, v8...)으로 보관. "이 모델은 이 데이터로, 이 정확도" 메타데이터와 함께. 롤백 가능.</div>
+    <div class="tools"><span class="tool t-harbor">Harbor (OCI artifact)</span><span class="tool t-new">MLflow Registry</span></div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="stage">
+    <span class="n">4</span><h3>배포 / 서빙 (Serving)</h3>
+    <div class="body">best.pt를 추론 API로 띄움. 영상 프레임 보내면 마커 좌표 반환. <code>capture-service</code>가 이걸 호출해 실시간 분석.</div>
+    <div class="tools"><span class="tool t-argo">ArgoCD (GitOps 배포)</span><span class="tool t-k8s">KServe / NestJS+ONNX</span><span class="tool t-harbor">Envoy Gateway</span></div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="stage">
+    <span class="n">5</span><h3>모니터링 (Monitoring)</h3>
+    <div class="body">검출률·정확도·추론 지연을 실시간 추적. 영상 스타일 바뀌어 정확도 떨어지면(=drift) 알림.</div>
+    <div class="tools"><span class="tool t-mon">Grafana + Prometheus</span></div>
+  </div>
+  <div class="arrow">↓ (drift 감지 시)</div>
+  <div class="stage">
+    <span class="n">6</span><h3>재학습 (Retraining)</h3>
+    <div class="body">새 영상/데이터가 쌓이거나 정확도 하락 시 ①~③을 자동 재실행. 사람 개입 없이 모델이 스스로 갱신.</div>
+    <div class="tools"><span class="tool t-new">Argo Workflows / Kubeflow Pipelines</span></div>
+  </div>
+</div>
+
+<h2>너희 인프라는 이미 MLOps 기반을 갖췄다</h2>
+<table>
+  <tr><th>MLOps 요소</th><th>이미 있음</th><th>추가 필요</th></tr>
+  <tr><td>모델/이미지 저장</td><td>✅ Harbor</td><td>—</td></tr>
+  <tr><td>배포 자동화</td><td>✅ ArgoCD (GitOps)</td><td>—</td></tr>
+  <tr><td>실행 환경</td><td>✅ K8s (Master+Worker2)</td><td>GPU 노드 라벨링</td></tr>
+  <tr><td>스토리지</td><td>✅ Longhorn</td><td>—</td></tr>
+  <tr><td>네트워크/게이트웨이</td><td>✅ Envoy + Cilium</td><td>—</td></tr>
+  <tr><td>시크릿</td><td>✅ Vault + ESO</td><td>—</td></tr>
+  <tr><td>모니터링</td><td>✅ Grafana</td><td>ML 메트릭 추가</td></tr>
+  <tr><td><b>학습 오케스트레이션</b></td><td>❌</td><td><b>Argo Workflows / Kubeflow</b></td></tr>
+  <tr><td><b>실험 추적</b></td><td>❌</td><td><b>MLflow / W&B</b></td></tr>
+  <tr><td><b>데이터 버전관리</b></td><td>❌</td><td><b>DVC</b></td></tr>
+</table>
+<p class="note">즉 인프라 뼈대는 거의 완성. <b>MLflow(실험추적) + Argo Workflows(파이프라인) + DVC(데이터버전)</b> 3개만 얹으면 PUB-34가 완전한 MLOps 사이클로 돈다.</p>
+
+<h2>현실적 전환 순서</h2>
+<ul>
+  <li><b>지금</b>: 로컬에서 best.pt·명당 데이터 충분히 뽑기 (연구 — 데이터/정확도가 먼저)</li>
+  <li><b>1단계</b>: full_pipeline을 도커 이미지로 → Harbor 푸시 → K8s Job으로 배치 분석 (로컬 수동 → 클러스터)</li>
+  <li><b>2단계</b>: 학습도 K8s Job + MLflow로 (실험 추적 시작)</li>
+  <li><b>3단계</b>: best.pt 서빙(KServe) + capture-service 연동 (실시간 웹서비스)</li>
+  <li><b>4단계</b>: Argo Workflows로 데이터→학습→배포 자동 사이클 (완전 MLOps)</li>
+</ul>
+<p class="note">핵심 원칙: <b>"모델·데이터가 안정되기 전엔 인프라부터 만들지 않는다."</b> 지금은 검출 정확도(이름박스·고해상도)부터 잡는 게 맞고, MLOps는 그게 검증된 뒤 얹는 거야.</p>
+</body>
+</html>
