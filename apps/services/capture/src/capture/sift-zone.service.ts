@@ -5,7 +5,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { join } from 'path';
 import sharp from 'sharp';
-import cv from '@techstark/opencv-js';
+import cv, { type CvMat, type CvKeyPointVector, type CvAkaze, type OpenCv } from '@techstark/opencv-js';
 import type { CircleData } from '@pubg-helper/shared';
 
 /** PUBG 페이즈별 자기장 반경 (circle.service와 동일). */
@@ -13,21 +13,20 @@ const PUBG_PHASE_RADII = [0.24474, 0.13461, 0.07403, 0.04072, 0.02036, 0.01018, 
 const MAPN = 1200; // 기준맵 해상도
 const FRAME_MAX = 1280; // 프레임 분석 해상도 (긴 변)
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type CV = any;
 type MapName = 'erangel' | 'taego';
 
+// opencv 타입은 src/types/techstark-opencv-js.d.ts 의 declare module에서 제공된다.
 interface RefDesc {
   name: MapName;
-  kp: CV; // KeyPointVector
-  des: CV; // Mat
+  kp: CvKeyPointVector;
+  des: CvMat;
 }
 
 @Injectable()
 export class SiftZoneService {
   private readonly logger = new Logger(SiftZoneService.name);
   private readyPromise: Promise<void> | null = null;
-  private akaze: CV = null;
+  private akaze!: CvAkaze;
   private refs: RefDesc[] = [];
 
   /** opencv WASM 준비 + 기준맵 디스크립터 사전계산 (최초 1회). */
@@ -35,11 +34,11 @@ export class SiftZoneService {
     if (this.readyPromise) return this.readyPromise;
     this.readyPromise = (async () => {
       await new Promise<void>((resolve) => {
-        const c = cv as CV;
+        const c = cv;
         if (c.Mat) resolve();
         else c.onRuntimeInitialized = () => resolve();
       });
-      const c = cv as CV;
+      const c = cv;
       this.akaze = new c.AKAZE();
       for (const name of ['erangel', 'taego'] as MapName[]) {
         const path = join(__dirname, '..', '..', 'assets', 'maps', `${name}.jpg`);
@@ -58,13 +57,13 @@ export class SiftZoneService {
   }
 
   /** 파일 → 그레이스케일 cv.Mat (CV_8UC1). */
-  private async grayMatFromFile(path: string, w: number, h: number): Promise<CV> {
+  private async grayMatFromFile(path: string, w: number, h: number): Promise<CvMat> {
     const { data } = await sharp(path)
       .resize(w, h, { fit: 'fill' })
       .grayscale()
       .raw()
       .toBuffer({ resolveWithObject: true });
-    return (cv as CV).matFromArray(h, w, (cv as CV).CV_8UC1, data);
+    return cv.matFromArray(h, w, cv.CV_8UC1, data);
   }
 
   /**
@@ -73,7 +72,7 @@ export class SiftZoneService {
    */
   async detectZone(base64: string, hintPhase?: number): Promise<CircleData | null> {
     await this.ensureReady();
-    const c = cv as CV;
+    const c = cv;
     const buf = Buffer.from(base64, 'base64');
 
     // 분석 해상도로 축소 (긴 변 FRAME_MAX), 그레이 + 컬러 둘 다 확보.
@@ -95,7 +94,7 @@ export class SiftZoneService {
     this.akaze.detectAndCompute(frameMat, noMask, kpF, desF);
     noMask.delete();
 
-    let best: { name: MapName; H: CV; inliers: number } | null = null;
+    let best: { name: MapName; H: CvMat; inliers: number } | null = null;
     try {
       for (const ref of this.refs) {
         const matcher = new c.BFMatcher(c.NORM_HAMMING);
@@ -173,7 +172,7 @@ export class SiftZoneService {
   }
 
   /** 호 픽셀을 호모그래피로 게임좌표(0~1)로 변환 후 RANSAC 원 피팅 → 페이즈 매칭. */
-  private fitZone(arc: Array<[number, number]>, H: CV, c: CV, hintPhase?: number): CircleData | null {
+  private fitZone(arc: Array<[number, number]>, H: CvMat, c: OpenCv, hintPhase?: number): CircleData | null {
     const flat: number[] = [];
     for (const [x, y] of arc) flat.push(x, y);
     const srcMat = c.matFromArray(arc.length, 1, c.CV_32FC2, flat);
