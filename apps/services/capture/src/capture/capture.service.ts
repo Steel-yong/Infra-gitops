@@ -12,6 +12,10 @@ import { SiftZoneService } from './sift-zone.service';
 // 디버그: 첫 frame 저장 (capture가 실제로 받는 데이터 확인용)
 let debugFrameSaved = false;
 
+// SIFT-zone(줌) 폴백 게이트 — opencv WASM+AKAZE 매칭이 무거워, 전체맵 미검출 프레임마다 돌면 캡처가 느려진다.
+// 줌 자기장(PUB-39)이 완성될 때까지 기본 비활성. 활성하려면 SIFT_ZONE_ENABLED=true.
+const SIFT_ZONE_ENABLED = process.env.SIFT_ZONE_ENABLED === 'true';
+
 @Injectable()
 export class CaptureService {
   private readonly logger = new Logger(CaptureService.name);
@@ -59,7 +63,7 @@ export class CaptureService {
     // 2) 전체맵이 아예 안 잡힘(=줌인 상태 추정)일 때만 SIFT-zone 폴백.
     //    전체맵이 잡혔는데 circle.service가 일시 실패한 경우엔 SIFT를 돌리지 않는다.
     //    (전체맵에서 SIFT는 지명·마커의 흰 픽셀을 자기장으로 오인해 약한 매칭으로 가짜 원을 만든다.)
-    if (!circle && !mapArea) {
+    if (!circle && !mapArea && SIFT_ZONE_ENABLED) {
       this.logger.debug('전체맵 미검출(줌인 추정) → SIFT-zone 폴백 시도');
       try {
         circle = await this.siftZone.detectZone(base64, hintPhase);
