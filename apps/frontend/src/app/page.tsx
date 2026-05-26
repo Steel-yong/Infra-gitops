@@ -14,6 +14,7 @@ import { useOcrTimer } from '../hooks/useOcrTimer';
 import { useAlertTimer } from '../hooks/useAlertTimer';
 import { useLockedCircle } from '../hooks/useLockedCircle';
 import { playAlarmBeep } from '../hooks/playAlarmBeep';
+import { useGameEndDetect } from '../hooks/useGameEndDetect';
 import { LocationPanel } from '../components/LocationPanel';
 import { TimerPanel } from '../components/TimerPanel';
 import styles from './page.module.css';
@@ -51,6 +52,10 @@ export default function Page() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const ocrTimer = useOcrTimer(videoRef.current, isCapturing);
 
+  // 게임 종료(치킨/죽음) 감지 — 종료 시 알람 억제 + 자기장 락 해제(UI 초기화).
+  const gameEnd = useGameEndDetect(videoRef.current, isCapturing);
+  const gameEndedRef = useRef(false);
+
   // 위치 락: 한 번 잡으면 고정. 잘못 잡히면 사용자가 "다시 잡기" 버튼으로 unlock.
   const { circle: lockedCircle, unlock: unlockCircle } = useLockedCircle(circleData);
 
@@ -67,6 +72,8 @@ export default function Page() {
     thresholds: alertEnabled,
     leadSeconds: CAPTURE_LAG_LEAD_SECONDS,
     onAlert: (seconds) => {
+      // 게임 종료(치킨/죽음) 상태면 알람 억제
+      if (gameEndedRef.current) return;
       // 비프음은 권한 무관 (탭이 활성화돼 있으면 들림)
       playAlarmBeep();
       // 브라우저 알림은 권한 허용 시
@@ -97,6 +104,17 @@ export default function Page() {
   useEffect(() => {
     setCurrentPhase(ocrTimer.currentPhase);
   }, [ocrTimer.currentPhase, setCurrentPhase]);
+
+  // 게임 종료(치킨/죽음) 감지 → 알람 억제 + 자기장 락 해제(추천·마커 자동 초기화).
+  // 일반 화면 복귀 시 재무장(다음 판). unlockCircle은 idempotent.
+  useEffect(() => {
+    if (gameEnd) {
+      gameEndedRef.current = true;
+      unlockCircle();
+    } else {
+      gameEndedRef.current = false;
+    }
+  }, [gameEnd, unlockCircle]);
 
   return (
     <main className={styles.root}>
