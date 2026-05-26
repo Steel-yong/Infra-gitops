@@ -85,6 +85,11 @@ export default function Page() {
     setParentCircle(lockedCircle);
   }, [lockedCircle, setParentCircle]);
 
+  // 맵 전환 시 자기장 락 해제 — 이전 맵 자기장이 새 맵에 남지 않게.
+  useEffect(() => {
+    unlockCircle();
+  }, [mapType, unlockCircle]);
+
   // 명당(정적 JSON). 자기장이 잡히면 그 안의 명당만 표시(MyungdangMarkers에서 필터).
   const myungdang = useMyungdang(mapType);
 
