@@ -116,17 +116,6 @@ export default function Page() {
     setCurrentPhase(ocrTimer.currentPhase);
   }, [ocrTimer.currentPhase, setCurrentPhase]);
 
-  // 명당 등급별 개수 (자기장 잡히면 그 안만 카운트).
-  const myungdangCounts: Record<MyungdangTier, number> = { S: 0, A: 0, B: 0, C: 0 };
-  for (const p of myungdang) {
-    if (lockedCircle) {
-      const dx = p.gx - lockedCircle.x;
-      const dy = p.gy - lockedCircle.y;
-      if (dx * dx + dy * dy > lockedCircle.r * lockedCircle.r) continue;
-    }
-    myungdangCounts[p.tier] += 1;
-  }
-
   // 자기장 잡히면: 중심에 가까운 명당 상위 N개를 강조 (우측 패널 거리순 + 마커 흰 테두리).
   const RANK_N = 10;
   let rankedMyungdang: { tier: MyungdangTier; distPct: number }[] = [];
@@ -363,12 +352,7 @@ export default function Page() {
             <p className={styles.sideSectionLabel}>추천</p>
           </div>
           <div className={styles.sideSection} style={{ flex: 1, overflowY: 'auto' }}>
-            <MyungdangPanel
-              counts={myungdangCounts}
-              visibleTiers={visibleTiers}
-              zoneActive={!!lockedCircle}
-              ranked={rankedMyungdang}
-            />
+            <MyungdangPanel zoneActive={!!lockedCircle} ranked={rankedMyungdang} />
           </div>
         </aside>
       </div>

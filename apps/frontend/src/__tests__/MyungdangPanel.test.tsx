@@ -1,40 +1,22 @@
-// MyungdangPanel 테스트 — 등급별 개수·합계·자기장 라벨·꺼진 등급 흐리게
+// MyungdangPanel 테스트 — 자기장 유무에 따른 안내/추천 목록
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MyungdangPanel } from '../components/MyungdangPanel';
 
-const counts = { S: 14, A: 43, B: 109, C: 571 };
-const ALL = { S: true, A: true, B: true, C: true };
-
 describe('MyungdangPanel', () => {
-  it('등급별 개수를 표시한다', () => {
-    render(<MyungdangPanel counts={counts} visibleTiers={ALL} zoneActive={false} />);
-    expect(screen.getByText('14')).toBeInTheDocument();
-    expect(screen.getByText('571')).toBeInTheDocument();
+  it('자기장 없으면 안내 문구를 표시한다 (등급 개수 없음)', () => {
+    render(<MyungdangPanel zoneActive={false} />);
+    expect(screen.getByText(/자기장이 감지되면 추천/)).toBeInTheDocument();
   });
 
-  it('zone 없으면 "전체 명당 · 737곳"을 표시한다', () => {
-    render(<MyungdangPanel counts={counts} visibleTiers={ALL} zoneActive={false} />);
-    expect(screen.getByText(/전체 명당/)).toBeInTheDocument();
-    expect(screen.getByText(/737곳/)).toBeInTheDocument();
+  it('자기장 있지만 원 안 명당이 없으면 빈 안내를 표시한다', () => {
+    render(<MyungdangPanel zoneActive={true} ranked={[]} />);
+    expect(screen.getByText(/추천할 명당이 없습니다/)).toBeInTheDocument();
   });
 
-  it('zoneActive면 "자기장 내부 명당" 라벨을 표시한다', () => {
-    render(<MyungdangPanel counts={counts} visibleTiers={ALL} zoneActive={true} />);
-    expect(screen.getByText(/자기장 내부 명당/)).toBeInTheDocument();
-  });
-
-  it('꺼진 등급은 흐리게(opacity 0.35) 표시한다', () => {
-    render(<MyungdangPanel counts={counts} visibleTiers={{ ...ALL, C: false }} zoneActive={false} />);
-    const cItem = document.querySelector('[data-tier="C"]') as HTMLElement;
-    expect(cItem.style.opacity).toBe('0.35');
-  });
-
-  it('zoneActive + ranked면 중심거리순 추천 목록을 표시한다', () => {
+  it('자기장 + ranked면 중심거리순 추천 목록을 표시한다', () => {
     render(
       <MyungdangPanel
-        counts={counts}
-        visibleTiers={ALL}
         zoneActive={true}
         ranked={[
           { tier: 'S', distPct: 5 },

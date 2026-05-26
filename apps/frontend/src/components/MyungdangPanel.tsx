@@ -1,8 +1,6 @@
-// 명당 우측 패널 — 자기장 잡히면 중심거리순 추천 목록, 아니면 등급 범례·개수
+// 명당 추천 패널 — 자기장 잡히면 중심거리순 추천 목록, 없으면 짧은 안내만
 
 import { TIER_COLOR, type MyungdangTier } from '../hooks/useMyungdang';
-
-const TIER_ORDER: MyungdangTier[] = ['S', 'A', 'B', 'C'];
 
 /** 자기장 내부 명당 1개의 순위 표시용 — 중심거리(%) 포함. */
 export interface RankedMyungdang {
@@ -12,15 +10,13 @@ export interface RankedMyungdang {
 }
 
 interface MyungdangPanelProps {
-  /** 등급별 개수 (자기장 필터 적용 후 보이는 수). */
-  counts: Record<MyungdangTier, number>;
-  /** 등급별 표시 여부 — 꺼진 등급은 흐리게. */
-  visibleTiers: Record<MyungdangTier, boolean>;
-  /** 자기장 필터가 걸려 있는지. */
+  /** 자기장이 잡혀 있는지. */
   zoneActive: boolean;
-  /** 자기장 잡혔을 때 중심거리순 추천 목록 (마커에 흰 테두리로 강조된 것들). */
+  /** 자기장 중심거리순 추천 목록 (마커에 흰 테두리로 강조된 것들). */
   ranked?: RankedMyungdang[];
 }
+
+const hintStyle = { fontSize: '0.8rem', color: '#8b949e', lineHeight: 1.6, margin: 0 } as const;
 
 const dot = (tier: MyungdangTier) => ({
   width: 14,
@@ -32,53 +28,31 @@ const dot = (tier: MyungdangTier) => ({
 
 /**
  * 자기장이 잡히고 추천 목록이 있으면 "중심에서 가까운 순" 리스트(이름 없으니 거리 기준)를 보여준다.
- * 그 외에는 등급 범례·개수. 꺼진 등급은 흐리게.
+ * 자기장이 없거나 원 안 명당이 없으면 안내 문구만 (등급 개수 표시는 두지 않는다).
  */
-export function MyungdangPanel({ counts, visibleTiers, zoneActive, ranked }: MyungdangPanelProps) {
-  if (zoneActive && ranked && ranked.length > 0) {
-    return (
-      <div aria-label="자기장 내부 추천 명당">
-        <p style={{ fontSize: '0.8rem', color: '#8b949e', margin: '0 0 10px' }}>
-          자기장 중심에서 가까운 순 · {ranked.length}곳
-        </p>
-        <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {ranked.map((r, i) => (
-            <li
-              key={i}
-              data-tier={r.tier}
-              style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-            >
-              <span style={{ width: 18, color: '#8b949e', fontWeight: 700 }}>{i + 1}</span>
-              <span aria-hidden style={dot(r.tier)} />
-              <span style={{ fontWeight: 700, width: 16 }}>{r.tier}</span>
-              <span style={{ color: '#8b949e', fontSize: '0.8rem', flex: 1 }}>중심거리</span>
-              <span style={{ fontWeight: 600 }}>{r.distPct}%</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    );
+export function MyungdangPanel({ zoneActive, ranked }: MyungdangPanelProps) {
+  if (!zoneActive) {
+    return <p style={hintStyle}>화면공유로 자기장이 감지되면 추천이 표시됩니다.</p>;
   }
-
-  const total = TIER_ORDER.reduce((sum, t) => sum + counts[t], 0);
+  if (!ranked || ranked.length === 0) {
+    return <p style={hintStyle}>이 자기장 안에 추천할 명당이 없습니다.</p>;
+  }
   return (
-    <div aria-label="명당 범례">
+    <div aria-label="자기장 내부 추천 명당">
       <p style={{ fontSize: '0.8rem', color: '#8b949e', margin: '0 0 10px' }}>
-        {zoneActive ? '자기장 내부 명당' : '전체 명당'} · {total}곳
+        자기장 중심에서 가까운 순 · {ranked.length}곳
       </p>
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {TIER_ORDER.map((tier) => (
-          <li
-            key={tier}
-            data-tier={tier}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: visibleTiers[tier] ? 1 : 0.35 }}
-          >
-            <span aria-hidden style={dot(tier)} />
-            <span style={{ fontWeight: 700, flex: 1 }}>{tier}</span>
-            <span style={{ fontWeight: 600 }}>{counts[tier]}</span>
+      <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {ranked.map((r, i) => (
+          <li key={i} data-tier={r.tier} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 18, color: '#8b949e', fontWeight: 700 }}>{i + 1}</span>
+            <span aria-hidden style={dot(r.tier)} />
+            <span style={{ fontWeight: 700, width: 16 }}>{r.tier}</span>
+            <span style={{ color: '#8b949e', fontSize: '0.8rem', flex: 1 }}>중심거리</span>
+            <span style={{ fontWeight: 600 }}>{r.distPct}%</span>
           </li>
         ))}
-      </ul>
+      </ol>
     </div>
   );
 }
