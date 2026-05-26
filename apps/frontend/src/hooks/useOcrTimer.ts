@@ -48,6 +48,20 @@ const INITIAL_STATE: OcrTimerState = {
   phaseRegion: null,
 };
 
+/** 동적 import 재시도 — next dev에서 청크 로드가 간헐적으로 실패(ChunkLoadError)하므로 몇 번 재시도. */
+async function importWithRetry<T>(load: () => Promise<T>, tries = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await load();
+    } catch (e) {
+      lastErr = e;
+      await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
 const OCR_REVERIFY_SECONDS = 3; // 락 후 3초마다 OCR 보정
 const OCR_DRIFT_TOLERANCE = 3; // 로컬 추정과 OCR 값이 3초 이상 차이나면 OCR로 재동기화
 // OCR 처리 지연은 매 호출마다 performance.now()로 실측해서 동적으로 차감 (환경 무관 sync).
@@ -91,7 +105,7 @@ export function useOcrTimer(
     (async () => {
       try {
         console.log('[OCR] Tesseract.js dynamic import...');
-        const { createWorker } = await import('tesseract.js');
+        const { createWorker } = await importWithRetry(() => import('tesseract.js'), 3);
         console.log('[OCR] createWorker 호출');
         worker = await createWorker('eng');
         console.log('[OCR] worker 생성 완료, 파라미터 설정');
