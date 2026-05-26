@@ -19,7 +19,8 @@
     "socket.io": "^4.7.5",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "@techstark/opencv-js": "4.12.0-release.1"
   },
   "devDependencies": {
     "@nestjs/testing": "^10.4.0",
