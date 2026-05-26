@@ -7,14 +7,14 @@ import type { MapType } from '@pubg-helper/shared';
 import { MAP_TYPES } from '@pubg-helper/shared';
 import { useCaptureSocket } from '../hooks/useCaptureSocket';
 import { useScreenCapture } from '../hooks/useScreenCapture';
-import { useLocations } from '../hooks/useLocations';
+import { useMyungdang, TIER_COLOR, type MyungdangTier } from '../hooks/useMyungdang';
 import { useStashLocations } from '../hooks/useStashLocations';
 import { useWebNotifications } from '../hooks/useWebNotifications';
 import { useOcrTimer } from '../hooks/useOcrTimer';
 import { useAlertTimer } from '../hooks/useAlertTimer';
 import { useLockedCircle } from '../hooks/useLockedCircle';
 import { playAlarmBeep } from '../hooks/playAlarmBeep';
-import { LocationPanel } from '../components/LocationPanel';
+import { MyungdangPanel } from '../components/MyungdangPanel';
 import { TimerPanel } from '../components/TimerPanel';
 import styles from './page.module.css';
 
@@ -26,8 +26,8 @@ const CircleOverlay = dynamic(
   () => import('../components/CircleOverlay').then((m) => ({ default: m.CircleOverlay })),
   { ssr: false },
 );
-const LocationMarkers = dynamic(
-  () => import('../components/LocationMarkers').then((m) => ({ default: m.LocationMarkers })),
+const MyungdangMarkers = dynamic(
+  () => import('../components/MyungdangMarkers').then((m) => ({ default: m.MyungdangMarkers })),
   { ssr: false },
 );
 const StashMarkers = dynamic(
@@ -39,6 +39,12 @@ export default function Page() {
   const [mapType, setMapType] = useState<MapType>('erangel');
   const [alertEnabled, setAlertEnabled] = useState<number[]>([30, 20, 10]);
   const [captureError, setCaptureError] = useState<string | null>(null);
+  const [visibleTiers, setVisibleTiers] = useState<Record<MyungdangTier, boolean>>({
+    S: true,
+    A: true,
+    B: true,
+    C: true,
+  });
 
   const { circleData, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle } = useCaptureSocket();
   const { isCapturing, stream, start, stop } = useScreenCapture({
@@ -59,8 +65,8 @@ export default function Page() {
     setParentCircle(lockedCircle);
   }, [lockedCircle, setParentCircle]);
 
-  // 위치 추천도 락된 원 기준으로 (락 안 됐으면 동작 안 함)
-  const { locations, error: locationError } = useLocations(lockedCircle, mapType);
+  // 명당(정적 JSON). 자기장이 잡히면 그 안의 명당만 표시(MyungdangMarkers에서 필터).
+  const myungdang = useMyungdang(mapType);
 
   // OCR 타이머 결과를 알림 훅에 전달 — 임계값(사용자 설정) + 1초 lead로 발송
   const { processState: processAlertState } = useAlertTimer({
@@ -97,6 +103,17 @@ export default function Page() {
   useEffect(() => {
     setCurrentPhase(ocrTimer.currentPhase);
   }, [ocrTimer.currentPhase, setCurrentPhase]);
+
+  // 명당 등급별 개수 (자기장 잡히면 그 안만 카운트).
+  const myungdangCounts: Record<MyungdangTier, number> = { S: 0, A: 0, B: 0, C: 0 };
+  for (const p of myungdang) {
+    if (lockedCircle) {
+      const dx = p.gx - lockedCircle.x;
+      const dy = p.gy - lockedCircle.y;
+      if (dx * dx + dy * dy > lockedCircle.r * lockedCircle.r) continue;
+    }
+    myungdangCounts[p.tier] += 1;
+  }
 
   return (
     <main className={styles.root}>
@@ -225,26 +242,65 @@ export default function Page() {
         <div className={styles.mapArea}>
           <div className={styles.mapAreaHeader}>
             <p className={styles.sideSectionLabel}>지도</p>
+            <div role="group" aria-label="명당 등급 표시" style={{ display: 'flex', gap: 6 }}>
+              {(['S', 'A', 'B', 'C'] as const).map((tier) => {
+                const on = visibleTiers[tier];
+                return (
+                  <button
+                    key={tier}
+                    type="button"
+                    onClick={() => setVisibleTiers((v) => ({ ...v, [tier]: !v[tier] }))}
+                    aria-pressed={on}
+                    aria-label={`${tier} 등급 표시`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: `2px solid ${TIER_COLOR[tier]}`,
+                      background: on ? 'rgba(255,255,255,0.06)' : 'transparent',
+                      color: '#e6edf3',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      opacity: on ? 1 : 0.4,
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        border: `2px solid ${TIER_COLOR[tier]}`,
+                      }}
+                    />
+                    {tier}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className={styles.mapAreaCanvas}>
             <MapCanvas mapType={mapType}>
               <StashMarkers stashes={stashes} />
               <CircleOverlay circleData={lockedCircle} />
-              <LocationMarkers locations={locations} />
+              <MyungdangMarkers points={myungdang} visibleTiers={visibleTiers} zone={lockedCircle} />
             </MapCanvas>
           </div>
         </div>
 
         {/* ── 오른쪽 사이드바: 위치 추천 ── */}
-        <aside className={styles.rightSidebar} aria-label="위치 추천 사이드바">
+        <aside className={styles.rightSidebar} aria-label="명당 사이드바">
           <div className={styles.sideSection}>
-            <p className={styles.sideSectionLabel}>추천 위치</p>
+            <p className={styles.sideSectionLabel}>명당</p>
           </div>
           <div className={styles.sideSection} style={{ flex: 1, overflowY: 'auto' }}>
-            <LocationPanel
-              locations={locations}
-              circleData={circleData}
-              error={locationError}
+            <MyungdangPanel
+              counts={myungdangCounts}
+              visibleTiers={visibleTiers}
+              zoneActive={!!lockedCircle}
             />
           </div>
         </aside>

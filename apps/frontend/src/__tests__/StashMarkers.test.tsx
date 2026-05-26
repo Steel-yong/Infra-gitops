@@ -61,7 +61,7 @@ describe('StashMarkers', () => {
     expect(screen.getAllByTestId('stash-marker')).toHaveLength(3);
   });
 
-  it('position은 [1-coordY, coordX] 순서다 (CircleOverlay·LocationMarkers와 좌표계 통일)', () => {
+  it('position은 [1-coordY, coordX] 순서다 (CircleOverlay·MyungdangMarkers와 좌표계 통일)', () => {
     render(<StashMarkers stashes={[makeStash({ coordX: 0.3, coordY: 0.7 })]} />);
     const marker = screen.getByTestId('stash-marker');
     expect(marker).toHaveAttribute('data-lat', String(1 - 0.7));

@@ -35,8 +35,9 @@ vi.mock('../hooks/useScreenCapture', () => ({
   useScreenCapture: vi.fn(() => ({ isCapturing: false, stream: null, start: vi.fn(), stop: vi.fn() })),
 }));
 
-vi.mock('../hooks/useLocations', () => ({
-  useLocations: vi.fn(() => ({ locations: [], loading: false, error: null })),
+vi.mock('../hooks/useMyungdang', () => ({
+  useMyungdang: vi.fn(() => []),
+  TIER_COLOR: { S: '#ff3b3b', A: '#ff9f1c', B: '#ffe600', C: '#4db8ff' },
 }));
 
 vi.mock('../hooks/useWebNotifications', () => ({
@@ -103,7 +104,7 @@ describe('Page', () => {
   it('좌·우 사이드바와 맵 영역이 렌더링된다', () => {
     render(<Page />);
     expect(screen.getByRole('complementary', { name: '설정 사이드바' })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: '위치 추천 사이드바' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: '명당 사이드바' })).toBeInTheDocument();
     expect(screen.getByTestId('map-canvas')).toBeInTheDocument();
   });
 
@@ -156,5 +157,13 @@ describe('Page', () => {
       capturedOnError?.('화면공유 실패');
     });
     expect(screen.getByText('화면공유 실패')).toBeInTheDocument();
+  });
+
+  it('S 등급 토글 버튼 클릭 시 aria-pressed가 false로 토글된다', () => {
+    render(<Page />);
+    const sBtn = screen.getByRole('button', { name: 'S 등급 표시' });
+    expect(sBtn).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(sBtn);
+    expect(sBtn).toHaveAttribute('aria-pressed', 'false');
   });
 });
