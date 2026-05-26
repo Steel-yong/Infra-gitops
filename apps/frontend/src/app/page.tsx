@@ -21,6 +21,17 @@ import styles from './page.module.css';
 /** 알람 lead — 사용자 요청: 1초 더 빨리 알림 (반응 시간 확보). */
 const CAPTURE_LAG_LEAD_SECONDS = 1;
 
+/** 토글 버튼에 등급 알파벳 옆에 붙일 설명 (명당은 이름이 없으므로 등급 설명으로 대체). */
+const TIER_LABEL: Record<MyungdangTier, string> = {
+  S: '최상위 명당',
+  A: '상위',
+  B: '중위',
+  C: '하위',
+};
+
+/** 비밀창고 토글 버튼 색 — 4등급(빨·주·노·하늘)과 겹치지 않는 보라 (globals.css .stash-marker와 동일). */
+const STASH_COLOR = '#a855f7';
+
 const MapCanvas = dynamic(() => import('../components/MapCanvas'), { ssr: false });
 const CircleOverlay = dynamic(
   () => import('../components/CircleOverlay').then((m) => ({ default: m.CircleOverlay })),
@@ -45,6 +56,7 @@ export default function Page() {
     B: true,
     C: true,
   });
+  const [showStash, setShowStash] = useState(true);
 
   const { circleData, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle } = useCaptureSocket();
   const { isCapturing, stream, start, stop } = useScreenCapture({
@@ -258,9 +270,12 @@ export default function Page() {
 
         {/* ── 맵 영역 (6.5) ── */}
         <div className={styles.mapArea}>
-          <div className={styles.mapAreaHeader}>
-            <p className={styles.sideSectionLabel}>지도</p>
-            <div role="group" aria-label="명당 등급 표시" style={{ display: 'flex', gap: 6 }}>
+          <div
+            className={styles.mapAreaHeader}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}
+          >
+            <p className={styles.sideSectionLabel} style={{ margin: 0 }}>지도</p>
+            <div role="group" aria-label="명당 등급 표시" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {(['S', 'A', 'B', 'C'] as const).map((tier) => {
                 const on = visibleTiers[tier];
                 return (
@@ -273,7 +288,7 @@ export default function Page() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 5,
+                      gap: 6,
                       padding: '4px 10px',
                       borderRadius: 6,
                       border: `2px solid ${TIER_COLOR[tier]}`,
@@ -283,6 +298,7 @@ export default function Page() {
                       fontSize: '0.8rem',
                       cursor: 'pointer',
                       opacity: on ? 1 : 0.4,
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     <span
@@ -294,15 +310,47 @@ export default function Page() {
                         border: `2px solid ${TIER_COLOR[tier]}`,
                       }}
                     />
-                    {tier}
+                    {tier} {TIER_LABEL[tier]}
                   </button>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => setShowStash((s) => !s)}
+                aria-pressed={showStash}
+                aria-label="비밀창고 표시"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  border: `2px solid ${STASH_COLOR}`,
+                  background: showStash ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  color: '#e6edf3',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  opacity: showStash ? 1 : 0.4,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    border: `2px solid ${STASH_COLOR}`,
+                  }}
+                />
+                💰 비밀창고
+              </button>
             </div>
           </div>
           <div className={styles.mapAreaCanvas}>
             <MapCanvas mapType={mapType}>
-              <StashMarkers stashes={stashes} />
+              {showStash && <StashMarkers stashes={stashes} />}
               <CircleOverlay circleData={lockedCircle} />
               <MyungdangMarkers points={myungdang} visibleTiers={visibleTiers} zone={lockedCircle} highlightedKeys={highlightedKeys} />
             </MapCanvas>

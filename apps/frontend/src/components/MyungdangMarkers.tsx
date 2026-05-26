@@ -66,9 +66,7 @@ export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys }
                   fillOpacity: 0,
                 }}
               >
-                <Tooltip>
-                  {p.tier} · {p.count}회
-                </Tooltip>
+                <Tooltip>{p.tier}</Tooltip>
               </CircleMarker>
             </Fragment>
           );

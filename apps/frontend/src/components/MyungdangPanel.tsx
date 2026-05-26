@@ -3,12 +3,6 @@
 import { TIER_COLOR, type MyungdangTier } from '../hooks/useMyungdang';
 
 const TIER_ORDER: MyungdangTier[] = ['S', 'A', 'B', 'C'];
-const TIER_DESC: Record<MyungdangTier, string> = {
-  S: '최상위 명당',
-  A: '상위',
-  B: '중위',
-  C: '하위',
-};
 
 /** 자기장 내부 명당 1개의 순위 표시용 — 중심거리(%) 포함. */
 export interface RankedMyungdang {
@@ -80,8 +74,7 @@ export function MyungdangPanel({ counts, visibleTiers, zoneActive, ranked }: Myu
             style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: visibleTiers[tier] ? 1 : 0.35 }}
           >
             <span aria-hidden style={dot(tier)} />
-            <span style={{ fontWeight: 700, width: 16 }}>{tier}</span>
-            <span style={{ color: '#8b949e', fontSize: '0.8rem', flex: 1 }}>{TIER_DESC[tier]}</span>
+            <span style={{ fontWeight: 700, flex: 1 }}>{tier}</span>
             <span style={{ fontWeight: 600 }}>{counts[tier]}</span>
           </li>
         ))}

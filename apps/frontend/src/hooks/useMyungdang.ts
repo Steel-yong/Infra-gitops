@@ -20,7 +20,7 @@ export interface MyungdangPoint {
 /** S=빨강 / A=주황 / B=노랑 / C=하늘 (회색은 지도에서 안 보여 하늘색). leaflet 비의존. */
 export const TIER_COLOR: Record<MyungdangTier, string> = {
   S: '#ff3b3b',
-  A: '#ff9f1c',
+  A: '#ea580c',
   B: '#ffe600',
   C: '#4db8ff',
 };
