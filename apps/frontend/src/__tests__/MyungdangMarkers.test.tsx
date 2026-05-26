@@ -117,4 +117,18 @@ describe('MyungdangMarkers', () => {
     render(<MyungdangMarkers points={[pt()]} visibleTiers={ALL} highlightedKeys={new Set()} />);
     expect(screen.getAllByTestId('circle-marker')).toHaveLength(1);
   });
+
+  it('hoveredKey와 일치하면 시안 테두리가 하나 더 생긴다 (강조+hover=3개)', () => {
+    render(
+      <MyungdangMarkers
+        points={[pt({ gx: 0.5, gy: 0.5, tier: 'S' })]}
+        visibleTiers={ALL}
+        highlightedKeys={new Set(['0.5-0.5'])}
+        hoveredKey="0.5-0.5"
+      />,
+    );
+    const markers = screen.getAllByTestId('circle-marker');
+    expect(markers).toHaveLength(3);
+    expect(markers.some((m) => m.getAttribute('data-color') === '#22d3ee')).toBe(true);
+  });
 });

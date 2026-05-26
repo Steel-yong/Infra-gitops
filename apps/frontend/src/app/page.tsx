@@ -57,6 +57,7 @@ export default function Page() {
     C: true,
   });
   const [showStash, setShowStash] = useState(true);
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const { circleData, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle } = useCaptureSocket();
   const { isCapturing, stream, start, stop } = useScreenCapture({
@@ -116,21 +117,30 @@ export default function Page() {
     setCurrentPhase(ocrTimer.currentPhase);
   }, [ocrTimer.currentPhase, setCurrentPhase]);
 
-  // 자기장 잡히면: 등급순(S→A→B→C) + 중심에 가까운 순으로 상위 15개를 추천·강조.
-  // → C는 S/A/B로 15개가 안 찰 때만 채워진다.
+  // 현재 페이즈 (OCR > 락된 원 > 원 데이터 순).
+  const currentPhase = ocrTimer.currentPhase ?? lockedCircle?.phase ?? circleData?.phase ?? null;
+
+  // 자기장 잡히면 상위 15개 추천·강조.
+  //  - 페이즈 4+ (후반): 중심에 가까운 순 우선 (자기장 좁아져 위치가 등급보다 중요).
+  //  - 그 전: 등급순(S→A→B→C) 우선, C는 S/A/B로 15개 안 찰 때만. (3페이즈는 추후 재검토)
   const RANK_N = 15;
   const TIER_RANK: Record<MyungdangTier, number> = { S: 0, A: 1, B: 2, C: 3 };
-  let rankedMyungdang: { tier: MyungdangTier }[] = [];
+  const lateGame = (currentPhase ?? 0) >= 4;
+  let rankedMyungdang: { tier: MyungdangTier; key: string }[] = [];
   let highlightedKeys = new Set<string>();
   if (lockedCircle && lockedCircle.r > 0) {
     const inZone = myungdang
       .filter((p) => visibleTiers[p.tier])
       .map((p) => ({ p, d: Math.hypot(p.gx - lockedCircle.x, p.gy - lockedCircle.y) }))
       .filter((x) => x.d <= lockedCircle.r)
-      .sort((a, b) => TIER_RANK[a.p.tier] - TIER_RANK[b.p.tier] || a.d - b.d)
+      .sort((a, b) =>
+        lateGame
+          ? a.d - b.d || TIER_RANK[a.p.tier] - TIER_RANK[b.p.tier]
+          : TIER_RANK[a.p.tier] - TIER_RANK[b.p.tier] || a.d - b.d,
+      )
       .slice(0, RANK_N);
-    rankedMyungdang = inZone.map((x) => ({ tier: x.p.tier }));
-    highlightedKeys = new Set(inZone.map((x) => `${x.p.gx}-${x.p.gy}`));
+    rankedMyungdang = inZone.map((x) => ({ tier: x.p.tier, key: `${x.p.gx}-${x.p.gy}` }));
+    highlightedKeys = new Set(rankedMyungdang.map((r) => r.key));
   }
 
   return (
@@ -164,7 +174,7 @@ export default function Page() {
           <TimerPanel
             state={ocrTimer}
             isCapturing={isCapturing}
-            phase={ocrTimer.currentPhase ?? lockedCircle?.phase ?? circleData?.phase ?? null}
+            phase={currentPhase}
           />
 
           <div className={styles.sideSection}>
@@ -340,7 +350,7 @@ export default function Page() {
             <MapCanvas mapType={mapType}>
               {showStash && <StashMarkers stashes={stashes} />}
               <CircleOverlay circleData={lockedCircle} />
-              <MyungdangMarkers points={myungdang} visibleTiers={visibleTiers} zone={lockedCircle} highlightedKeys={highlightedKeys} />
+              <MyungdangMarkers points={myungdang} visibleTiers={visibleTiers} zone={lockedCircle} highlightedKeys={highlightedKeys} hoveredKey={hoveredKey} />
             </MapCanvas>
           </div>
         </div>
@@ -351,7 +361,7 @@ export default function Page() {
             <p className={styles.sideSectionLabel}>추천</p>
           </div>
           <div className={styles.sideSection} style={{ flex: 1, overflowY: 'auto' }}>
-            <MyungdangPanel zoneActive={!!lockedCircle} ranked={rankedMyungdang} />
+            <MyungdangPanel zoneActive={!!lockedCircle} ranked={rankedMyungdang} onHover={setHoveredKey} />
           </div>
         </aside>
       </div>

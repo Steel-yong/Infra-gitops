@@ -22,6 +22,8 @@ interface MyungdangMarkersProps {
   zone?: CircleData | null;
   /** 우측 패널에 뜬(자기장 중심에 가까운) 명당 키 집합 — 흰 테두리 링으로 강조. */
   highlightedKeys?: Set<string>;
+  /** 우측 패널 항목에 hover 중인 명당 키 — 그 마커에 시안 테두리를 하나 더 씌운다. */
+  hoveredKey?: string | null;
 }
 
 /** 마커 고유 키 (좌표 기반) — page의 하이라이트 집합과 매칭. */
@@ -41,15 +43,24 @@ function insideZone(p: MyungdangPoint, zone: CircleData): boolean {
  * gy는 이미지 좌표계(위 0)이고 Leaflet은 남→북이므로 center를 `[1 - gy, gx]`로 뒤집는다.
  * zone이 있으면 원 안의 명당만 남긴다. MapCanvas children으로 렌더링해야 Leaflet 컨텍스트를 쓴다.
  */
-export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys }: MyungdangMarkersProps) {
+export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys, hoveredKey }: MyungdangMarkersProps) {
   return (
     <>
       {points
         .filter((p) => visibleTiers[p.tier] && (!zone || insideZone(p, zone)))
         .map((p, i) => {
-          const highlighted = highlightedKeys?.has(pointKey(p)) ?? false;
+          const key = pointKey(p);
+          const highlighted = highlightedKeys?.has(key) ?? false;
+          const hovered = hoveredKey != null && hoveredKey === key;
           return (
             <Fragment key={`${p.gx}-${p.gy}-${i}`}>
+              {hovered && (
+                <CircleMarker
+                  center={[1 - p.gy, p.gx]}
+                  radius={TIER_RADIUS[p.tier] + 7}
+                  pathOptions={{ color: '#22d3ee', weight: 3, fillOpacity: 0 }}
+                />
+              )}
               {highlighted && (
                 <CircleMarker
                   center={[1 - p.gy, p.gx]}
