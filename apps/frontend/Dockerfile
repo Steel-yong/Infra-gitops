@@ -10,7 +10,7 @@ COPY apps/services/capture/package.json ./apps/services/capture/
 COPY apps/services/location/package.json ./apps/services/location/
 COPY apps/frontend/package.json ./apps/frontend/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 COPY packages/shared/ ./packages/shared/
 COPY apps/frontend/ ./apps/frontend/
