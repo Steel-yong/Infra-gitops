@@ -1,9 +1,12 @@
-# PUBG Helper — Codex 바이블 (collab)
+# pubg — Codex 바이블 (collab)
 
-<!-- 생성됨: build_bibles.sh collab (2026-05-26). 직접 수정 금지 — 00-CORE.md 또는 역할 파일을 고치고 재빌드. -->
+<!-- 생성됨: build_bibles.sh collab (2026-05-26). 직접 수정 금지 — generic/CORE.md·project/pubg.md·역할 파일을 고치고 재빌드. -->
 <!-- 현재 모드: collab -->
 
-<!-- 공통 CORE — Claude·Codex 공통, 협업·단독 모드 공통. build_bibles.sh가 역할 파일과 합쳐 CLAUDE.md/AGENTS.md 생성. -->
+<!-- 공통 CORE (프로젝트 무관 방법론) — Claude·Codex 공통, 협업·단독 모드 공통.
+     build_bibles.sh가 [generic/CORE] + [project/<프로젝트>] + [역할]을 합쳐 CLAUDE.md/AGENTS.md 생성.
+     ⚠ 스택 종속 섹션 = "2부 테스트 원칙"(Vitest/Playwright), "3부 코딩 스타일"(TypeScript/React).
+        다른 프로젝트로 옮길 때 이 두 섹션만 해당 스택에 맞게 교체·삭제하면 된다. -->
 
 ## 0부. 세션 시작 프로토콜
 
@@ -257,6 +260,9 @@ destructive 명령, 대량 삭제, 외부 네트워크 다운로드, 시크릿 �
 > 이 둘은 서로 다른 레이어다. **허용 목록**(예: `.claude/settings.local.json`)은 "반복 확인 없이 실행 가능한 기술적 승인"을 정하고, **알림 원칙**은 "행동 규범"을 정한다. 어떤 명령이 허용 목록에 있다고 해서 알림 원칙이 면제되지 않는다.
 
 ---
+
+
+<!-- 프로젝트 전용(PUBG). build_bibles.sh가 generic/CORE와 역할 파일 사이에 끼워 넣는다. -->
 
 ## 8부. 프로젝트 정보
 

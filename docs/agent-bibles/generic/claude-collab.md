@@ -39,7 +39,7 @@ Claude가 한 **모든 작업**(계획·코드·문서)이 검수 대상이다. 
 
 ### 지침 파일 상호검증
 - `CORE`/역할 파일이 변경되면 Claude·Codex가 함께 리뷰한다 (역할·권한·산출물·형식 충돌 여부).
-- 변경은 항상 `00-CORE.md` 또는 역할 파일을 고치고 `build_bibles.sh`로 재생성한다. 생성된 `CLAUDE.md`/`AGENTS.md`를 직접 수정하지 않는다.
+- 변경은 항상 `generic/CORE.md`(방법론)·`project/<name>.md`(프로젝트 정보)·역할 파일을 고치고 `build_bibles.sh`로 재생성한다. 생성된 `CLAUDE.md`/`AGENTS.md`를 직접 수정하지 않는다.
 
 ### Claude 응답 형식
 ```markdown
