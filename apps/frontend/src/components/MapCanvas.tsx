@@ -49,6 +49,8 @@ export default function MapCanvas({ mapType, children }: MapCanvasProps) {
         maxBounds={BOUNDS}
         maxBoundsViscosity={1.0}
         className={styles.map}
+        preferCanvas
+        zoomSnap={0.5}
         zoomControl
         attributionControl={false}
       >
