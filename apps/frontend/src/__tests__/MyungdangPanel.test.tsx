@@ -14,18 +14,12 @@ describe('MyungdangPanel', () => {
     expect(screen.getByText(/추천할 명당이 없습니다/)).toBeInTheDocument();
   });
 
-  it('자기장 + ranked면 중심거리순 추천 목록을 표시한다', () => {
+  it('자기장 + ranked면 등급순 추천 목록을 표시한다 (중심거리 표시 없음)', () => {
     render(
-      <MyungdangPanel
-        zoneActive={true}
-        ranked={[
-          { tier: 'S', distPct: 5 },
-          { tier: 'A', distPct: 20 },
-        ]}
-      />,
+      <MyungdangPanel zoneActive={true} ranked={[{ tier: 'S' }, { tier: 'A' }, { tier: 'B' }]} />,
     );
-    expect(screen.getByText(/가까운 순/)).toBeInTheDocument();
-    expect(screen.getByText('5%')).toBeInTheDocument();
-    expect(screen.getByText('20%')).toBeInTheDocument();
+    expect(screen.getByText(/추천 명당/)).toBeInTheDocument();
+    expect(document.querySelectorAll('li[data-tier]')).toHaveLength(3);
+    expect(screen.queryByText(/중심거리/)).not.toBeInTheDocument();
   });
 });

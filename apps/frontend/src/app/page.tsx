@@ -116,21 +116,20 @@ export default function Page() {
     setCurrentPhase(ocrTimer.currentPhase);
   }, [ocrTimer.currentPhase, setCurrentPhase]);
 
-  // 자기장 잡히면: 중심에 가까운 명당 상위 N개를 강조 (우측 패널 거리순 + 마커 흰 테두리).
-  const RANK_N = 10;
-  let rankedMyungdang: { tier: MyungdangTier; distPct: number }[] = [];
+  // 자기장 잡히면: 등급순(S→A→B→C) + 중심에 가까운 순으로 상위 15개를 추천·강조.
+  // → C는 S/A/B로 15개가 안 찰 때만 채워진다.
+  const RANK_N = 15;
+  const TIER_RANK: Record<MyungdangTier, number> = { S: 0, A: 1, B: 2, C: 3 };
+  let rankedMyungdang: { tier: MyungdangTier }[] = [];
   let highlightedKeys = new Set<string>();
   if (lockedCircle && lockedCircle.r > 0) {
     const inZone = myungdang
       .filter((p) => visibleTiers[p.tier])
       .map((p) => ({ p, d: Math.hypot(p.gx - lockedCircle.x, p.gy - lockedCircle.y) }))
       .filter((x) => x.d <= lockedCircle.r)
-      .sort((a, b) => a.d - b.d)
+      .sort((a, b) => TIER_RANK[a.p.tier] - TIER_RANK[b.p.tier] || a.d - b.d)
       .slice(0, RANK_N);
-    rankedMyungdang = inZone.map((x) => ({
-      tier: x.p.tier,
-      distPct: Math.round((x.d / lockedCircle.r) * 100),
-    }));
+    rankedMyungdang = inZone.map((x) => ({ tier: x.p.tier }));
     highlightedKeys = new Set(inZone.map((x) => `${x.p.gx}-${x.p.gy}`));
   }
 

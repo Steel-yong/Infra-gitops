@@ -2,11 +2,9 @@
 
 import { TIER_COLOR, type MyungdangTier } from '../hooks/useMyungdang';
 
-/** 자기장 내부 명당 1개의 순위 표시용 — 중심거리(%) 포함. */
+/** 자기장 내부 추천 명당 1개 — 등급순+중심거리순으로 page에서 정렬된 결과. */
 export interface RankedMyungdang {
   tier: MyungdangTier;
-  /** 자기장 중심까지 거리 (반경 대비 %, 0=중심). */
-  distPct: number;
 }
 
 interface MyungdangPanelProps {
@@ -40,16 +38,14 @@ export function MyungdangPanel({ zoneActive, ranked }: MyungdangPanelProps) {
   return (
     <div aria-label="자기장 내부 추천 명당">
       <p style={{ fontSize: '0.8rem', color: '#8b949e', margin: '0 0 10px' }}>
-        자기장 중심에서 가까운 순 · {ranked.length}곳
+        추천 명당 · {ranked.length}곳 (등급·중심 가까운 순)
       </p>
       <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {ranked.map((r, i) => (
           <li key={i} data-tier={r.tier} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ width: 18, color: '#8b949e', fontWeight: 700 }}>{i + 1}</span>
             <span aria-hidden style={dot(r.tier)} />
-            <span style={{ fontWeight: 700, width: 16 }}>{r.tier}</span>
-            <span style={{ color: '#8b949e', fontSize: '0.8rem', flex: 1 }}>중심거리</span>
-            <span style={{ fontWeight: 600 }}>{r.distPct}%</span>
+            <span style={{ fontWeight: 700 }}>{r.tier}</span>
           </li>
         ))}
       </ol>
