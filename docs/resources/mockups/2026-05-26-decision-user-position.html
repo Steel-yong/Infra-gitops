@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!-- 유저 실시간 위치 표시 기능 — 소스·접근방식 결정 시각화 (PUB 신규) -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>결정 — 유저 실시간 위치 표시</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --bd:#30363d; --tx:#e6edf3; --mut:#8b949e;
+          --good:#3fb950; --warn:#d29922; --bad:#f85149; --acc:#58a6ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:32px; background:var(--bg); color:var(--tx);
+         font-family:'Segoe UI','Malgun Gothic',sans-serif; line-height:1.6; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  h2 { font-size:18px; margin:28px 0 12px; border-left:3px solid var(--acc); padding-left:10px; }
+  .sub { color:var(--mut); margin-bottom:24px; }
+  .grid { display:grid; gap:16px; }
+  .g2 { grid-template-columns:1fr 1fr; }
+  .g3 { grid-template-columns:1fr 1fr 1fr; }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:10px; padding:16px; }
+  .card h3 { margin:0 0 8px; font-size:16px; }
+  .tag { display:inline-block; font-size:12px; padding:2px 8px; border-radius:12px; margin-left:6px; }
+  .t-good { background:rgba(63,185,80,.15); color:var(--good); }
+  .t-warn { background:rgba(210,153,34,.15); color:var(--warn); }
+  .t-bad { background:rgba(248,81,73,.15); color:var(--bad); }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--bd); font-size:14px; vertical-align:top; }
+  th { color:var(--mut); font-weight:600; }
+  .pro::before { content:"✓ "; color:var(--good); }
+  .con::before { content:"✕ "; color:var(--bad); }
+  .rec { background:linear-gradient(90deg,rgba(88,166,255,.12),transparent);
+         border:1px solid var(--acc); border-radius:10px; padding:16px; margin-top:8px; }
+  ul { margin:6px 0; padding-left:20px; }
+  li { margin:3px 0; }
+  code { background:#0b0f14; padding:1px 5px; border-radius:4px; font-size:13px; color:#79c0ff; }
+  .step { counter-reset:s; list-style:none; padding-left:0; }
+  .step li { counter-increment:s; padding-left:30px; position:relative; margin:8px 0; }
+  .step li::before { content:counter(s); position:absolute; left:0; top:0; width:22px; height:22px;
+    background:var(--acc); color:#000; border-radius:50%; text-align:center; font-weight:700; font-size:13px; line-height:22px; }
+</style>
+</head>
+<body>
+  <h1>유저 실시간 위치 표시 — 결정</h1>
+  <div class="sub">우리 UI(Leaflet 맵)에 플레이어 자기 위치를 표시. 핵심 질문 둘: <b>① 어디서 뽑나(소스)</b> · <b>② 학습이 필요한가(접근)</b>. 2026-05-26.</div>
+
+  <h2>① 위치 소스 — 어느 화면에서 위치를 읽나</h2>
+  <div class="grid g3">
+    <div class="card">
+      <h3>미니맵 <span class="tag t-good">실시간</span></h3>
+      <p style="color:var(--mut);font-size:13px;margin:4px 0">플레이 중 항상 보이는 우하단 미니맵. 플레이어는 거의 중앙, 흰 화살표(방향).</p>
+      <ul style="font-size:13px">
+        <li class="pro">끊김 없는 실시간 추적</li>
+        <li class="pro">방향(화살표)까지 얻음</li>
+        <li class="con">영역이 작아 호모그래피 특징점 부족 위험</li>
+        <li class="con">좌표 변환 난도 높음(좁은 영역→전체맵)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>전체맵 <span class="tag t-warn">열 때만</span></h3>
+      <p style="color:var(--mut);font-size:13px;margin:4px 0">탭/M으로 전체맵 열었을 때 표시되는 플레이어 마커.</p>
+      <ul style="font-size:13px">
+        <li class="pro">마커 크고 또렷 → 검출 쉬움</li>
+        <li class="pro">자기장 검출과 동일 좌표계 재활용</li>
+        <li class="con">맵 열 때만 = 실시간 아님</li>
+        <li class="con">"실시간 표시" 요구와 안 맞음</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>둘 다 <span class="tag t-warn">단계적</span></h3>
+      <p style="color:var(--mut);font-size:13px;margin:4px 0">전체맵으로 먼저 검증 → 미니맵 실시간으로 확장.</p>
+      <ul style="font-size:13px">
+        <li class="pro">쉬운 것부터 → 리스크 분산</li>
+        <li class="pro">전체맵으로 좌표 정확도 먼저 확보</li>
+        <li class="con">작업 2배, 범위 큼</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>② 접근 방식 — 학습이 필요한가</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>고전 CV <span class="tag t-good">추천</span></h3>
+      <p style="color:var(--mut);font-size:13px;margin:4px 0">PUB-39 AKAZE 호모그래피 재활용 + 화살표 아이콘 검출(템플릿/색·형태).</p>
+      <ul style="font-size:13px">
+        <li class="pro"><b>이미 있는 자산 재활용</b> — <code>sift-zone.service</code>의 화면→게임좌표 변환</li>
+        <li class="pro">학습 데이터·GPU 불필요, 즉시 시작</li>
+        <li class="pro">내 화면은 방송영상과 달리 깨끗·일관 → 고전 CV 유리</li>
+        <li class="con">작은 미니맵에서 특징점 부족하면 매칭 실패 가능</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>ML 학습 <span class="tag t-bad">나중</span></h3>
+      <p style="color:var(--mut);font-size:13px;margin:4px 0">PUB-34처럼 합성 데이터 + YOLO로 플레이어 마커 검출 학습.</p>
+      <ul style="font-size:13px">
+        <li class="pro">고전 CV가 실패하는 케이스에 강건</li>
+        <li class="con">데이터 라벨링·학습·배포 = 큰 비용</li>
+        <li class="con">아직 고전 CV를 안 해봄 → <b>시기상조</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>핵심 통찰 — PUB-34와 정반대</h2>
+  <table>
+    <tr><th>상황</th><th>입력</th><th>그래서</th></tr>
+    <tr><td>PUB-34 (프로 위치)</td><td>토너먼트 방송영상 — 지저분·가변</td><td>고전 CV 2주 실패 → ML(YOLO) 전환</td></tr>
+    <tr><td><b>이번 (유저 위치)</b></td><td>유저 본인 화면 — 깨끗·일관</td><td><b>고전 CV로 충분할 가능성 높음</b> → ML은 폴백</td></tr>
+  </table>
+
+  <h2>추천</h2>
+  <div class="rec">
+    <b>소스 = 미니맵(실시간) · 접근 = 고전 CV 먼저(호모그래피 재활용), ML은 폴백.</b>
+    <ul>
+      <li>"실시간 표시"라는 요구는 미니맵만 충족함(전체맵은 열 때만).</li>
+      <li>학습은 <b>지금 필요 없음</b> — 고전 CV(PUB-39 호모그래피)를 먼저 시도하고, 미니맵 매칭이 불안정할 때만 ML 검토.</li>
+      <li>리스크 = 미니맵이 좁아 호모그래피 특징점이 부족할 수 있음. → <b>PoC 1건으로 먼저 검증</b>(올려준 스크린샷에 미니맵 영역으로).</li>
+    </ul>
+  </div>
+
+  <h2>결정 후 액션</h2>
+  <ol class="step">
+    <li>Linear 이슈 생성 + 계획 3종(plan/checklist/context-notes) 작성.</li>
+    <li>PoC — 미니맵 크롭 1장에 AKAZE 호모그래피 시도, inlier 수 확인(임계 통과하나).</li>
+    <li>통과 → <code>capture</code>에 <code>detectPlayer()</code> 추가(좌표+방향), shared에 <code>PlayerPosition</code> 타입.</li>
+    <li>프론트 <code>PlayerMarker</code> 컴포넌트(<code>[1-y, x]</code> 변환, 방향 회전).</li>
+    <li>실패 → ML 결정 목업 다시(데이터·학습 계획).</li>
+  </ol>
+</body>
+</html>
