@@ -320,6 +320,14 @@ export class CircleService {
       }
     }
     if (!best) return null;
+    // 가설은 서브샘플(pts)로 빠르게 찾되, 최종 채택 점수는 전체 점(points)으로 재계산.
+    // 서브샘플(maxPts)이 얇은 자기장 원 외곽을 솎아내 점수가 실제보다 낮게 나오던 문제 보정.
+    let fullScore = 0;
+    for (const [px, py] of points) {
+      if (Math.abs(Math.hypot(px - best.cx, py - best.cy) - best.r) < 2.0) fullScore++;
+    }
+    best.score = fullScore;
+    this.logger.debug(`RANSAC ${mode} 후보: r=${best.r.toFixed(0)}px(기대 ${best.rExpected.toFixed(0)}) 전체점수 ${fullScore}/${minScoreForPhase(best.phase)}`);
     if (best.score < minScoreForPhase(best.phase)) return null;
     // parentCircle 제약: 검출 결과 원의 중심도 parentCircle 안에 있어야 채택.
     // 다음 페이즈는 무조건 이전 페이즈 자기장 안에 형성됨 (PUBG 룰).
