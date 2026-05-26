@@ -128,11 +128,11 @@ export default function Page() {
   const currentPhase = ocrTimer.currentPhase ?? lockedCircle?.phase ?? circleData?.phase ?? null;
 
   // 자기장 잡히면 상위 15개 추천·강조.
-  //  - 페이즈 4+ (후반): 중심에 가까운 순 우선 (자기장 좁아져 위치가 등급보다 중요).
-  //  - 그 전: 등급순(S→A→B→C) 우선, C는 S/A/B로 15개 안 찰 때만. (3페이즈는 추후 재검토)
+  //  - 페이즈 3+ (후반): 중심에 가까운 순 우선 (자기장 충분히 작아 위치가 등급보다 중요).
+  //  - 1~2페이즈: 등급순(S→A→B→C) 우선, C는 S/A/B로 15개 안 찰 때만.
   const RANK_N = 15;
   const TIER_RANK: Record<MyungdangTier, number> = { S: 0, A: 1, B: 2, C: 3 };
-  const lateGame = (currentPhase ?? 0) >= 4;
+  const lateGame = (currentPhase ?? 0) >= 3;
   // 1~2페이즈는 자기장이 거대 → 외곽 말고 중앙 절반 반경 안의 명당만 추천. 그 외엔 전체 반경.
   const radiusFactor = currentPhase != null && currentPhase <= 2 ? 0.5 : 1.0;
   let rankedMyungdang: { tier: MyungdangTier; key: string }[] = [];
