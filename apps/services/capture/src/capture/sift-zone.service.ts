@@ -71,7 +71,7 @@ export class SiftZoneService {
    * 줌인 프레임에서 자기장 복원. 매칭/검출 실패 시 null.
    * @param base64 화면 프레임 (RGB jpeg/png base64)
    */
-  async detectZone(base64: string): Promise<CircleData | null> {
+  async detectZone(base64: string, hintPhase?: number): Promise<CircleData | null> {
     await this.ensureReady();
     const c = cv as CV;
     const buf = Buffer.from(base64, 'base64');
@@ -148,7 +148,8 @@ export class SiftZoneService {
 
     // 흰 자기장 호 픽셀 (프레임 좌표) → 게임 좌표 변환 → RANSAC 원 피팅.
     const arc = this.collectWhiteArc(color, fw, fh);
-    const result = arc.length >= 30 ? this.fitZone(arc, best.H, c) : null;
+    const minArc = isValidPhase(hintPhase) ? 12 : 30; // 페이즈 알면 중심만 찾으므로 호 점 적어도 됨
+    const result = arc.length >= minArc ? this.fitZone(arc, best.H, c, hintPhase) : null;
     best.H.delete();
     if (result) {
       this.logger.log(
@@ -172,21 +173,32 @@ export class SiftZoneService {
   }
 
   /** 호 픽셀을 호모그래피로 게임좌표(0~1)로 변환 후 RANSAC 원 피팅 → 페이즈 매칭. */
-  private fitZone(arc: Array<[number, number]>, H: CV, c: CV): CircleData | null {
+  private fitZone(arc: Array<[number, number]>, H: CV, c: CV, hintPhase?: number): CircleData | null {
     const flat: number[] = [];
     for (const [x, y] of arc) flat.push(x, y);
     const srcMat = c.matFromArray(arc.length, 1, c.CV_32FC2, flat);
     const dstMat = new c.Mat();
-    c.perspectiveTransform(srcMat, dstMat, H);
     const game: Array<[number, number]> = [];
-    for (let i = 0; i < arc.length; i++) {
-      const gx = dstMat.data32F[i * 2] / MAPN;
-      const gy = dstMat.data32F[i * 2 + 1] / MAPN;
-      if (gx > -0.1 && gx < 1.1 && gy > -0.1 && gy < 1.1) game.push([gx, gy]);
+    try {
+      c.perspectiveTransform(srcMat, dstMat, H);
+      for (let i = 0; i < arc.length; i++) {
+        const gx = dstMat.data32F[i * 2] / MAPN;
+        const gy = dstMat.data32F[i * 2 + 1] / MAPN;
+        if (gx > -0.1 && gx < 1.1 && gy > -0.1 && gy < 1.1) game.push([gx, gy]);
+      }
+    } finally {
+      srcMat.delete();
+      dstMat.delete();
     }
-    srcMat.delete();
-    dstMat.delete();
-    if (game.length < 30) return null;
+    const minPts = isValidPhase(hintPhase) ? 12 : 30;
+    if (game.length < minPts) return null;
+
+    // OCR로 페이즈(=반경)를 알면 중심만 찾는다 — 작은 호·부분 잘림에 견고.
+    if (isValidPhase(hintPhase)) {
+      const r = PUBG_PHASE_RADII[hintPhase - 1];
+      const center = this.fitCenterFixedRadius(game, r);
+      return center ? { x: center.cx, y: center.cy, r, phase: hintPhase } : null;
+    }
 
     let best: { cx: number; cy: number; r: number; score: number } | null = null;
     for (let t = 0; t < 3000; t++) {
@@ -216,6 +228,28 @@ export class SiftZoneService {
     }
     return { x: best.cx, y: best.cy, r: PUBG_PHASE_RADII[phase - 1], phase };
   }
+
+  /** 반경 고정 시 호 점들로 중심만 RANSAC (페이즈 힌트가 있을 때, 작은 호에 견고). */
+  private fitCenterFixedRadius(
+    pts: Array<[number, number]>,
+    r: number,
+  ): { cx: number; cy: number } | null {
+    let best: { cx: number; cy: number; score: number } | null = null;
+    for (let t = 0; t < 2000; t++) {
+      const a = pts[(Math.random() * pts.length) | 0];
+      const b = pts[(Math.random() * pts.length) | 0];
+      for (const cen of centersFromTwoAndRadius(a, b, r)) {
+        if (cen.cx < -0.1 || cen.cx > 1.1 || cen.cy < -0.1 || cen.cy > 1.1) continue;
+        let score = 0;
+        for (const [px, py] of pts) {
+          if (Math.abs(Math.hypot(px - cen.cx, py - cen.cy) - r) < 0.006) score++;
+        }
+        if (!best || score > best.score) best = { cx: cen.cx, cy: cen.cy, score };
+      }
+    }
+    if (!best || best.score < 12) return null;
+    return { cx: best.cx, cy: best.cy };
+  }
 }
 
 function circleFromThree(
@@ -237,4 +271,32 @@ function circleFromThree(
   const cx = (d * e - b * f) / g;
   const cy = (a * f - cc * e) / g;
   return { cx, cy, r: Math.hypot(x1 - cx, y1 - cy) };
+}
+
+/** hintPhase가 유효한 페이즈 번호(1~N 정수)인지. */
+function isValidPhase(p: number | undefined): p is number {
+  return p != null && Number.isInteger(p) && p >= 1 && p <= PUBG_PHASE_RADII.length;
+}
+
+/** 두 점과 고정 반경 r로 가능한 원 중심 후보 (최대 2개). */
+function centersFromTwoAndRadius(
+  p1: [number, number],
+  p2: [number, number],
+  r: number,
+): Array<{ cx: number; cy: number }> {
+  const [x1, y1] = p1;
+  const [x2, y2] = p2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const d = Math.hypot(dx, dy);
+  if (d < 1e-9 || d > 2 * r) return [];
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const h = Math.sqrt(Math.max(0, r * r - (d * d) / 4));
+  const ux = -dy / d;
+  const uy = dx / d;
+  return [
+    { cx: mx + h * ux, cy: my + h * uy },
+    { cx: mx - h * ux, cy: my - h * uy },
+  ];
 }

@@ -60,7 +60,7 @@ export class CaptureService {
     if (!circle) {
       this.logger.debug('전체맵 경로 실패 → SIFT-zone 폴백 시도');
       try {
-        circle = await this.siftZone.detectZone(base64);
+        circle = await this.siftZone.detectZone(base64, hintPhase);
       } catch (e) {
         this.logger.warn(`SIFT-zone 폴백 오류: ${e instanceof Error ? e.message : e}`);
       }
