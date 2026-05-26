@@ -29,4 +29,21 @@ describe('MyungdangPanel', () => {
     const cItem = document.querySelector('[data-tier="C"]') as HTMLElement;
     expect(cItem.style.opacity).toBe('0.35');
   });
+
+  it('zoneActive + ranked면 중심거리순 추천 목록을 표시한다', () => {
+    render(
+      <MyungdangPanel
+        counts={counts}
+        visibleTiers={ALL}
+        zoneActive={true}
+        ranked={[
+          { tier: 'S', distPct: 5 },
+          { tier: 'A', distPct: 20 },
+        ]}
+      />,
+    );
+    expect(screen.getByText(/가까운 순/)).toBeInTheDocument();
+    expect(screen.getByText('5%')).toBeInTheDocument();
+    expect(screen.getByText('20%')).toBeInTheDocument();
+  });
 });

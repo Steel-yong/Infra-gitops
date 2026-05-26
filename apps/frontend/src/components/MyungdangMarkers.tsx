@@ -1,6 +1,7 @@
 'use client';
 // 명당(프로 위치)을 등급별 도넛 마커로 Leaflet 지도에 렌더링하는 컴포넌트
 
+import { Fragment } from 'react';
 import { CircleMarker, Tooltip } from 'react-leaflet';
 import type { CircleData } from '@pubg-helper/shared';
 import { TIER_COLOR, type MyungdangPoint, type MyungdangTier } from '../hooks/useMyungdang';
@@ -19,6 +20,13 @@ interface MyungdangMarkersProps {
   visibleTiers: Record<MyungdangTier, boolean>;
   /** 자기장 원. 있으면 원 안의 명당만 표시(다른 지역은 숨김). null이면 전체. */
   zone?: CircleData | null;
+  /** 우측 패널에 뜬(자기장 중심에 가까운) 명당 키 집합 — 흰 테두리 링으로 강조. */
+  highlightedKeys?: Set<string>;
+}
+
+/** 마커 고유 키 (좌표 기반) — page의 하이라이트 집합과 매칭. */
+export function pointKey(p: { gx: number; gy: number }): string {
+  return `${p.gx}-${p.gy}`;
 }
 
 /** 명당이 자기장 원 안에 있는지 (좌표·반경 모두 0~1 정규화, 같은 이미지 좌표계). */
@@ -33,27 +41,38 @@ function insideZone(p: MyungdangPoint, zone: CircleData): boolean {
  * gy는 이미지 좌표계(위 0)이고 Leaflet은 남→북이므로 center를 `[1 - gy, gx]`로 뒤집는다.
  * zone이 있으면 원 안의 명당만 남긴다. MapCanvas children으로 렌더링해야 Leaflet 컨텍스트를 쓴다.
  */
-export function MyungdangMarkers({ points, visibleTiers, zone }: MyungdangMarkersProps) {
+export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys }: MyungdangMarkersProps) {
   return (
     <>
       {points
         .filter((p) => visibleTiers[p.tier] && (!zone || insideZone(p, zone)))
-        .map((p, i) => (
-          <CircleMarker
-            key={`${p.gx}-${p.gy}-${i}`}
-            center={[1 - p.gy, p.gx]}
-            radius={TIER_RADIUS[p.tier]}
-            pathOptions={{
-              color: TIER_COLOR[p.tier],
-              weight: 2,
-              fillOpacity: 0,
-            }}
-          >
-            <Tooltip>
-              {p.tier} · {p.count}회
-            </Tooltip>
-          </CircleMarker>
-        ))}
+        .map((p, i) => {
+          const highlighted = highlightedKeys?.has(pointKey(p)) ?? false;
+          return (
+            <Fragment key={`${p.gx}-${p.gy}-${i}`}>
+              {highlighted && (
+                <CircleMarker
+                  center={[1 - p.gy, p.gx]}
+                  radius={TIER_RADIUS[p.tier] + 4}
+                  pathOptions={{ color: '#ffffff', weight: 2, fillOpacity: 0 }}
+                />
+              )}
+              <CircleMarker
+                center={[1 - p.gy, p.gx]}
+                radius={TIER_RADIUS[p.tier]}
+                pathOptions={{
+                  color: TIER_COLOR[p.tier],
+                  weight: highlighted ? 3 : 2,
+                  fillOpacity: 0,
+                }}
+              >
+                <Tooltip>
+                  {p.tier} · {p.count}회
+                </Tooltip>
+              </CircleMarker>
+            </Fragment>
+          );
+        })}
     </>
   );
 }

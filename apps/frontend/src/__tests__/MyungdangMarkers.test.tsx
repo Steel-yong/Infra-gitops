@@ -99,4 +99,22 @@ describe('MyungdangMarkers', () => {
     expect(marker).toHaveAttribute('data-lat', String(1 - 0.7));
     expect(marker).toHaveAttribute('data-lng', '0.3');
   });
+
+  it('highlightedKeys에 든 명당은 흰 테두리 링이 추가된다 (마커 2개)', () => {
+    render(
+      <MyungdangMarkers
+        points={[pt({ gx: 0.5, gy: 0.5, tier: 'S' })]}
+        visibleTiers={ALL}
+        highlightedKeys={new Set(['0.5-0.5'])}
+      />,
+    );
+    const markers = screen.getAllByTestId('circle-marker');
+    expect(markers).toHaveLength(2);
+    expect(markers.some((m) => m.getAttribute('data-color') === '#ffffff')).toBe(true);
+  });
+
+  it('하이라이트가 아니면 마커는 1개다', () => {
+    render(<MyungdangMarkers points={[pt()]} visibleTiers={ALL} highlightedKeys={new Set()} />);
+    expect(screen.getAllByTestId('circle-marker')).toHaveLength(1);
+  });
 });
