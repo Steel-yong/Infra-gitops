@@ -5,8 +5,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { join } from 'path';
 import sharp from 'sharp';
-import cv, { type CvMat, type CvKeyPointVector, type CvAkaze, type OpenCv } from '@techstark/opencv-js';
+import cvDefault from '@techstark/opencv-js';
+import type { CvMat, CvKeyPointVector, CvAkaze, OpenCv } from '../types/techstark-opencv-js';
 import type { CircleData } from '@pubg-helper/shared';
+
+// @techstark/opencv-js의 자체 타입이 이 프로젝트 사용부와 안 맞아, 로컬 OpenCv 타입으로 한 번만 단언한다(any 미사용).
+const cv = cvDefault as unknown as OpenCv;
 
 /** PUBG 페이즈별 자기장 반경 (circle.service와 동일). */
 const PUBG_PHASE_RADII = [0.24474, 0.13461, 0.07403, 0.04072, 0.02036, 0.01018, 0.00509, 0.00254];
@@ -18,7 +22,7 @@ const MIN_STRONG_INLIERS = 120;
 
 type MapName = 'erangel' | 'taego';
 
-// opencv 타입은 src/types/techstark-opencv-js.d.ts 의 declare module에서 제공된다.
+// opencv 타입은 src/types/techstark-opencv-js.d.ts 의 로컬 타입 모듈에서 제공된다.
 interface RefDesc {
   name: MapName;
   kp: CvKeyPointVector;
