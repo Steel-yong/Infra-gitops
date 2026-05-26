@@ -12,6 +12,9 @@ import type { CircleData } from '@pubg-helper/shared';
 const PUBG_PHASE_RADII = [0.24474, 0.13461, 0.07403, 0.04072, 0.02036, 0.01018, 0.00509, 0.00254];
 const MAPN = 1200; // 기준맵 해상도
 const FRAME_MAX = 1280; // 프레임 분석 해상도 (긴 변)
+// 줌인 전체맵(②)의 강한 매칭만 통과시켜 게임플레이·관전(③)의 약한 가짜 매칭(inlier 수십)을 차단.
+// 줌인된 실제 전체맵은 지형 특징이 풍부해 inlier 수백이 나온다. (단독 게이트로는 한계 — 후속: 공간분산·reproj 추가.)
+const MIN_STRONG_INLIERS = 120;
 
 type MapName = 'erangel' | 'taego';
 
@@ -139,7 +142,7 @@ export class SiftZoneService {
       desF.delete();
     }
 
-    if (!best || best.inliers < 15) {
+    if (!best || best.inliers < MIN_STRONG_INLIERS) {
       best?.H.delete();
       this.logger.debug('SIFT-zone 매칭 실패 (지형 특징 부족/줌 과도)');
       return null;

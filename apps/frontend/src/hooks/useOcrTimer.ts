@@ -131,6 +131,82 @@ export function useOcrTimer(
           const tickStartedAt = performance.now();
           const now = Date.now();
 
+          // ★ 페이즈 OCR — 타이머 OCR의 게이트(락·줄어듦·재검증 return)와 독립적으로 가장 먼저 실행.
+          //   줄어드는 중·관전 등 어떤 상태에서도 페이즈(=검출용 hintPhase)는 갱신돼야 한다.
+          //   (tesseract 워커는 recognize 호출을 직렬 큐잉하므로 타이머 OCR과 동시 호출돼도 안전.)
+          const phaseSinceLast = (now - lastPhaseOcrRef.current) / 1000;
+          if (phaseSinceLast >= 1) {
+            lastPhaseOcrRef.current = now;
+            try {
+              const PHASE_SCALE = 3;
+              const phaseRegion = getPhaseRegion(video.videoWidth, video.videoHeight);
+              const phasePreviewCanvas = document.createElement('canvas');
+              phasePreviewCanvas.width = phaseRegion.w;
+              phasePreviewCanvas.height = phaseRegion.h;
+              const phasePreviewCtx = phasePreviewCanvas.getContext('2d', { willReadFrequently: true });
+              let phaseCropDataUrl: string | null = null;
+              if (phasePreviewCtx) {
+                phasePreviewCtx.drawImage(
+                  video, phaseRegion.x, phaseRegion.y, phaseRegion.w, phaseRegion.h,
+                  0, 0, phaseRegion.w, phaseRegion.h,
+                );
+                phaseCropDataUrl = phasePreviewCanvas.toDataURL('image/png');
+              }
+              const phaseCanvas = document.createElement('canvas');
+              phaseCanvas.width = phaseRegion.w * PHASE_SCALE;
+              phaseCanvas.height = phaseRegion.h * PHASE_SCALE;
+              const phaseCtx = phaseCanvas.getContext('2d', { willReadFrequently: true });
+              if (phaseCtx) {
+                phaseCtx.imageSmoothingEnabled = false;
+                phaseCtx.drawImage(
+                  video, phaseRegion.x, phaseRegion.y, phaseRegion.w, phaseRegion.h,
+                  0, 0, phaseRegion.w * PHASE_SCALE, phaseRegion.h * PHASE_SCALE,
+                );
+                const pImg = phaseCtx.getImageData(0, 0, phaseCanvas.width, phaseCanvas.height);
+                const pPx = pImg.data;
+                for (let i = 0; i < pPx.length; i += 4) {
+                  const isWhite = pPx[i] > 220 && pPx[i + 1] > 220 && pPx[i + 2] > 220;
+                  const v = isWhite ? 0 : 255;
+                  pPx[i] = v; pPx[i + 1] = v; pPx[i + 2] = v;
+                }
+                phaseCtx.putImageData(pImg, 0, 0);
+                const phaseResult = await worker.recognize(phaseCanvas.toDataURL('image/png'));
+                const phaseText = phaseResult.data.text.trim();
+                const detected = parsePhaseString(phaseText);
+                setState((prev) => ({
+                  ...prev,
+                  phaseRawText: phaseText,
+                  phaseCropDataUrl,
+                  phaseRegion,
+                }));
+                const hist = phaseHistoryRef.current;
+                if (detected !== null) {
+                  if (hist.length > 0 && hist[hist.length - 1] !== detected) {
+                    phaseHistoryRef.current = [detected];
+                  } else {
+                    hist.push(detected);
+                  }
+                } else {
+                  phaseHistoryRef.current = [];
+                }
+                const stable = phaseHistoryRef.current.length >= PHASE_CONFIRM_COUNT
+                  ? phaseHistoryRef.current[phaseHistoryRef.current.length - 1]
+                  : null;
+                console.log(
+                  `[OCR] 페이즈 OCR: text=${JSON.stringify(phaseText)} → ${detected} ` +
+                  `(history ${phaseHistoryRef.current.length}/${PHASE_CONFIRM_COUNT}, stable=${stable})`,
+                );
+                if (stable !== null) {
+                  setState((prev) =>
+                    prev.currentPhase === stable ? prev : { ...prev, currentPhase: stable },
+                  );
+                }
+              }
+            } catch (e) {
+              console.warn('[OCR] 페이즈 인식 실패:', e);
+            }
+          }
+
           // 0) 락 상태일 때 로컬 카운트다운 갱신
           if (lockedAtRef.current !== null && lockedSecondsRef.current !== null) {
             const elapsed = (now - lockedAtRef.current) / 1000;
@@ -202,8 +278,10 @@ export function useOcrTimer(
               video, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h,
             );
             const cropDataUrl = previewCanvas.toDataURL('image/png');
+            const SCALE = 3; // OCR 전처리 확대 배율 (타이머·페이즈 공용)
 
-            // ★ 먼저 빨간 느낌표 체크 — 줄어드는 중이면 OCR 자체를 스킵 (비용 절감 + 노이즈 차단)
+            // ★ 줄어드는 중이면 타이머 OCR만 스킵 — 페이즈 OCR은 아래에서 계속 실행해야 함
+            //   (검출이 hintPhase에 의존하므로 줄어드는 동안에도 페이즈는 갱신돼야 한다)
             const flagW0 = Math.floor(region.w * 0.2);
             const flagCanvas0 = document.createElement('canvas');
             flagCanvas0.width = flagW0;
@@ -231,11 +309,8 @@ export function useOcrTimer(
                 isShrinking: true,
                 status: 'shrinking',
               }));
-              return;
-            }
-
+            } else {
             // OCR용 전처리: 3배 확대 + 순수 흰색 필터 + 색 반전
-            const SCALE = 3;
             const procCanvas = document.createElement('canvas');
             procCanvas.width = region.w * SCALE;
             procCanvas.height = region.h * SCALE;
@@ -295,10 +370,7 @@ export function useOcrTimer(
                 isShrinking: true,
                 status: 'shrinking',
               }));
-              return;
-            }
-
-            if (ocrSeconds !== null) {
+            } else if (ocrSeconds !== null) {
               // OCR 처리 지연 보상: 이번 호출의 실측 lag만큼 차감해서 게임과 sync (동적)
               const compensated = Math.max(0, ocrSeconds - lagSeconds);
               // 첫 락 또는 드리프트 보정
@@ -336,91 +408,9 @@ export function useOcrTimer(
                 isShrinking: false,
               }));
             }
+            } // ← 줄어드는 중(shrinkingNow)이 아닐 때만 타이머 OCR. 페이즈 OCR은 항상 실행.
 
-            // 페이즈 OCR (1초 주기) — 미니맵 우상단 "페이즈 N" 글자에서 1~8 추출.
-            // 잡히면 capture에 hintPhase로 전달돼 RANSAC이 그 페이즈 ±1만 검색.
-            // 디버그 미리보기: phaseCropDataUrl로 ROI 어디 잡는지 UI에서 시각 확인.
-            const PHASE_OCR_ENABLED = true;
-            const phaseSinceLast = (now - lastPhaseOcrRef.current) / 1000;
-            if (PHASE_OCR_ENABLED && phaseSinceLast >= 1) {
-              lastPhaseOcrRef.current = now;
-              try {
-                const phaseRegion = getPhaseRegion(video.videoWidth, video.videoHeight);
-
-                // 미리보기 캡처 (원본 크롭, 전처리 없음) — UI 디버그용
-                const phasePreviewCanvas = document.createElement('canvas');
-                phasePreviewCanvas.width = phaseRegion.w;
-                phasePreviewCanvas.height = phaseRegion.h;
-                const phasePreviewCtx = phasePreviewCanvas.getContext('2d', { willReadFrequently: true });
-                let phaseCropDataUrl: string | null = null;
-                if (phasePreviewCtx) {
-                  phasePreviewCtx.drawImage(
-                    video, phaseRegion.x, phaseRegion.y, phaseRegion.w, phaseRegion.h,
-                    0, 0, phaseRegion.w, phaseRegion.h,
-                  );
-                  phaseCropDataUrl = phasePreviewCanvas.toDataURL('image/png');
-                }
-
-                const phaseCanvas = document.createElement('canvas');
-                phaseCanvas.width = phaseRegion.w * SCALE;
-                phaseCanvas.height = phaseRegion.h * SCALE;
-                const phaseCtx = phaseCanvas.getContext('2d', { willReadFrequently: true });
-                if (phaseCtx) {
-                  phaseCtx.imageSmoothingEnabled = false;
-                  phaseCtx.drawImage(
-                    video, phaseRegion.x, phaseRegion.y, phaseRegion.w, phaseRegion.h,
-                    0, 0, phaseRegion.w * SCALE, phaseRegion.h * SCALE,
-                  );
-                  const pImg = phaseCtx.getImageData(0, 0, phaseCanvas.width, phaseCanvas.height);
-                  const pPx = pImg.data;
-                  for (let i = 0; i < pPx.length; i += 4) {
-                    const isWhite = pPx[i] > 220 && pPx[i + 1] > 220 && pPx[i + 2] > 220;
-                    const v = isWhite ? 0 : 255;
-                    pPx[i] = v; pPx[i + 1] = v; pPx[i + 2] = v;
-                  }
-                  phaseCtx.putImageData(pImg, 0, 0);
-                  const phaseResult = await worker.recognize(phaseCanvas.toDataURL('image/png'));
-                  const phaseText = phaseResult.data.text.trim();
-                  const detected = parsePhaseString(phaseText);
-
-                  // 미리보기 + raw 텍스트 state에 저장 (ROI 보정용)
-                  setState((prev) => ({
-                    ...prev,
-                    phaseRawText: phaseText,
-                    phaseCropDataUrl,
-                    phaseRegion,
-                  }));
-                  // Sticky 룰: 같은 페이즈 PHASE_CONFIRM_COUNT번 연속이면 currentPhase 갱신.
-                  // 다른 페이즈가 들어오면 history 리셋. 빈 결과는 history 리셋만 하고
-                  // currentPhase는 절대 null로 안 바꿈 (이전 락 유지).
-                  const hist = phaseHistoryRef.current;
-                  if (detected !== null) {
-                    if (hist.length > 0 && hist[hist.length - 1] !== detected) {
-                      phaseHistoryRef.current = [detected];
-                    } else {
-                      hist.push(detected);
-                    }
-                  } else {
-                    phaseHistoryRef.current = [];
-                  }
-                  const stable = phaseHistoryRef.current.length >= PHASE_CONFIRM_COUNT
-                    ? phaseHistoryRef.current[phaseHistoryRef.current.length - 1]
-                    : null;
-                  console.log(
-                    `[OCR] 페이즈 OCR: text=${JSON.stringify(phaseText)} → ${detected} ` +
-                    `(history ${phaseHistoryRef.current.length}/${PHASE_CONFIRM_COUNT}, stable=${stable})`,
-                  );
-                  if (stable !== null) {
-                    setState((prev) =>
-                      prev.currentPhase === stable ? prev : { ...prev, currentPhase: stable },
-                    );
-                  }
-                  // ※ 빈 결과로 currentPhase null 리셋하는 분기 의도적 제거 (sticky 룰).
-                }
-              } catch (e) {
-                console.warn('[OCR] 페이즈 인식 실패:', e);
-              }
-            }
+            // (페이즈 OCR은 tick 최상단으로 이동 — 락·줄어듦·재검증 게이트와 무관하게 항상 실행.)
           } finally {
             busyRef.current = false;
           }

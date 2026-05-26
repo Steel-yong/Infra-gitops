@@ -56,9 +56,11 @@ export class CaptureService {
       circle = await this.circleService.extractCircle(croppedBuffer.toString('base64'), hintPhase, parentCircle);
     }
 
-    // 2) 전체맵 검출/추출 실패(줌인 상태 등) → SIFT-zone(AKAZE 호모그래피) 폴백
-    if (!circle) {
-      this.logger.debug('전체맵 경로 실패 → SIFT-zone 폴백 시도');
+    // 2) 전체맵이 아예 안 잡힘(=줌인 상태 추정)일 때만 SIFT-zone 폴백.
+    //    전체맵이 잡혔는데 circle.service가 일시 실패한 경우엔 SIFT를 돌리지 않는다.
+    //    (전체맵에서 SIFT는 지명·마커의 흰 픽셀을 자기장으로 오인해 약한 매칭으로 가짜 원을 만든다.)
+    if (!circle && !mapArea) {
+      this.logger.debug('전체맵 미검출(줌인 추정) → SIFT-zone 폴백 시도');
       try {
         circle = await this.siftZone.detectZone(base64, hintPhase);
       } catch (e) {
