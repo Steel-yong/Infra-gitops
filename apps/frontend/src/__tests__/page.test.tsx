@@ -104,7 +104,7 @@ describe('Page', () => {
   it('좌·우 사이드바와 맵 영역이 렌더링된다', () => {
     render(<Page />);
     expect(screen.getByRole('complementary', { name: '설정 사이드바' })).toBeInTheDocument();
-    expect(screen.getByRole('complementary', { name: '명당 사이드바' })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: '추천 사이드바' })).toBeInTheDocument();
     expect(screen.getByTestId('map-canvas')).toBeInTheDocument();
   });
 

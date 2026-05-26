@@ -358,9 +358,9 @@ export default function Page() {
         </div>
 
         {/* ── 오른쪽 사이드바: 위치 추천 ── */}
-        <aside className={styles.rightSidebar} aria-label="명당 사이드바">
+        <aside className={styles.rightSidebar} aria-label="추천 사이드바">
           <div className={styles.sideSection}>
-            <p className={styles.sideSectionLabel}>명당</p>
+            <p className={styles.sideSectionLabel}>추천</p>
           </div>
           <div className={styles.sideSection} style={{ flex: 1, overflowY: 'auto' }}>
             <MyungdangPanel
