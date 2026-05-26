@@ -69,11 +69,13 @@ export default function Page() {
   const { permission, requestPermission } = useWebNotifications();
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const ocrTimer = useOcrTimer(videoRef.current, isCapturing);
 
-  // 게임 종료(치킨/죽음) 감지 — 종료 시 알람 억제 + 자기장 락 해제(UI 초기화).
+  // 게임 종료(치킨/죽음) 감지 — 종료 시 알람 억제 + 자기장 락 해제 + 타이머 초기화.
   const gameEnd = useGameEndDetect(videoRef.current, isCapturing);
   const gameEndedRef = useRef(false);
+
+  // 게임 종료 시 OCR 타이머도 비활성 → INITIAL_STATE로 초기화(잔여시간·페이즈 클리어).
+  const ocrTimer = useOcrTimer(videoRef.current, isCapturing && !gameEnd);
 
   // 위치 락: 한 번 잡으면 고정. 잘못 잡히면 사용자가 "다시 잡기" 버튼으로 unlock.
   const { circle: lockedCircle, unlock: unlockCircle } = useLockedCircle(circleData);
