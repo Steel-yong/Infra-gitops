@@ -17,12 +17,14 @@ const BOUNDS: [[number, number], [number, number]] = [
 function MapUpdater({ mapType }: { mapType: MapType }) {
   const map = useMap();
   useEffect(() => {
+    // 이전 맵의 minZoom 잠금 먼저 해제 — 안 풀면 맵 전환 시 fitBounds가
+    // 이전 minZoom에 막혀 최소 줌(깨진 작은 상태)으로 떨어진다.
+    map.setMinZoom(-10);
     map.fitBounds(BOUNDS, { padding: [0, 0] });
     const size = map.getSize();
     if (size.x > size.y) {
-      const currentZoom = map.getZoom();
       const ratio = size.x / size.y;
-      map.setZoom(currentZoom + Math.log2(ratio), { animate: false });
+      map.setZoom(map.getZoom() + Math.log2(ratio), { animate: false });
     }
     // 보정된 줌을 최소 줌으로 고정 — 사용자가 더 축소해서 맵이 작아지지 않게.
     map.setMinZoom(map.getZoom());
