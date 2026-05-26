@@ -30,6 +30,13 @@ vi.mock('react-leaflet', () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <span data-testid="tooltip">{children}</span>
   ),
+  Marker: ({ position }: { position: [number, number] }) => (
+    <div data-testid="arrow-marker" data-lat={position[0]} data-lng={position[1]} />
+  ),
+}));
+
+vi.mock('leaflet', () => ({
+  divIcon: (opts: { html: string }) => ({ options: opts }),
 }));
 
 const ALL = { S: true, A: true, B: true, C: true };
@@ -130,5 +137,24 @@ describe('MyungdangMarkers', () => {
     const markers = screen.getAllByTestId('circle-marker');
     expect(markers).toHaveLength(3);
     expect(markers.some((m) => m.getAttribute('data-color') === '#22d3ee')).toBe(true);
+  });
+
+  it('hover 시 빨간 화살표 마커가 뜬다', () => {
+    render(
+      <MyungdangMarkers
+        points={[pt({ gx: 0.5, gy: 0.5 })]}
+        visibleTiers={ALL}
+        highlightedKeys={new Set(['0.5-0.5'])}
+        hoveredKey="0.5-0.5"
+      />,
+    );
+    expect(screen.getByTestId('arrow-marker')).toBeInTheDocument();
+  });
+
+  it('hover가 아니면 화살표 마커가 없다', () => {
+    render(
+      <MyungdangMarkers points={[pt()]} visibleTiers={ALL} highlightedKeys={new Set(['0.5-0.5'])} />,
+    );
+    expect(screen.queryByTestId('arrow-marker')).not.toBeInTheDocument();
   });
 });

@@ -133,13 +133,16 @@ export default function Page() {
   const RANK_N = 15;
   const TIER_RANK: Record<MyungdangTier, number> = { S: 0, A: 1, B: 2, C: 3 };
   const lateGame = (currentPhase ?? 0) >= 4;
+  // 1~2페이즈는 자기장이 거대 → 외곽 말고 중앙 절반 반경 안의 명당만 추천. 그 외엔 전체 반경.
+  const radiusFactor = currentPhase != null && currentPhase <= 2 ? 0.5 : 1.0;
   let rankedMyungdang: { tier: MyungdangTier; key: string }[] = [];
   let highlightedKeys = new Set<string>();
   if (lockedCircle && lockedCircle.r > 0) {
+    const limit = lockedCircle.r * radiusFactor;
     const inZone = myungdang
       .filter((p) => visibleTiers[p.tier])
       .map((p) => ({ p, d: Math.hypot(p.gx - lockedCircle.x, p.gy - lockedCircle.y) }))
-      .filter((x) => x.d <= lockedCircle.r)
+      .filter((x) => x.d <= limit)
       .sort((a, b) =>
         lateGame
           ? a.d - b.d || TIER_RANK[a.p.tier] - TIER_RANK[b.p.tier]

@@ -2,7 +2,8 @@
 // 명당(프로 위치)을 등급별 도넛 마커로 Leaflet 지도에 렌더링하는 컴포넌트
 
 import { Fragment } from 'react';
-import { CircleMarker, Tooltip } from 'react-leaflet';
+import { CircleMarker, Marker, Tooltip } from 'react-leaflet';
+import { divIcon } from 'leaflet';
 import type { CircleData } from '@pubg-helper/shared';
 import { TIER_COLOR, type MyungdangPoint, type MyungdangTier } from '../hooks/useMyungdang';
 
@@ -13,6 +14,14 @@ const TIER_RADIUS: Record<MyungdangTier, number> = {
   B: 5,
   C: 4,
 };
+
+/** hover 시 가리키는 빨간 화살표 — 점 위에서 ▼ 끝이 점을 가리킴. */
+const arrowIcon = divIcon({
+  className: '',
+  html: '<div style="color:#ff2d2d;font-size:24px;line-height:1;text-shadow:0 0 4px #000,0 0 2px #000">▼</div>',
+  iconSize: [24, 24],
+  iconAnchor: [12, 30],
+});
 
 interface MyungdangMarkersProps {
   points: MyungdangPoint[];
@@ -55,11 +64,14 @@ export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys, 
           return (
             <Fragment key={`${p.gx}-${p.gy}-${i}`}>
               {hovered && (
-                <CircleMarker
-                  center={[1 - p.gy, p.gx]}
-                  radius={TIER_RADIUS[p.tier] + 7}
-                  pathOptions={{ color: '#22d3ee', weight: 3, fillOpacity: 0 }}
-                />
+                <>
+                  <CircleMarker
+                    center={[1 - p.gy, p.gx]}
+                    radius={TIER_RADIUS[p.tier] + 7}
+                    pathOptions={{ color: '#22d3ee', weight: 3, fillOpacity: 0 }}
+                  />
+                  <Marker position={[1 - p.gy, p.gx]} icon={arrowIcon} />
+                </>
               )}
               {highlighted && (
                 <CircleMarker
