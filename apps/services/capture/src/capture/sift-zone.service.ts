@@ -8,6 +8,7 @@ import sharp from 'sharp';
 import cvDefault from '@techstark/opencv-js';
 import type { CvMat, CvKeyPointVector, CvAkaze, OpenCv } from '../types/techstark-opencv-js';
 import type { CircleData } from '@pubg-helper/shared';
+import { isZoneInsideParent, type ParentZone } from './zone-geometry';
 
 // @techstark/opencv-js의 자체 타입이 이 프로젝트 사용부와 안 맞아, 로컬 OpenCv 타입으로 한 번만 단언한다(any 미사용).
 const cv = cvDefault as unknown as OpenCv;
@@ -77,7 +78,11 @@ export class SiftZoneService {
    * 줌인 프레임에서 자기장 복원. 매칭/검출 실패 시 null.
    * @param base64 화면 프레임 (RGB jpeg/png base64)
    */
-  async detectZone(base64: string, hintPhase?: number): Promise<CircleData | null> {
+  async detectZone(
+    base64: string,
+    hintPhase?: number,
+    parent?: ParentZone,
+  ): Promise<CircleData | null> {
     await this.ensureReady();
     const c = cv;
     const buf = Buffer.from(base64, 'base64');
@@ -155,7 +160,7 @@ export class SiftZoneService {
     // 흰 자기장 호 픽셀 (프레임 좌표) → 게임 좌표 변환 → RANSAC 원 피팅.
     const arc = this.collectWhiteArc(color, fw, fh);
     const minArc = isValidPhase(hintPhase) ? 12 : 30; // 페이즈 알면 중심만 찾으므로 호 점 적어도 됨
-    const result = arc.length >= minArc ? this.fitZone(arc, best.H, c, hintPhase) : null;
+    const result = arc.length >= minArc ? this.fitZone(arc, best.H, c, hintPhase, parent) : null;
     best.H.delete();
     if (result) {
       this.logger.log(
@@ -179,7 +184,13 @@ export class SiftZoneService {
   }
 
   /** 호 픽셀을 호모그래피로 게임좌표(0~1)로 변환 후 RANSAC 원 피팅 → 페이즈 매칭. */
-  private fitZone(arc: Array<[number, number]>, H: CvMat, c: OpenCv, hintPhase?: number): CircleData | null {
+  private fitZone(
+    arc: Array<[number, number]>,
+    H: CvMat,
+    c: OpenCv,
+    hintPhase?: number,
+    parent?: ParentZone,
+  ): CircleData | null {
     const flat: number[] = [];
     for (const [x, y] of arc) flat.push(x, y);
     const srcMat = c.matFromArray(arc.length, 1, c.CV_32FC2, flat);
@@ -202,7 +213,7 @@ export class SiftZoneService {
     // OCR로 페이즈(=반경)를 알면 중심만 찾는다 — 작은 호·부분 잘림에 견고.
     if (isValidPhase(hintPhase)) {
       const r = PUBG_PHASE_RADII[hintPhase - 1];
-      const center = this.fitCenterFixedRadius(game, r);
+      const center = this.fitCenterFixedRadius(game, r, parent);
       return center ? { x: center.cx, y: center.cy, r, phase: hintPhase } : null;
     }
 
@@ -214,6 +225,7 @@ export class SiftZoneService {
       const cir = circleFromThree(a, b, d);
       if (!cir) continue;
       if (cir.r < 0.01 || cir.r > 0.6) continue;
+      if (!isZoneInsideParent(cir.cx, cir.cy, cir.r, parent)) continue; // 부모 자기장 밖 중심 기각
       let score = 0;
       for (const [px, py] of game) {
         if (Math.abs(Math.hypot(px - cir.cx, py - cir.cy) - cir.r) < 0.004) score++;
@@ -232,13 +244,17 @@ export class SiftZoneService {
         phase = p + 1;
       }
     }
-    return { x: best.cx, y: best.cy, r: PUBG_PHASE_RADII[phase - 1], phase };
+    // 스냅된 페이즈 반경이 best.r보다 커질 수 있으므로, 부모 포함 제약을 스냅 반경으로 재검증.
+    const snappedR = PUBG_PHASE_RADII[phase - 1];
+    if (!isZoneInsideParent(best.cx, best.cy, snappedR, parent)) return null;
+    return { x: best.cx, y: best.cy, r: snappedR, phase };
   }
 
   /** 반경 고정 시 호 점들로 중심만 RANSAC (페이즈 힌트가 있을 때, 작은 호에 견고). */
   private fitCenterFixedRadius(
     pts: Array<[number, number]>,
     r: number,
+    parent?: ParentZone,
   ): { cx: number; cy: number } | null {
     let best: { cx: number; cy: number; score: number } | null = null;
     for (let t = 0; t < 2000; t++) {
@@ -246,6 +262,7 @@ export class SiftZoneService {
       const b = pts[(Math.random() * pts.length) | 0];
       for (const cen of centersFromTwoAndRadius(a, b, r)) {
         if (cen.cx < -0.1 || cen.cx > 1.1 || cen.cy < -0.1 || cen.cy > 1.1) continue;
+        if (!isZoneInsideParent(cen.cx, cen.cy, r, parent)) continue; // 부모 자기장 밖 중심 기각
         let score = 0;
         for (const [px, py] of pts) {
           if (Math.abs(Math.hypot(px - cen.cx, py - cen.cy) - r) < 0.006) score++;

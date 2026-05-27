@@ -66,7 +66,7 @@ export class CaptureService {
     if (!circle && !mapArea && SIFT_ZONE_ENABLED) {
       this.logger.debug('전체맵 미검출(줌인 추정) → SIFT-zone 폴백 시도');
       try {
-        circle = await this.siftZone.detectZone(base64, hintPhase);
+        circle = await this.siftZone.detectZone(base64, hintPhase, parentCircle);
       } catch (e) {
         this.logger.warn(`SIFT-zone 폴백 오류: ${e instanceof Error ? e.message : e}`);
       }
