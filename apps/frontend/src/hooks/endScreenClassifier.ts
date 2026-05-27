@@ -11,16 +11,12 @@ export const CHICKEN_YELLOW_RATIO = 0.06;
 /** 어두움 게이트: 어두운 픽셀 비율 임계(죽음·결과화면 ~0.72+). 단독으로 죽음 확정 금지 — OCR 확인 필수. */
 export const DARK_RATIO = 0.72;
 
-/** 결과/종료 화면 텍스트 패턴 — 어두움 게이트 통과 후 OCR로 죽음을 확정하는 키워드(순위·메뉴). */
-const RESULT_PATTERNS: RegExp[] = [
-  /#\s*\d{1,3}/, // 순위 "#35"
-  /\d\s*\/\s*9\s*9/, // "35/99"
-  /다음/,
-  /결과/,
-  /관전/,
-  /순위/,
-  /로비/,
-];
+/**
+ * 결과화면 좌하단 고정 "다음" 버튼 패턴 — 죽음 확정 신호.
+ * 순위("#N/99")는 인원수가 99가 아닐 수 있어 취약 → 항상 같은 위치에 뜨는 "다음"으로 판정.
+ * OCR 오차 여유로 글자 사이 공백 허용.
+ */
+const NEXT_BUTTON = /다\s*음/;
 
 /**
  * 1차 픽셀 분류. 치킨(노랑)이 우선. 어두우면 'dark'(OCR 확인 대상). 둘 다 아니면 null.
@@ -44,8 +40,8 @@ export function classifyEndFrame(pixels: Uint8ClampedArray): EndCandidate {
   return null;
 }
 
-/** OCR로 읽은 텍스트가 결과/종료 화면 키워드를 포함하는가 (어두움 게이트 통과 후 죽음 확정용). */
-export function isResultScreenText(text: string): boolean {
+/** OCR로 읽은 텍스트에 좌하단 "다음" 버튼이 있는가 (어두움 게이트 통과 후 죽음 확정용). */
+export function isNextButton(text: string): boolean {
   if (!text) return false;
-  return RESULT_PATTERNS.some((p) => p.test(text));
+  return NEXT_BUTTON.test(text);
 }

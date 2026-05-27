@@ -1,6 +1,6 @@
 // endScreenClassifier 테스트 — 치킨(노랑)/죽음(어두움)/일반(컬러) 구분
 import { describe, it, expect } from 'vitest';
-import { classifyEndFrame, isResultScreenText } from '../hooks/endScreenClassifier';
+import { classifyEndFrame, isNextButton } from '../hooks/endScreenClassifier';
 
 /** w*h 픽셀을 단색 RGBA로 채운 배열 생성. */
 function fill(r: number, g: number, b: number, count = 1000): Uint8ClampedArray {
@@ -49,20 +49,21 @@ describe('classifyEndFrame', () => {
   });
 });
 
-describe('isResultScreenText (어두움 게이트 통과 후 죽음 확정용)', () => {
-  it('순위 "#N" 텍스트를 결과화면으로 인식', () => {
-    expect(isResultScreenText('#35  KYUGOO')).toBe(true);
+describe('isNextButton (좌하단 "다음" 버튼 — 죽음 확정용)', () => {
+  it('"다음" 텍스트를 인식', () => {
+    expect(isNextButton('다음')).toBe(true);
   });
-  it('"N / 99" 순위 표기 인식', () => {
-    expect(isResultScreenText('35 / 99')).toBe(true);
+  it('OCR 공백 끼어도 인식 ("다 음")', () => {
+    expect(isNextButton('다 음')).toBe(true);
   });
-  it('메뉴 키워드(다음/결과/관전) 인식', () => {
-    expect(isResultScreenText('다음으로')).toBe(true);
-    expect(isResultScreenText('매치 결과')).toBe(true);
-    expect(isResultScreenText('관전 모드')).toBe(true);
+  it('주변 텍스트와 섞여도 인식', () => {
+    expect(isNextButton('F  다음')).toBe(true);
   });
-  it('일반 게임플레이 텍스트·빈 문자열은 결과화면 아님', () => {
-    expect(isResultScreenText('123m  ammo')).toBe(false);
-    expect(isResultScreenText('')).toBe(false);
+  it('순위("#35/99")는 더 이상 죽음 신호 아님 (인원수 의존 제거)', () => {
+    expect(isNextButton('#35 / 99')).toBe(false);
+  });
+  it('일반 텍스트·빈 문자열은 아님', () => {
+    expect(isNextButton('123m ammo')).toBe(false);
+    expect(isNextButton('')).toBe(false);
   });
 });

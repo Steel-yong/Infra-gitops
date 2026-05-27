@@ -5,12 +5,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Worker as TesseractWorker } from 'tesseract.js';
-import { classifyEndFrame, isResultScreenText, type GameEndKind } from './endScreenClassifier';
+import { classifyEndFrame, isNextButton, type GameEndKind } from './endScreenClassifier';
 
 const SAMPLE_W = 160; // 1차 픽셀 분류용 (가벼움)
 const SAMPLE_H = 90;
-const OCR_W = 640; // OCR용 크롭 (텍스트 읽을 해상도)
-const OCR_H = 360;
+// 결과화면 좌하단 "다음" 버튼만 크롭해 OCR — 고정 위치라 인원수·노이즈와 무관.
+const NEXT_CROP_X = 0; // 좌측부터
+const NEXT_CROP_Y = 0.85; // 하단 15% 영역
+const NEXT_CROP_W = 0.25; // 좌측 25% 폭
+const NEXT_CROP_H = 0.15;
+const OCR_W = 512; // 크롭을 업스케일해 작은 "다음" 글자 가독성 확보
+const OCR_H = 200;
 /** 연속 N회 같은 결과여야 확정 — 순간 오탐(전환 프레임) 방지. */
 const CONFIRM_COUNT = 3;
 
@@ -45,11 +50,11 @@ export function useGameEndDetect(
     ocr.height = OCR_H;
     const octx = ocr.getContext('2d', { willReadFrequently: true });
 
-    // 어두움 게이트 통과 시 1회 생성하는 tesseract 워커(영문 — 순위 "#N/99"가 핵심 신호).
+    // 어두움 게이트 통과 시 1회 생성하는 tesseract 워커(한글 — 좌하단 "다음" 버튼 인식).
     const ensureWorker = async (): Promise<TesseractWorker> => {
       if (workerRef.current) return workerRef.current;
       const mod = await import('tesseract.js');
-      const w = await mod.createWorker('eng');
+      const w = await mod.createWorker('kor');
       if (stopped) {
         // 생성 대기 중 unmount/비활성 전환 → cleanup이 이미 지나 ref에 못 담으면 누수.
         // 여기서 즉시 종료하고 저장하지 않는다(누수 방지).
@@ -81,15 +86,26 @@ export function useGameEndDetect(
         record(null);
         return;
       }
-      // 어두움 게이트 통과 → OCR로 결과화면 텍스트 확인돼야 죽음 확정.
+      // 어두움 게이트 통과 → 좌하단 "다음" 버튼 OCR로 죽음 확정.
       busyRef.current = true;
       try {
         const w = await ensureWorker();
         if (stopped) return;
-        octx.drawImage(video, 0, 0, OCR_W, OCR_H);
+        // 좌하단 고정 영역만 크롭해 업스케일 → "다음" 인식.
+        octx.drawImage(
+          video,
+          video.videoWidth * NEXT_CROP_X,
+          video.videoHeight * NEXT_CROP_Y,
+          video.videoWidth * NEXT_CROP_W,
+          video.videoHeight * NEXT_CROP_H,
+          0,
+          0,
+          OCR_W,
+          OCR_H,
+        );
         const { data } = await w.recognize(ocr);
         if (stopped) return;
-        record(isResultScreenText(data.text) ? 'death' : null);
+        record(isNextButton(data.text) ? 'death' : null);
       } catch {
         // OCR 실패 → 죽음 미확정(어두움만으로 초기화하지 않음).
         if (!stopped) record(null);
