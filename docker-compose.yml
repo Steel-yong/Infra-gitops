@@ -23,6 +23,8 @@ services:
       - "3001:3001"
     environment:
       PORT: 3001
+      # 줌 자기장 SIFT 폴백(PUB-39). 기본 off — 라이브 테스트 시 true로 켠다.
+      SIFT_ZONE_ENABLED: ${SIFT_ZONE_ENABLED:-false}
 
   location:
     build:
