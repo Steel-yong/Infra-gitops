@@ -1,6 +1,6 @@
 // endScreenClassifier 테스트 — 치킨(노랑)/죽음(어두움)/일반(컬러) 구분
 import { describe, it, expect } from 'vitest';
-import { classifyEndFrame, isNextButton } from '../hooks/endScreenClassifier';
+import { classifyEndFrame, isNextButton, nextButtonCropRect } from '../hooks/endScreenClassifier';
 
 /** w*h 픽셀을 단색 RGBA로 채운 배열 생성. */
 function fill(r: number, g: number, b: number, count = 1000): Uint8ClampedArray {
@@ -65,5 +65,18 @@ describe('isNextButton (좌하단 "다음" 버튼 — 죽음 확정용)', () => 
   it('일반 텍스트·빈 문자열은 아님', () => {
     expect(isNextButton('123m ammo')).toBe(false);
     expect(isNextButton('')).toBe(false);
+  });
+});
+
+describe('nextButtonCropRect (좌하단 "다음" 크롭 영역)', () => {
+  it('1920x1080 → 좌하단 25%×15%', () => {
+    expect(nextButtonCropRect(1920, 1080)).toEqual({ sx: 0, sy: 918, sw: 480, sh: 162 });
+  });
+  it('크롭이 항상 프레임 안 + 하단부에 위치', () => {
+    const { sx, sy, sw, sh } = nextButtonCropRect(1280, 720);
+    expect(sx).toBe(0);
+    expect(sw).toBeLessThanOrEqual(1280);
+    expect(sy + sh).toBeLessThanOrEqual(720);
+    expect(sy).toBeGreaterThan(720 * 0.8); // 하단
   });
 });

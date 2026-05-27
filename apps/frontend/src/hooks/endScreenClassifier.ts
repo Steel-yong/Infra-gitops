@@ -45,3 +45,16 @@ export function isNextButton(text: string): boolean {
   if (!text) return false;
   return NEXT_BUTTON.test(text);
 }
+
+/** 결과화면 좌하단 "다음" 버튼 크롭 영역(소스 픽셀). 고정 비율 — OCR 대상 영역. */
+export function nextButtonCropRect(
+  w: number,
+  h: number,
+): { sx: number; sy: number; sw: number; sh: number } {
+  return {
+    sx: 0,
+    sy: Math.round(h * 0.85), // 하단 15%
+    sw: Math.round(w * 0.25), // 좌측 25%
+    sh: Math.round(h * 0.15),
+  };
+}

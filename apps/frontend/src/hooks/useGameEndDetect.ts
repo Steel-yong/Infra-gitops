@@ -5,16 +5,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Worker as TesseractWorker } from 'tesseract.js';
-import { classifyEndFrame, isNextButton, type GameEndKind } from './endScreenClassifier';
+import {
+  classifyEndFrame,
+  isNextButton,
+  nextButtonCropRect,
+  type GameEndKind,
+} from './endScreenClassifier';
 
 const SAMPLE_W = 160; // 1차 픽셀 분류용 (가벼움)
 const SAMPLE_H = 90;
-// 결과화면 좌하단 "다음" 버튼만 크롭해 OCR — 고정 위치라 인원수·노이즈와 무관.
-const NEXT_CROP_X = 0; // 좌측부터
-const NEXT_CROP_Y = 0.85; // 하단 15% 영역
-const NEXT_CROP_W = 0.25; // 좌측 25% 폭
-const NEXT_CROP_H = 0.15;
-const OCR_W = 512; // 크롭을 업스케일해 작은 "다음" 글자 가독성 확보
+// 결과화면 좌하단 "다음" 버튼 크롭(nextButtonCropRect)을 업스케일해 OCR — 고정 위치라 인원수·노이즈 무관.
+const OCR_W = 512;
 const OCR_H = 200;
 /** 연속 N회 같은 결과여야 확정 — 순간 오탐(전환 프레임) 방지. */
 const CONFIRM_COUNT = 3;
@@ -92,17 +93,8 @@ export function useGameEndDetect(
         const w = await ensureWorker();
         if (stopped) return;
         // 좌하단 고정 영역만 크롭해 업스케일 → "다음" 인식.
-        octx.drawImage(
-          video,
-          video.videoWidth * NEXT_CROP_X,
-          video.videoHeight * NEXT_CROP_Y,
-          video.videoWidth * NEXT_CROP_W,
-          video.videoHeight * NEXT_CROP_H,
-          0,
-          0,
-          OCR_W,
-          OCR_H,
-        );
+        const crop = nextButtonCropRect(video.videoWidth, video.videoHeight);
+        octx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, OCR_W, OCR_H);
         const { data } = await w.recognize(ocr);
         if (stopped) return;
         record(isNextButton(data.text) ? 'death' : null);
