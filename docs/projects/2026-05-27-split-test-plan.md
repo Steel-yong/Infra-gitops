@@ -10,6 +10,7 @@
 | `feature/PUB-38-taego` | 태이고 명당 526개 데이터 | 라이브 | frontend (data) |
 | `feature/PUB-37-gameend` | 게임 종료(치킨/사망) 감지 OCR | 라이브 + 유닛 | frontend (hooks) |
 | `feature/PUB-39-zoom` | 줌 자기장 parentCircle 제약 | 라이브 + 유닛 | capture |
+| `feature/admin` | `/admin` 비번 게이트 + API 테스트 패널 | 라이브 + 유닛 | frontend |
 | `feature/regression-tests` | useLockedCircle 회귀 테스트 | 유닛만 | frontend (test) |
 | `feature/agents-viz-rule` | bible 규칙 2개(시각화 자료·이슈 분리) | 검증 불요(문서) | docs |
 
@@ -31,6 +32,13 @@
 - [ ] 전체맵 줌인 상태에서 자기장 원 복원, 부모 제약으로 우상단 가짜원 억제.
 - [ ] 과도 줌·후반 페이즈에서 `tol`(부모반경*0.2)·`MIN_STRONG_INLIERS`(120) 튜닝 필요 여부 기록.
 
+### 어드민 페이지
+- [ ] 선행: frontend에 `ADMIN_PASSWORD` 설정(미설정 시 `/admin` 잠김).
+- [ ] `/admin` 접속 → 미인증이면 `/admin/login` 리다이렉트.
+- [ ] 올바른 비번 → 패널 진입. 틀린 비번 → 에러.
+- [ ] capture/location/alert health·locations 버튼 → 실제 응답(HTTP 상태+본문) 표시.
+- [ ] 로그아웃 → 다시 로그인 요구.
+
 ## 3. 유닛 테스트 (자동 — 라이브 불요)
 
 | 브랜치 | 테스트 | 결과 |
@@ -38,6 +46,7 @@
 | regression-tests | useLockedCircle.test | 6/6 |
 | PUB-37-gameend | endScreenClassifier.test | 10/10 |
 | PUB-39-zoom | zone-geometry.spec | 9/9 |
+| admin | admin-auth·login-route·pages | 18/18 |
 
 ## 4. 테스트 선행 절차
 1. 각 브랜치를 develop로 PR 머지(서비스가 달라 순서 무관).
@@ -50,4 +59,3 @@
 
 ## 6. 미분리·후속
 - **E 유저 실시간 위치** — PoC상 미니맵 매칭만으론 부족, 플레이어 화살표 검출 필요 → 별도 이슈.
-- **어드민 페이지** — env 비번 로그인 + API 테스트 UI → 별도 이슈/worktree.
