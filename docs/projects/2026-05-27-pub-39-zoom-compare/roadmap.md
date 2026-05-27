@@ -7,7 +7,7 @@
 
 ## PHASE A — 방법 2·1·5 PoC 비교 (전부 [자율])
 > 상세 검증 기준은 `checklist.md` 참조. 아래는 순서.
-- [ ] A1. 검출 모듈 정리: 흰 안전구역 원 + 파란 블루존 벽 원 안정 검출(파란 헛원 제거). → 검증: 5프레임 오버레이 육안 OK + inlier 기준.
+- [x] A1. 검출 모듈 정리: 흰 안전구역 원 + 파란 블루존 벽 원 안정 검출(파란 헛원 제거). → 검증: 5프레임 오버레이 육안 OK + inlier 기준. **(완료: 흰 4/5 정확, 파란 헛원 제거, 파란 벽 색분리 불가 실측. context-notes A1.)**
 - [ ] A2. `ground_truth.json`: 프레임별 흰 원 중심 도시 → erangel-cities 좌표(정답). → 검증: 프레임당 (도시,gx,gy).
 - [ ] A3. known 앵커 추출: 전체맵(1페·2페)에서 현재 원 abs / P_world. → 검증: 앵커 좌표 출력.
 - [ ] A4. 방법2(원 ruler) PoC → compare_result.json m2. → 검증: 프레임별 err·sanity.

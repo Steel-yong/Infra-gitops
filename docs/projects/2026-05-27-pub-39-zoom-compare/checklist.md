@@ -5,7 +5,7 @@
 ## 0. 기반
 - [x] 프레임/도시표/PoC 패턴 확인.
 - [x] 방법2 1차 PoC(`poc_m2_ruler.py`) + 색 오버레이(`poc_overlay_circles.py`).
-- [ ] 검출 모듈 정리: 흰 안전구역 원 + 파란 블루존 벽 원 안정 검출. → 검증: 5개 줌 프레임 오버레이가 육안상 맞고 inlier≥기준.
+- [x] 검출 모듈 정리: 흰 안전구역 원 + 파란 블루존 벽 원 안정 검출. → 검증: 5개 줌 프레임 오버레이가 육안상 맞고 inlier≥기준. **(완료: 흰 원 4/5 정확 inl2472~3547, 파란 헛원 제거. 파란 벽=색분리 불가 실측→구조윤곽법. 4v 작은 링 미검출=후속. `.local/poc_detect_circles.py`, det_*.png, context-notes A1 참조.)**
 
 ## 1. 정답(ground truth)
 - [ ] 각 테스트 프레임의 흰 원 중심 도시 식별 → `erangel-cities.ts` 좌표로 `ground_truth.json` 작성. → 검증: 프레임마다 (도시명, gx, gy) 한 줄. 애매하면 best+second 기록.
