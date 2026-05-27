@@ -1,18 +1,32 @@
 // 게임 종료 화면(치킨/죽음) 판별 — 순수 함수(테스트 용이).
-// 실제 화면 보정: 치킨=대형 노란 텍스트(노랑비율 0.14), 죽음=화면 어두움(0.81). 인게임 전체맵은 컬러라 미해당.
+// 치킨=대형 노란 텍스트(노랑비율). 죽음=어두움을 1차 게이트로 쓰고, OCR로 결과화면 텍스트가 확인돼야 확정.
+// (어두움만으로 초기화 금지 — 동굴·야간 인게임 오판 방지.)
 
 export type GameEndKind = 'chicken' | 'death' | null;
+/** 1차 픽셀 분류 결과. 'dark'는 어두움 게이트 통과(=OCR 확인 필요)일 뿐 확정 죽음이 아니다. */
+export type EndCandidate = 'chicken' | 'dark' | null;
 
 /** 치킨: 노란 픽셀 비율 임계 (치킨 0.14 vs 그 외 ~0). */
 export const CHICKEN_YELLOW_RATIO = 0.06;
-/** 죽음: 어두운 픽셀 비율 임계 (죽음 0.81 vs 인게임 컬러맵 낮음). 비행 어두움은 락 전이라 무해. */
-export const DEATH_DARK_RATIO = 0.72;
+/** 어두움 게이트: 어두운 픽셀 비율 임계(죽음·결과화면 ~0.72+). 단독으로 죽음 확정 금지 — OCR 확인 필수. */
+export const DARK_RATIO = 0.72;
+
+/** 결과/종료 화면 텍스트 패턴 — 어두움 게이트 통과 후 OCR로 죽음을 확정하는 키워드(순위·메뉴). */
+const RESULT_PATTERNS: RegExp[] = [
+  /#\s*\d{1,3}/, // 순위 "#35"
+  /\d\s*\/\s*9\s*9/, // "35/99"
+  /다음/,
+  /결과/,
+  /관전/,
+  /순위/,
+  /로비/,
+];
 
 /**
- * RGBA 픽셀 배열에서 게임 종료 화면을 판별한다.
- * 치킨이 죽음보다 우선(둘 다면 치킨). 둘 다 아니면 null.
+ * 1차 픽셀 분류. 치킨(노랑)이 우선. 어두우면 'dark'(OCR 확인 대상). 둘 다 아니면 null.
+ * ※ 'dark'는 죽음 확정이 아니라 후보 — useGameEndDetect가 OCR로 결과화면 텍스트를 확인해야 'death'.
  */
-export function classifyEndFrame(pixels: Uint8ClampedArray): GameEndKind {
+export function classifyEndFrame(pixels: Uint8ClampedArray): EndCandidate {
   let yellow = 0;
   let dark = 0;
   let n = 0;
@@ -26,6 +40,12 @@ export function classifyEndFrame(pixels: Uint8ClampedArray): GameEndKind {
   }
   if (n === 0) return null;
   if (yellow / n >= CHICKEN_YELLOW_RATIO) return 'chicken';
-  if (dark / n >= DEATH_DARK_RATIO) return 'death';
+  if (dark / n >= DARK_RATIO) return 'dark';
   return null;
+}
+
+/** OCR로 읽은 텍스트가 결과/종료 화면 키워드를 포함하는가 (어두움 게이트 통과 후 죽음 확정용). */
+export function isResultScreenText(text: string): boolean {
+  if (!text) return false;
+  return RESULT_PATTERNS.some((p) => p.test(text));
 }
