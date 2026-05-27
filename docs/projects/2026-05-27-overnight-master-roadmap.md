@@ -6,6 +6,21 @@
 
 ---
 
+## 📌 상시 지침 (최우선 — 매 회차·매 작업에 적용)
+
+### ① 먼저 이 세션 맥락을 흡수하라 (루프 시작 시 1회, 이후 필요할 때 참조)
+이 줌 작업은 5라운드 Claude↔Codex 비판 토론 + 사용자 정정 위에 서 있다. 그 맥락 없이 진행하면 이미 폐기한 결론을 되풀이한다.
+- **원 세션 전사(우리 대화 전부)**: `~/.claude/projects/-mnt-d-infra-project-Infra-gitops/bc013ad8-727c-44f1-808b-9f2b76fa443e.jsonl` — 1회 읽어 맥락 흡수.
+- **큐레이션 문서(매 작업 참조)**: `docs/projects/2026-05-27-pub-39-zoom-v2/codex-deep-r1·r2·r3r4·r5.md`, `docs/projects/2026-05-27-pub-39-zoom-compare/context-notes.md`, `docs/resources/mockups/2026-05-27-report-zoom-6methods.html`.
+- 핵심 기억: 줌 SIFT 실패 확정 / 흰 원 RANSAC 성공 / 사용자 정정="플레이어는 가장자리 보려 줌 안 함→아이콘 가시성 높음" / 방법1·2·5 비교가 현재 과제 / 정답=도시라벨.
+
+### ② 모든 것을 Codex와 상담하며 진행하라 (단독 결론 금지 — CORE 10부)
+검출기 설계, 방법 선택, scale·기하 로직, 비교 결론, 코드 구현 — **주요 판단마다 `codex exec`로 상담하고 항목별로 반영**한다(아래 호출법). 최종 검수뿐 아니라 진행 중에도 상담한다.
+- 패턴: 막히거나 결정할 때 → 현황+선택지를 프롬프트로 codex에 묻기 → 답을 context-notes/응답파일에 적고 반영 또는 반박. 같은 이견 2회면 사용자 판정으로 남김.
+- 내가 쓴 건 Codex가, Codex가 쓴 건 내가 검수(상호). 상담 기록은 `docs/projects/<작업>/`에 보존.
+
+---
+
 ## ⛔ 하드 금지선 (권한이 풀려도 절대 금지 — 위반 = 사고)
 - **git push 금지. main 머지/체크아웃 금지. force push·남의 브랜치 삭제 금지.**
 - **클러스터 변경 절대 금지**: `kubectl`/`helm`/`argocd`/`k9s`의 apply·delete·patch·scale·rollout, `docker push`, 매니페스트 적용 — 전부 금지(여긴 k8s-bastion).
