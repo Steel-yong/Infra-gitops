@@ -8,7 +8,7 @@
 - [x] 검출 모듈 정리: 흰 안전구역 원 + 파란 블루존 벽 원 안정 검출. → 검증: 5개 줌 프레임 오버레이가 육안상 맞고 inlier≥기준. **(완료: 흰 원 4/5 정확 inl2472~3547, 파란 헛원 제거. 파란 벽=색분리 불가 실측→구조윤곽법. 4v 작은 링 미검출=후속. `.local/poc_detect_circles.py`, det_*.png, context-notes A1 참조.)**
 
 ## 1. 정답(ground truth)
-- [ ] 각 테스트 프레임의 흰 원 중심 도시 식별 → `erangel-cities.ts` 좌표로 `ground_truth.json` 작성. → 검증: 프레임마다 (도시명, gx, gy) 한 줄. 애매하면 best+second 기록.
+- [x] 각 테스트 프레임의 흰 원 중심 도시 식별 → `erangel-cities.ts` 좌표로 `ground_truth.json` 작성. → 검증: 프레임마다 (도시명, gx, gy) 한 줄. 애매하면 best+second 기록. **(완료: `.local/pub39-shots/ground_truth.json`. Codex 라운드2 반영 — candidateRegion(약한앵커)+matchTable(줌↔전체맵)+detector분리. 1페확대↔1페, 2페확대·2페확대2↔2페(1) 매칭. 2v·4v는 전체맵 매칭없어 분리. codex-consult.md 라운드2.)**
 - [ ] 전체맵(1페·2페)에서 known 앵커(현재 원 abs / P_world) 추출해 줌 프레임에 매칭(같은 페이즈). → 검증: 앵커 abs 좌표 출력.
 
 ## 2. 방법2 — 원 ruler

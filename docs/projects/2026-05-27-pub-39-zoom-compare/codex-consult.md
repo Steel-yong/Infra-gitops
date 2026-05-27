@@ -34,3 +34,28 @@
 2. context-notes A1 색결론 문구 한정.
 3. A2: 검출기와 독립적인 ground_truth.json(도시 라벨 비전 식별 + target identity + confidence + excludedReason).
 4. 위 산출물 다시 Codex 검증(라운드 2).
+
+---
+
+## 라운드 2 — A2 ground truth 검수 (2026-05-28)
+- 프롬프트: `.local/zoom-a2-codex-prompt.md` · 원응답: `.local/zoom-a2-codex-out.txt`.
+- **판정: CHANGES_REQUESTED.**
+
+### Codex BLOCKER → 내 반영
+- **[Q3] 현 정답은 "약한 라벨 후보", 비교용 아님(4/5 low). 절대오차 비교 시 정답 노이즈 측정. GATE-1식 신호.** → **반영.** 절대오차 비교 폐기. 더 강한 정답 소스(전체맵) 먼저 사용(사람 정지 전 단계). GATE-1 기준을 Q4 메트릭으로 교체.
+- **[Q1] world.best/second는 도시 라벨 좌표지 원 중심 아님 → numeric 정답 금지. 1페확대 Shooting↔Stalber는 "근방 후보군".** → **반영.** ground_truth를 재구조화: `visualEvidence`(전체맵에서 읽은 중심권역·반지름)와 `detectorObservation`(검출 픽셀) 분리. 도시좌표는 "근방 후보군(candidateRegion)"으로 명시, 정량 중심정답 아님.
+- **[detectorStatus 정답파일 혼입 위험]** → **반영.** detectorObservation 키로 분리, 평가에 섞지 않음.
+
+### Codex SHOULD-FIX → 내 반영
+- **[Q2] 전체맵 스샷에서 정답 재작성(라벨·원·반지름·current/next 관계 명확).** → **반영.** 단 발견: `2페.png`는 게임 원본이 아니라 **우리 앱(PUBG-HELPER) 스샷**, `1페.png`는 클린 게임맵. 전체맵 정답은 클린 게임맵 우선.
+- **[Q2 함정] "같은 페이즈·같은 원" 보장 매칭 테이블(phase·targetType·원개수·상대위치·landmarks·반지름비율) 먼저.** → **반영(최우선).** alive수 단서: 1페(83)↔1페확대(78) 매칭 유력. 2페확대/2페확대2(둘다54) 동일순간 2줌레벨. 2v(38)·4v(22) 후반 — 클린 전체맵 매칭 불명 → 매칭 못하면 low-confidence 유지·비교 분리.
+- **[Q4] 절대 err 대신: 가용성·identity sanity(current/next 안 뒤바뀜)·후보군 포함률·상대 일관성(같은 페이즈쌍 중심이동·반지름)·기각 품질(4v 큰원 오답 안 냄).** → **반영.** roadmap GATE-1·checklist 비교 기준을 이 메트릭으로 교체.
+
+### Codex OPINION → 수용
+- **[Q5] (a) 전체맵 정답 재작성 → A3 앵커 추출. 사람 정지 단계는 아님.** → **수용. 다음 단계 = 매칭 테이블 + 전체맵 기반 정답 재작성.**
+
+### 조치(라운드2 결과)
+1. 줌↔전체맵 매칭 테이블 작성(증거 기반, 못 맞추면 분리).
+2. ground_truth.json 재구조화: candidateRegion(약한앵커) + visualEvidence(전체맵 중심권역·반지름) + detectorObservation 분리.
+3. roadmap GATE-1 기준을 절대err→Q4 상대/sanity 메트릭으로 교체.
+4. 그다음 A3 앵커 추출(전체맵). 진행 전/후 Codex 라운드3 검증.
