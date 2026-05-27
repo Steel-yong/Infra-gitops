@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<!-- PUB-40 유저 위치 — 접근 재결정 시각화 (승인된 AKAZE가 PoC로 무효화됨) -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PUB-40 유저 위치 — 접근 재결정</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 2rem; background: #0d0d14; color: #e2e8f0;
+    font-family: system-ui, "Segoe UI", sans-serif; line-height: 1.6; }
+  h1 { font-size: 1.5rem; margin: 0 0 .3rem; }
+  h2 { font-size: 1.15rem; margin: 2rem 0 .6rem; color: #93c5fd; }
+  .sub { color: #94a3b8; margin: 0 0 1.2rem; }
+  .alert { background: #2a1620; border: 1px solid #7f1d1d; border-radius: 8px;
+    padding: .9rem 1.1rem; margin: 1rem 0; }
+  .alert b { color: #fca5a5; }
+  table { width: 100%; border-collapse: collapse; margin: .5rem 0 1rem; font-size: .92rem; }
+  th, td { border: 1px solid #262636; padding: .6rem .7rem; text-align: left; vertical-align: top; }
+  th { background: #161622; color: #cbd5e1; }
+  .rec { background: #14241a; }
+  .rec td:first-child { border-left: 3px solid #34d399; }
+  .tag { display: inline-block; font-size: .72rem; padding: .1rem .5rem; border-radius: 10px; margin-left: .4rem; }
+  .t1 { background: #14532d; color: #bbf7d0; }
+  .t2 { background: #1e3a5f; color: #bfdbfe; }
+  .t3 { background: #3a2a14; color: #fde68a; }
+  .pro { color: #86efac; } .con { color: #fca5a5; }
+  ul { margin: .3rem 0; padding-left: 1.2rem; }
+  .box { background: #161622; border: 1px solid #262636; border-radius: 8px; padding: 1rem 1.2rem; }
+  code { background: #1f2030; padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
+</style>
+</head>
+<body>
+  <h1>PUB-40 — 유저 실시간 위치, 접근 재결정</h1>
+  <p class="sub">작성 2026-05-27 · feature/PUB-40-player · 결정자: 사용자</p>
+
+  <div class="alert">
+    <b>왜 다시 결정하나.</b> 원 계획은 사용자 승인 = <b>"실시간 미니맵 + 고전 CV(AKAZE 호모그래피)"</b>였습니다.
+    그러나 PoC에서 <b>미니맵 AKAZE 매칭 inlier = 4</b>로 나와(임계 미달) 호모그래피가 불가했습니다.
+    즉 <b>승인된 접근이 데이터로 무효화</b>됐습니다. 아래 중 어디로 갈지 선택이 필요합니다.
+  </div>
+
+  <h2>선택지 비교</h2>
+  <table>
+    <tr><th>접근</th><th>방법</th><th>장점</th><th>단점</th><th>실시간?</th></tr>
+    <tr class="rec">
+      <td><b>A. 미니맵 템플릿매칭</b><span class="tag t1">추천 1순위</span></td>
+      <td>미니맵 크롭을 기준맵에 <b>정규화상관(NCC) 다중스케일</b>로 위치 검색. 미니맵 중심=플레이어. 흰 화살표로 heading.</td>
+      <td class="pro">사용자 승인 "실시간 미니맵" 요구 유지. 특징점 불필요 → 작은 영역에 AKAZE보다 강할 가능성.</td>
+      <td class="con">미검증(PoC 필요). 바다·설원 등 단조 지형 오정합 위험. 미니맵 회전 시 보정 필요.</td>
+      <td>✅ 가능</td>
+    </tr>
+    <tr>
+      <td><b>B. 전체맵 화살표 검출</b><span class="tag t2">보조</span></td>
+      <td>M키 전체맵에서 플레이어 흰 화살표 검출. 전체맵은 이미 zone 검출이 좌표계 확보 → 절대좌표 직접.</td>
+      <td class="pro">로컬라이제이션 불필요 → 구현 단순·신뢰도 높음.</td>
+      <td class="con">전체맵 열 때만 → "실시간" 요구 위반. 마커가 자기장·핑과 겹치면 오검출.</td>
+      <td>❌ (열 때만)</td>
+    </tr>
+    <tr>
+      <td><b>C. ML 학습</b><span class="tag t3">폴백</span></td>
+      <td>미니맵→위치를 학습 모델로 추론.</td>
+      <td class="pro">단조 지형·회전에 강건 가능.</td>
+      <td class="con">데이터·학습 비용 큼. 원 계획상 폴백.</td>
+      <td>✅ 가능(비쌈)</td>
+    </tr>
+  </table>
+
+  <h2>추천</h2>
+  <div class="box">
+    <p><b>① A를 PoC로 먼저 검증</b> — 미니맵 크롭 NCC가 기준맵에서 플레이어 중심을 안정적으로 찾는지(스케일·위치 오차 측정).</p>
+    <p><b>② 결과 분기</b> — PoC 통과 → <b>A 구현</b>. 실패 → <b>B(실시간 포기, 전체맵 열 때 내 위치)</b> 또는 C(ML).</p>
+    <p><b>③ 하이브리드 가능</b> — 평소엔 A(실시간), 전체맵 열렸을 땐 B(정확) 병행도 자연스럽습니다.</p>
+    <p class="con"><b>막힌 점:</b> A의 PoC에는 <b>인게임 미니맵(우하단) 원본 프레임</b>이 필요합니다. 현재 <code>.claude/images</code>엔 풀맵·앱스샷·종료화면뿐이라, 체인 영상에서 1프레임 추출하거나 사용자가 미니맵 스샷 1장을 주셔야 합니다.</p>
+  </div>
+
+  <h2>결정 후 액션</h2>
+  <ul>
+    <li><b>A 선택</b> → 미니맵 프레임 확보 → NCC PoC(<code>.local/poc_player_template.py</code>) → 통과 시 capture <code>detectPlayer()</code> 구현.</li>
+    <li><b>B 선택</b> → 전체맵 화살표 검출기(흰 삼각형 connected-component) → 이미 있는 전체맵 좌표계로 환산.</li>
+    <li><b>C 선택</b> → 라벨 데이터 수집 + 모델 — 별도 대형 이슈.</li>
+  </ul>
+  <p class="sub">이미 완료(접근 무관): <code>shared.PlayerPosition{x,y,heading}</code> 타입 + <code>SocketEvents.PLAYER_RESULT</code> 이벤트.</p>
+</body>
+</html>

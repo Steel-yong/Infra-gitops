@@ -9,6 +9,8 @@ export const SocketEvents = {
   NO_MAP: 'map:none',
   /** alert-service → 프론트: 타이머 상태 업데이트 */
   TIMER_UPDATE: 'timer:update',
+  /** capture-service → 프론트: 플레이어(유저 본인) 실시간 위치 */
+  PLAYER_RESULT: 'player:result',
 } as const;
 
 export type SocketEvent = (typeof SocketEvents)[keyof typeof SocketEvents];

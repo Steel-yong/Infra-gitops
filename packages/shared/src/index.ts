@@ -5,5 +5,6 @@ export type { MapType } from './types/map';
 export { MAP_TYPES, isMapType } from './types/map';
 export type { LocationData, LocationTier } from './types/location';
 export type { TimerState } from './types/timer';
+export type { PlayerPosition } from './types/player';
 export { SocketEvents } from './types/socket-events';
 export type { SocketEvent, FrameUploadPayload } from './types/socket-events';
