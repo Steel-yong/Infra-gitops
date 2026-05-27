@@ -9,7 +9,7 @@
 > 상세 검증 기준은 `checklist.md` 참조. 아래는 순서.
 - [x] A1. 검출 모듈 정리: 흰 안전구역 원 + 파란 블루존 벽 원 안정 검출(파란 헛원 제거). → 검증: 5프레임 오버레이 육안 OK + inlier 기준. **(완료: 흰 4/5 정확, 파란 헛원 제거, 파란 벽 색분리 불가 실측. context-notes A1.)**
 - [x] A2. `ground_truth.json`: 프레임별 흰 원 중심 도시 → erangel-cities 좌표(정답). → 검증: 프레임당 (도시,gx,gy). **(완료(라운드2 재작성): 검출기와 독립, candidateRegion+visualEvidence+detectorObservation 분리, 줌↔전체맵 matchTable 잠금(1페·2페 high/med, 2v·4v unmatched 분리). 절대err→상대/sanity 메트릭. Codex CHANGES_REQUESTED 반영.)**
-- [ ] A3. known 앵커 추출: 전체맵(1페·2페)에서 현재 원 abs / P_world. → 검증: 앵커 좌표 출력.
+- [~] A3. known 앵커 추출: 전체맵(1페·2페)에서 현재 원 abs / P_world. → 검증: 앵커 좌표 출력. **(🚪 GATE — 기하 스펙은 Codex 라운드3로 잠금(Opt1 control point + residual gate + leave-one-out sensitivity, codex-consult.md). 단 control point 정밀 픽셀좌표를 에이전트가 눈으로 못 맞춤(±2~4% ≫ 요구 ±0.3%) → 데이터/도구 보강 필요로 멈춤. overnight-progress.md 옵션 참조.)**
 - [ ] A4. 방법2(원 ruler) PoC → compare_result.json m2. → 검증: 프레임별 err·sanity.
 - [ ] A5. 방법1(플레이어 앵커) PoC → m1. → 검증: 아이콘 가용성 + err.
 - [ ] A6. 방법5(factor graph 융합) PoC → m5. → 검증: 단일앵커 실패시도 결과 + err.

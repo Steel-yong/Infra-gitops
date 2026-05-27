@@ -59,3 +59,30 @@
 2. ground_truth.json 재구조화: candidateRegion(약한앵커) + visualEvidence(전체맵 중심권역·반지름) + detectorObservation 분리.
 3. roadmap GATE-1 기준을 절대err→Q4 상대/sanity 메트릭으로 교체.
 4. 그다음 A3 앵커 추출(전체맵). 진행 전/후 Codex 라운드3 검증.
+
+---
+
+## 라운드 3 — A3 앵커 추출 기하 접근 (2026-05-28)
+- 프롬프트: `.local/zoom-a3-codex-prompt.md` · 원응답: `.local/zoom-a3-codex-out.txt`.
+- **판정: Opt1(도시 control point similarity) 잠금 찬성. 단 엄격 조건. Q5 = "PoC 만들되 anchor confidence 낮으면 데이터 보강 요청으로 멈춰라."**
+
+### Codex BLOCKER → 내 반영
+- **control point 의미 고정**: `erangel-cities.ts`의 gx,gy가 "도시 실제 중심"인지 "라벨 텍스트 중심"인지 명시(안 하면 체계적 bias). → **반영(스펙).** A3 control point = 도시 실제 중심 기준으로 통일, 라벨 텍스트 위치와 오차 주의 명시.
+- **앵커 출력 스키마**: `{cx,cy,r,transform,residualPx,residualWorld,controlPoints,confidence,rejectionReason}` 필수. raw만 저장 금지. → **반영(스펙).**
+- **unmatched 줌(2v·4v)은 절대 err 평가 금지** → 가용성·sanity·후보군 포함률·상대 일관성만. zoom self-anchor는 control point ≥4 & 분산 충분일 때만 low-confidence 보조. → **반영(스펙).**
+
+### Codex SHOULD-FIX → 내 반영(스펙으로 잠금)
+- control point 최소 4·권장 6+, 원을 둘러싸 분산 배치, 한쪽 몰림/해안 몰림 제외.
+- residual 이중 게이트: (수동) median ≤8px·max ≤18px, (world) median ≤0.003·max ≤0.007 초기값 후 분포 보고 조정.
+- control point convex hull 안(또는 근처)에 원 중심 — 외삽 금지.
+- 변환 = 회전0 단일 scale+tx+ty(similarity). 한 축 residual 잔존 시 anisotropic sx,sy는 diagnostics로만.
+- **anchor sensitivity(leave-one-out)** 필수: control point 하나씩 빼서 `{cx,cy,r}` 변동 기록. 방법 간 차이 < anchor sensitivity면 승패 판정 금지. `anchorSigma=max(LOOdelta, residualWorld)`, method err < anchorSigma면 tie/inconclusive.
+- (MINOR) identity sanity overlay: 변환된 도시 좌표 재투영해 라벨 근처인지 육안.
+
+### Codex OPINION → 수용
+- Opt1 최선(Opt2는 흐릿한 배경에 사각형 검출 실패가 조용히 bias). Opt3 과함. 수용.
+- **Q5: A3 PoC 만들고 1페·2페 control point overlay + residual·sensitivity HTML 보여준 뒤, anchor confidence 낮으면 데이터 보강 요청으로 멈춰라.** 수용.
+
+### 내 판정 → **GATE: 데이터/도구 보강 필요로 멈춤**
+Codex 스펙은 명확하나, **A3 실행의 입력(도시 라벨 정밀 픽셀좌표)을 내가 스샷에서 눈으로 읽는 정밀도(±2~4% 이미지폭)가 residual gate(world median ≤0.003 = ±0.3%)보다 5~10× 크다.** 즉 수동 eye-anchor로는 게이트 통과 불가 → Codex Q5의 "anchor confidence 낮으면 멈추고 데이터 보강 요청" 조건에 정확히 해당. 가짜 정밀 좌표를 만들어 진행하는 것은 단독·허위 결론이라 금지(사용자 지시·CORE 위배).
+→ **A3는 사람 결정 게이트.** 스펙은 위에 잠가둠(데이터/도구 확보 시 즉시 실행 가능). 다음 행동은 사용자에게 옵션 제시(아래 overnight-progress.md).
