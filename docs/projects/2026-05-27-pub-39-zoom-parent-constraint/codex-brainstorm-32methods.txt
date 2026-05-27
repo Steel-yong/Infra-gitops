@@ -1,0 +1,67 @@
+현재 진행 상태.  
+- 계획: `docs/projects/2026-05-27-pub-39-zoom-parent-constraint`는 줌 자기장 로컬라이즈 실패 원인과 원 자체를 ruler로 쓰는 B안 연구까지 기록됨. 일부 문서는 인코딩이 깨져 보임.  
+- 작업 중 이슈: Linear 조회 불가.  
+- 미푸시 develop 커밋: 23개.  
+- 열린 워크트리: `feature-gameend-next`, `feature-pub40-player`.  
+- 미커밋 변경: `.claude/settings.local.json`, PUB-39 context, mockup 리소스 일부.  
+다음 할 일: 코드 수정 없이 줌 화면 절대좌표 로컬라이즈 방법을 검토함.
+
+## 후보 방법.
+
+| 방법 | 원리 한줄 | 필요 입력 | 강점 | 약점 | 난이도 | 성공가능성 |
+|---|---|---|---|---|---|---|
+| 1. 자기장 원을 ruler로 사용. | 검출된 픽셀 반경 `Pr`와 페이즈별 절대 반경 `R`로 스케일 `s=Pr/R`를 구함. | 페이즈, 반경 테이블, 픽셀 원. | 특징점 불필요, 이미 RANSAC 성공률 있음. | 절대 중심을 모르면 이동량이 남음. | 하 | 중 |
+| 2. 이전 전체맵 앵커 원과 같은 원 매칭. | 같은 페이즈 원의 절대 중심을 이미 알고 있으면 픽셀 중심과 반경으로 affine 변환을 즉시 복원함. | 이전 full-map 검출 중심, 현재 픽셀 원. | 가장 단순하고 강함. | 같은 원을 이미 절대좌표로 알아야 함. | 하 | 상 |
+| 3. parent circle 제약 + known radius. | 현재 후보 중심을 이전 원 내부 제약으로 좁히고 스케일은 반경으로 고정함. | 이전 원, 현재 페이즈, 픽셀 원. | 허위 중심 기각에 좋음. | 후보가 여전히 넓을 수 있음. | 중 | 중 |
+| 4. 다음 자기장도 같이 검출. | 현재/다음 원 2개의 반경과 상대 위치를 쓰면 translation 후보가 크게 줄어듦. | 두 원 픽셀 검출, 두 페이즈 반경. | 원만으로 위치 제약이 강해짐. | 화면에 두 원이 같이 보여야 함. | 중 | 상 |
+| 5. 원 arc + 화면 경계 교차점 사용. | 원이 화면 밖으로 잘린 지점과 viewport 사각형의 교차 패턴을 제약으로 사용함. | arc, 화면 crop 크기, 반경. | 원 일부만 보여도 사용 가능. | 단독으로는 절대좌표가 약함. | 중 | 중 |
+| 6. 격자선 간격으로 줌 스케일 추정. | 지도 grid line 간 픽셀 간격을 검출해 zoom scale을 구함. | 줌 화면, 기준 grid 간격. | 밝은 선이면 안정적, 계산 저렴. | translation은 별도 필요, grid가 희미하면 실패. | 중 | 중 |
+| 7. 격자선 phase offset 매칭. | 수직/수평 grid line의 픽셀 위치 modulo를 기준맵 grid와 맞춰 viewport offset 후보를 생성함. | grid line 위치, 기준 grid 좌표. | 특징점보다 구조적임. | 반복 패턴이라 여러 후보가 생김. | 중 | 중 |
+| 8. grid label OCR. | 화면 가장자리의 A/B/C 또는 숫자 grid label을 OCR해서 절대 cell을 앵커로 삼음. | OCR, grid label 위치. | 성공하면 절대 위치가 바로 나옴. | 라벨이 안 보이는 줌/설정이면 불가. | 중 | 중 |
+| 9. 도시 라벨 OCR. | `Pochinki`, `Yasnaya` 같은 도시명 OCR 후 기준 좌표와 맞춤. | OCR 결과, 라벨 좌표 DB. | 절대 앵커가 매우 강함. | 한글/영문, 폰트, 가림, 회전 없음에도 OCR 품질 이슈. | 중 | 상 |
+| 10. 라벨 glyph template matching. | OCR 대신 도시명 글자 모양 템플릿을 기준맵에서 찾음. | 기준맵 라벨 템플릿, 줌 화면. | OCR보다 게임 폰트에 특화 가능. | 라벨이 부분 가림이면 취약. | 중 | 중 |
+| 11. 해안선/물가 edge matching. | 물/육지 경계 mask를 만들고 줌 화면 edge와 chamfer distance로 매칭함. | 기준맵 water mask, 줌 화면 water/edge mask. | 특징점 부족 구간에도 해안은 강한 구조. | 내륙은 약함, 색상 보정 필요. | 중 | 상 |
+| 12. 강/하천 skeleton 매칭. | 물 영역을 skeleton화해서 선형 구조를 기준맵과 맞춤. | water mask, skeleton, scale. | 강 주변에서 매우 강함. | 사막/내륙 평지에서는 약함. | 중 | 중 |
+| 13. 도로망 skeleton 매칭. | 도로를 색/edge로 분리하고 선 그래프를 기준맵 도로망과 매칭함. | 기준 도로 mask, 줌 도로 mask. | 내륙에서도 쓸 수 있음. | 도로 검출이 어려움, 작은 길 많음. | 상 | 중 |
+| 14. 지도 semantic mask 매칭. | 물, 도로, 도시, 들판, 산 색상 채널을 분리해 다중 채널 template matching. | 기준맵 semantic channels, 줌 crop. | 특징점 대신 면/선 구조를 사용함. | 기준맵과 게임 렌더 색 차이에 민감함. | 상 | 상 |
+| 15. coarse-to-fine normalized cross correlation. | known scale에서 기준맵 전체를 훑어 줌 crop과 가장 비슷한 위치를 찾음. | 기준맵 이미지, scale, crop. | 구현 단순, baseline으로 좋음. | UI/원/마커 가림, 반복 지형에 약함. | 하 | 중 |
+| 16. edge-only template matching. | 색 대신 Canny/gradient magnitude만 비교해 조명과 UI 색 차이를 줄임. | 기준 edge map, crop edge. | 색상 차이에 강함. | 해안/도로 없는 곳은 약함. | 중 | 중 |
+| 17. distance transform chamfer matching. | 기준 edge distance map 위에 crop edge를 올려 최저 비용 위치를 찾음. | 기준 edge distance map, crop edge. | 부분 edge에도 강함. | 후보 탐색 최적화 필요. | 중 | 상 |
+| 18. phase 반경으로 scale 고정 후 sliding search. | 반경으로 scale을 고정하고 translation만 전역 탐색함. | 페이즈 반경, 픽셀 원, 기준맵. | 탐색 차원이 줄어 실용적임. | 원 중심 절대값은 image matching이 보완해야 함. | 중 | 상 |
+| 19. 원 내부/외부 색상 차이 활용. | 자기장 원 안팎의 tint/blue overlay 패턴을 기준 좌표 후보와 비교함. | 원 mask, 화면 색상. | 원이 크면 넓은 정보 사용 가능. | 게임 그래픽 효과와 압축에 민감함. | 중 | 하 |
+| 20. 맵 경계/코너 검출. | 줌 화면에 섬 외곽 또는 지도 사각 경계가 보이면 절대 위치를 고정함. | 경계 edge, 기준맵 boundary. | 보이면 매우 강함. | 대부분 줌 화면에서는 안 보임. | 하 | 중 |
+| 21. 프레임간 visual odometry. | 이전 프레임의 로컬 좌표에서 현재 프레임 이동량만 추적함. | 연속 프레임, 초기 앵커. | 초기 앵커 후 매우 안정적. | 드리프트, 급격한 이동/줌 변경에 취약. | 중 | 상 |
+| 22. optical flow 기반 pan 추적. | 지도 pan 중 dense/sparse optical flow로 viewport 이동량을 누적함. | 연속 줌 화면. | 특징점 매칭보다 낮은 질감에도 작동 가능. | absolute relocalization은 못 함. | 중 | 상 |
+| 23. phase별 particle filter. | 원, grid, coast, OCR, odometry 점수를 모두 likelihood로 합쳐 후보 분포를 갱신함. | 여러 약한 관측값. | 단일 신호 실패에 강함. | 구현 복잡도와 튜닝이 큼. | 상 | 상 |
+| 24. 사용자 줌 시작 순간 추적. | unzoom full-map 앵커가 있을 때 줌 버튼/휠 이후의 viewport 변환을 계속 추적함. | 줌 전 앵커, 프레임 연속성. | 실제 UX에서 가장 자연스러움. | 중간 프레임 누락 시 재로컬라이즈 필요. | 중 | 상 |
+| 25. 마우스 커서 중심 가정. | PUBG 맵 줌이 커서 또는 화면 중심 기준이라면 줌 전후 중심을 추정함. | 줌 이벤트 전후 프레임, 커서/중심 규칙. | 구현 쉬움. | 게임 동작 규칙 확인 필요. | 하 | 중 |
+| 26. 미니맵/플레이어 위치를 보조 앵커로 사용. | 플레이어 현재 위치가 지도에 표시되면 그 마커를 절대좌표 앵커로 씀. | 플레이어 마커 검출, 실제 위치 추정. | 보이면 강력함. | 전체맵 줌 화면에서 마커가 항상 보이지 않음. | 중 | 중 |
+| 27. 핑/웨이포인트 마커 매칭. | 사용자 핑이나 팀 마커가 기준 지도 좌표와 연결되면 앵커로 사용함. | 마커 검출, 마커 의미. | 색상 마커는 검출 쉬움. | 절대좌표를 알 방법이 별도 필요. | 중 | 하 |
+| 28. known phase transition model. | PUBG 자기장 생성 규칙, parent containment, land ratio bias를 prior로 후보를 줄임. | 이전 원들, phase, 맵 land mask. | 원 기반 방법의 false positive를 줄임. | 단독 위치 결정은 불가. | 중 | 중 |
+| 29. land-only circle center prior. | 다음 원 중심이 물에 과도하게 치우치지 않는다는 prior로 후보를 점수화함. | land mask, phase. | 해안 후보 기각에 도움. | 규칙이 절대적이지 않음. | 하 | 중 |
+| 30. 도시/건물 밀도 heatmap 매칭. | 기준맵의 compound 밀도 heatmap과 줌 crop의 건물/아이콘 밀도를 비교함. | 기준 building/compound heatmap. | 도시 주변에서 강함. | 평야/숲에서는 약함. | 상 | 중 |
+| 31. 큰 지형 랜드마크 템플릿. | 공항, 강, 산맥, 큰 도시 같은 landmark별 detector를 둠. | landmark templates. | 맵별로 실전 튜닝 가능. | 범용성 낮고 유지비 있음. | 중 | 중 |
+| 32. 후보 위치 다중 스코어링. | `원 스케일 + grid + edge + water + label` 점수를 합산해 최고 후보 선택. | 기준맵 전처리, 검출 결과. | 실용적으로 가장 견고함. | 점수 가중치 튜닝 필요. | 상 | 상 |
+
+## 핵심 판단.
+
+자기장 원 자체는 매우 좋은 `scale ruler`입니다. 다만 현재 원의 절대 중심을 모르면 원 하나만으로는 절대 translation을 결정하지 못합니다. 그래서 원은 `줌 배율 확정`에 쓰고, 절대 위치는 `이전 앵커`, `해안/격자/라벨`, `프레임간 추적` 중 하나가 채워야 합니다.
+
+가장 실용적인 구조는 이렇습니다.
+
+1. 페이즈 OCR로 절대 반경을 고정함.
+2. RANSAC 원 검출로 픽셀 반경과 픽셀 중심을 얻음.
+3. `scale = pixelRadius / normalizedRadius`로 줌 스케일을 고정함.
+4. translation 후보를 전역 탐색하되, parent circle, land mask, grid, coast, label, odometry 점수로 랭킹함.
+5. 한 번 높은 신뢰도로 잡히면 이후는 frame odometry로 유지하고, 신뢰도 하락 시 재탐색함.
+
+## Top 3 추천.
+
+1. **원 ruler + 이전 앵커/같은 원 매칭.**  
+성공가능성 상. 이미 1페이즈 full-map 앵커가 있다면 제일 간단하고 정확합니다. 같은 페이즈 또는 직전 locked circle을 알고 있을 때는 바로 affine 변환이 나옵니다.
+
+2. **원 ruler + semantic/edge 전역 매칭.**  
+성공가능성 상. 반경으로 scale을 고정한 뒤 translation만 찾으면 탐색이 현실적입니다. 특히 water mask, coastline, road/edge distance transform을 합치면 AKAZE/SIFT보다 PUBG 지도에 맞습니다.
+
+3. **초기 앵커 + 프레임간 odometry + particle filter.**  
+성공가능성 상. 실사용에서는 갑자기 한 장만 받는 것보다 연속 프레임을 받으므로, 한 번 잡은 좌표를 optical flow/pan 추적으로 유지하는 쪽이 강합니다. 원, grid, coast, OCR은 drift 보정 관측값으로 넣는 게 좋습니다.
