@@ -1,0 +1,96 @@
+/* 어드민 페이지(로그인·테스트 패널) 다크 테마 스타일 */
+.root {
+  min-height: 100vh;
+  background: #0d0d14;
+  color: #e2e8f0;
+  padding: 2rem;
+  font-family: system-ui, sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.loginCard {
+  max-width: 320px;
+  margin: 12vh auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #161622;
+  border: 1px solid #262636;
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.input {
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #333346;
+  background: #0d0d14;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+}
+
+.button {
+  padding: 0.55rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #2d6cdf;
+  background: #1f4fa3;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.linkButton {
+  background: transparent;
+  border: 1px solid #333346;
+  color: #94a3b8;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.error {
+  color: #f87171;
+  font-size: 0.85rem;
+}
+
+.probeList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0;
+}
+
+.probe {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.result {
+  background: #161622;
+  border: 1px solid #262636;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}

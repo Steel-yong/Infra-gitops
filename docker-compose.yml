@@ -56,6 +56,9 @@ services:
       NEXT_PUBLIC_CAPTURE_SERVICE_URL: http://127.0.0.1:3001
       NEXT_PUBLIC_LOCATION_SERVICE_URL: http://127.0.0.1:3002
       NEXT_PUBLIC_ALERT_SERVICE_URL: http://127.0.0.1:3003
+      # 어드민 페이지 게이트 비번 (서버 전용 — NEXT_PUBLIC 아님).
+      # 기본값 없음 — 미설정 시 /admin 잠김(fail-closed). 운영/개발 모두 시크릿·.env로 주입.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
 
 volumes:
   postgres_data:
