@@ -1,6 +1,6 @@
 // endScreenClassifier 테스트 — 치킨(노랑)/죽음(어두움)/일반(컬러) 구분
 import { describe, it, expect } from 'vitest';
-import { classifyEndFrame } from '../hooks/endScreenClassifier';
+import { classifyEndFrame, isResultScreenText } from '../hooks/endScreenClassifier';
 
 /** w*h 픽셀을 단색 RGBA로 채운 배열 생성. */
 function fill(r: number, g: number, b: number, count = 1000): Uint8ClampedArray {
@@ -19,8 +19,8 @@ describe('classifyEndFrame', () => {
     expect(classifyEndFrame(fill(255, 220, 40))).toBe('chicken');
   });
 
-  it('대부분 어두우면 death', () => {
-    expect(classifyEndFrame(fill(15, 15, 15))).toBe('death');
+  it('대부분 어두우면 dark (게이트 — 죽음 확정 아님, OCR 확인 필요)', () => {
+    expect(classifyEndFrame(fill(15, 15, 15))).toBe('dark');
   });
 
   it('일반 컬러 화면(초록맵)이면 null', () => {
@@ -46,5 +46,23 @@ describe('classifyEndFrame', () => {
       px[i * 4 + 3] = 255;
     }
     expect(classifyEndFrame(px)).toBe('chicken');
+  });
+});
+
+describe('isResultScreenText (어두움 게이트 통과 후 죽음 확정용)', () => {
+  it('순위 "#N" 텍스트를 결과화면으로 인식', () => {
+    expect(isResultScreenText('#35  KYUGOO')).toBe(true);
+  });
+  it('"N / 99" 순위 표기 인식', () => {
+    expect(isResultScreenText('35 / 99')).toBe(true);
+  });
+  it('메뉴 키워드(다음/결과/관전) 인식', () => {
+    expect(isResultScreenText('다음으로')).toBe(true);
+    expect(isResultScreenText('매치 결과')).toBe(true);
+    expect(isResultScreenText('관전 모드')).toBe(true);
+  });
+  it('일반 게임플레이 텍스트·빈 문자열은 결과화면 아님', () => {
+    expect(isResultScreenText('123m  ammo')).toBe(false);
+    expect(isResultScreenText('')).toBe(false);
   });
 });
