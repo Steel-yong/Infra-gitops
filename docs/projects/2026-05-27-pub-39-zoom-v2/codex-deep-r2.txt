@@ -1,0 +1,136 @@
+현재 진행 상태.  
+- 계획: PUB-39 줌 자기장 검출은 SIFT/AKAZE 실패 확인 후, 자기장 원을 scale ruler로 쓰는 방향까지 정리됨.  
+- 작업 중 이슈: Linear 조회 불가.  
+- 미푸시 develop 커밋: 23개.  
+- 열린 워크트리: `feature-gameend-next`, `feature-pub39-v2`, `feature-pub40-player`.  
+- 미커밋 변경: `.claude/settings.local.json`, PUB-39 context, mockup 리소스 일부.  
+다음 할 일: 코드 변경 없이 Round2 우선순위 수렴.
+
+결론부터 말하면, 반론 1과 2는 동의한다. 반론 3도 대부분 동의한다.  
+내 Round1의 “factor graph 통합 1순위”는 잘못된 우선순위였다. 그건 여러 앵커가 생긴 뒤의 융합 레이어지, 첫 구현 단일 방법이 아니다. 지금은 “가장 먼저 만들 관측 앵커”를 골라야 한다.
+
+최종 Top3는 아래 순서가 맞다.
+
+**1. 플레이어 아이콘 앵커 + 미니맵 오도메트리.**
+
+가장 먼저 만들 방법은 이 조합이다. ML보다 우선이다.
+
+파이프라인은 이렇다.
+
+1. 1페 또는 전체맵 정상 검출 시점에 플레이어 절대좌표 `P_world`를 확보한다.
+2. 이후 일반 플레이 중에는 항상 켜진 미니맵을 crop한다.
+3. 미니맵 배경의 프레임 간 이동량을 optical flow 또는 feature tracking으로 추정한다.
+4. 플레이어 아이콘은 미니맵 중심 또는 고정 위치라고 보고, 미니맵 배경 이동량을 누적해 `P_world`를 계속 갱신한다.
+5. 전체맵 줌 글랜스가 들어오면 플레이어 아이콘 픽셀 `P_px`를 검출한다.
+6. 동시에 자기장 원 픽셀 중심과 반경 `C_px, R_px`를 검출한다.
+7. 현재 phase 반경 `R_world`는 OCR phase 또는 phase state로 안다.
+8. `scale = R_px / R_world`를 얻는다.
+9. `P_px ↔ P_world`와 `scale`로 줌 화면의 translation을 결정한다.
+10. `C_world = P_world + (C_px - P_px) / scale`로 자기장 절대좌표를 복원한다.
+
+이 방식이 강한 이유는 명확하다. 플레이어 아이콘은 도시명, 지형, 도로보다 훨씬 검출하기 쉽고, 기준맵 렌더와 게임 렌더의 도메인갭도 거의 없다. 학습 데이터도 필요 없다. 사용자는 추가 조작을 하지 않는다.
+
+하지만 단점도 꽤 크다.
+
+- 전체맵 줌 프레임에서 플레이어 아이콘이 항상 보인다는 보장이 없다.
+- 아이콘이 자기장 선, 핑, 팀마커, UI, 지도 라벨과 겹치면 검출이 흔들린다.
+- 미니맵 오도메트리는 누적 오차가 생긴다.
+- 차량 이동, 급회전, 줌/스케일 변화, 미니맵 회전 설정, 지도 열림 전환에서 drift가 커질 수 있다.
+- 프레임 드랍이나 압축 노이즈가 있으면 optical flow가 끊긴다.
+- 초기 `P_world`가 틀리면 이후 전체가 틀린다.
+
+메우는 방법은 이렇다.
+
+- 미니맵 오도메트리는 confidence를 둔다. 추적점 수, flow 일관성, 이동량 상한, 회전 추정 실패를 점수화한다.
+- confidence가 낮아지면 누적하지 않고 “불확실 상태”로 둔다.
+- 전체맵에서 플레이어 아이콘이 다시 보이면 즉시 재앵커한다.
+- 미니맵 배경을 기준맵의 작은 window와 주기적으로 재매칭해 drift를 보정한다.
+- 글랜스에서 아이콘이 안 보이면 Top2로 fallback한다.
+- 자기장 결과가 parent circle containment, phase radius, 이전 locked circle과 물리적으로 맞지 않으면 폐기한다.
+
+**2. 자기장 원 ruler + 기존 locked circle 재앵커.**
+
+두 번째는 이미 PUB-39 문맥에서 가장 가까운 deterministic fallback이다. 단독 커버리지는 1번보다 낮지만 구현이 쉽고, 실패 시에도 기존 UX를 크게 망치지 않는다.
+
+파이프라인은 이렇다.
+
+1. 전체맵이 정상 검출된 시점에 현재 자기장 또는 이전 locked circle의 절대좌표 `Z_known = cx, cy, r`를 저장한다.
+2. 줌 글랜스에서 흰 자기장 원 arc를 검출한다.
+3. RANSAC circle fitting으로 픽셀 원 `Z_px = cx, cy, r_px`를 얻는다.
+4. phase 반경 또는 known circle 반경으로 `scale = r_px / r_world`를 얻는다.
+5. 현재 줌 프레임에 보이는 원이 이미 아는 circle이라고 판단되면 `Z_px ↔ Z_known`으로 translation을 결정한다.
+6. 같은 프레임에 다음 원도 보이면 동일 변환으로 다음 자기장을 복원한다.
+7. 다음 원만 보이고 기준이 될 known circle이 안 보이면 parent containment와 phase radius로 후보를 제한하되, 확정하지 않는다.
+
+강점은 단순함이다. 이미 검출해야 하는 대상이 자기장이고, 원은 픽셀 형태가 뚜렷하다. ML도 필요 없고 플레이어 상태도 필요 없다.
+
+단점은 치명적으로 “아는 원이 같이 보여야” 한다는 점이다.
+
+- 처음 보는 다음 자기장만 보이면 translation이 부족하다.
+- 원 일부 arc만 보이면 중심 fitting이 흔들린다.
+- phase OCR이 틀리면 scale이 틀린다.
+- 현재 원과 다음 원을 잘못 구분하면 완전히 다른 위치가 나온다.
+- 원이 화면 밖으로 많이 나가면 단독 확정이 어렵다.
+
+메우는 방법은 이렇다.
+
+- phase radius와 parent containment를 hard gate로 쓴다.
+- 이전 locked circle과 반경이 같은 후보를 우선 current circle로 분류한다.
+- 결과가 이전 phase 규칙을 위반하면 retain한다.
+- 확정 confidence가 낮으면 새 좌표를 내보내지 않고 기존 locked circle을 유지한다.
+- 플레이어 아이콘 앵커가 보이면 즉시 Top1 결과를 우선한다.
+
+**3. 결정론적 지도 앵커 매칭. 라벨, 격자, 해안선, 도로, 수계.**
+
+세 번째는 ML이 아니라 deterministic map relocalizer다. ML보다 먼저다.
+
+파이프라인은 이렇다.
+
+1. 기준맵에서 라벨 위치, 격자선, 해안선, 강, 주요 도로, compound density 같은 채널을 미리 만든다.
+2. 줌 글랜스에서 자기장 원을 검출해 scale을 먼저 고정한다.
+3. scale이 고정되면 남는 자유도는 translation 중심이 된다.
+4. 후보 translation window를 만든다. 후보 범위는 이전 player odometry, parent circle, viewport 경계, phase 규칙으로 줄인다.
+5. 각 후보에 대해 여러 점수를 계산한다.
+6. 도시 라벨 OCR 또는 glyph template이 맞으면 높은 점수.
+7. 해안선과 수계 edge가 맞으면 높은 점수.
+8. 격자선 phase offset이 맞으면 중간 점수.
+9. 도로 skeleton이나 compound density가 맞으면 보조 점수.
+10. 가장 높은 후보가 margin을 충분히 이기면 변환을 확정한다.
+11. margin이 낮으면 확정하지 않고 Top1 또는 Top2 결과를 기다린다.
+
+이 방식은 플레이어 아이콘이 안 보이거나 미니맵 drift가 커졌을 때 재앵커 역할을 한다. 학습 데이터가 없어도 만들 수 있고, 실패 이유를 사람이 해석할 수 있다.
+
+단점도 분명하다.
+
+- 도시나 해안, 도로가 없는 평야 crop에서는 약하다.
+- 라벨 OCR은 언어, 폰트, 가림, 줌 배율에 취약하다.
+- 기준맵 이미지와 실제 게임 렌더 차이가 여전히 있다.
+- 여러 후보가 비슷한 반복 지형이면 오인식한다.
+- 구현량은 1번과 2번보다 크다.
+
+메우는 방법은 이렇다.
+
+- 단일 feature에 의존하지 않고 다채널 점수로 합산한다.
+- 최고점뿐 아니라 1등과 2등의 margin을 본다.
+- parent circle, phase radius, player odometry 범위를 hard gate로 써서 탐색 공간을 줄인다.
+- 확신이 낮으면 결과를 폐기하고 기존 locked state를 유지한다.
+- 이 모듈은 Top1의 drift 재앵커와 Top2의 translation fallback으로만 먼저 붙인다.
+
+ML은 지금 Top3가 아니다.
+
+반론 3에 동의한다. 현재 98개 영상은 “전체맵 프레임 + 결과”에 가깝지, “줌 crop + 정답 좌표” 데이터셋이 아니다. 기준맵에서 합성 crop을 만들 수는 있지만, 게임 렌더, UI 오버레이, 압축, 색감, 라벨 가림, 자기장 선 효과와 도메인갭이 남는다. 이 갭을 줄이려면 결국 실제 줌 crop 라벨이 필요하고, 그 라벨을 얻으려면 앞의 deterministic anchor들이 먼저 필요하다.
+
+따라서 ML의 현실적 위치는 이렇다.
+
+- 지금 1순위 아님.
+- deterministic Top1, Top2, Top3로 auto-label을 쌓은 뒤 검증된 데이터가 생기면 고려.
+- 목적은 첫 구현이 아니라 애매한 crop의 후보 ranking 보조.
+- “ML 하나로 좌표 복원”은 현재 비용 대비 우위가 없다.
+
+최종 판단은 이렇다.
+
+1. 1순위는 플레이어 아이콘 앵커 + 미니맵 오도메트리다.
+2. 2순위는 자기장 원 ruler + 기존 locked circle 재앵커다.
+3. 3순위는 결정론적 지도 앵커 매칭이다.
+4. Factor graph는 나중의 통합 레이어다.
+5. ML은 지금은 보류다. deterministic 앵커로 실제 줌 crop 라벨을 만든 뒤 다시 평가하는 게 맞다.
