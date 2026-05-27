@@ -4,6 +4,7 @@
 - [x] `shared.PlayerPosition {x, y, heading?}` 타입 + export.
 - [x] `SocketEvents.PLAYER_RESULT` 이벤트.
 - [x] 접근 재결정 시각화 HTML.
+- [x] 프론트 `PlayerMarker`(`[1-y,x]` + heading 회전, null·점·heading0 처리) — 유닛 5/5, Codex APPROVED.
 
 ## 결정 대기 (사용자)
 - [ ] 접근 선택 — A(미니맵 템플릿매칭) / B(전체맵 화살표) / C(ML). → 시각화 참고.

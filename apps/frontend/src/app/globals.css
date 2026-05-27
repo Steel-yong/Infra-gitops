@@ -39,3 +39,31 @@ body {
   0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
   50%       { box-shadow: 0 0 0 9px rgba(168, 85, 247, 0); }
 }
+
+/* 플레이어(유저 본인) 위치 마커 — 방향 화살표 또는 점 */
+.player-marker {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-arrow {
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 16px solid #38bdf8;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
+  transform-origin: 50% 60%;
+}
+
+.player-dot {
+  width: 12px;
+  height: 12px;
+  background: #38bdf8;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+}
