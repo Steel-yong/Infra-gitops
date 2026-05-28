@@ -1,5 +1,8 @@
-// 줌 화면 자기장 흰 원 검출 — 흰 픽셀 RANSAC 원 피팅 (순수 기하, opencv 무관 · 단독 테스트 가능).
-// PoC(.local/poc_zoom_ring.py)에서 2v/4v 실프레임 검출 성공(inlier 25~39%)한 로직의 TS 포팅.
+// 줌 화면 자기장 검출 — opencv 없이 순수 기하.
+// 1) 흰 원(=다음 자기장 후보): 흰 픽셀 RANSAC.
+// 2) 외부 경계(=현재 자기장=앵커): 파란 외부영역 마스크의 INNER boundary 픽셀 RANSAC.
+// 둘 다 검출되면 chain transform으로 줌 중 다음 자기장의 절대좌표를 계산 가능(능동추적).
+// PoC(.local/poc_zoom_ring.py + poc_blue.py)에서 4v 실프레임 phase 비율 1.83 ≈ 이론 1.82 확인.
 
 export type PixelPoint = [number, number];
 export interface RingFit {
@@ -66,4 +69,50 @@ export function fitRing(
     inliers: best.inliers,
     coverage: best.inliers / n,
   };
+}
+
+/**
+ * 줌 화면의 "파란 외부영역(자기장 밖)" 안쪽 경계 픽셀 추출 — 현재 자기장(앵커) 경계.
+ * 파란 마스크 픽셀 중 4-이웃에 비파란이 하나라도 있으면 boundary로 채집.
+ * stride 2로 샘플, 우측 UI(>78%) 제외. fitRing에 그대로 넣어 외부 자기장 원 추정.
+ *
+ * @param raw RGB 평탄 버퍼 (3 채널, alpha 제거된 상태)
+ * @param w 이미지 폭
+ * @param h 이미지 높이
+ */
+export function extractBlueOutsideBoundary(
+  raw: Buffer | Uint8Array,
+  w: number,
+  h: number,
+): PixelPoint[] {
+  // 1. blue-tint mask — 자기장 밖 어두운 파랑 픽셀 (PoC poc_blue.py와 동일 임계).
+  const mask = new Uint8Array(w * h);
+  const xlim = Math.floor(w * 0.78);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < xlim; x++) {
+      const i = (y * w + x) * 3;
+      const r = raw[i];
+      const g = raw[i + 1];
+      const b = raw[i + 2];
+      if (b > r + 25 && b > g + 10 && b > 70 && r < 130) {
+        mask[y * w + x] = 1;
+      }
+    }
+  }
+  // 2. boundary pixels — 파란 픽셀 중 4-이웃에 비파란이 하나라도 있으면 경계.
+  const pts: PixelPoint[] = [];
+  for (let y = 1; y < h - 1; y += 2) {
+    for (let x = 1; x < xlim - 1; x += 2) {
+      if (mask[y * w + x] === 0) continue;
+      if (
+        mask[(y - 1) * w + x] === 0 ||
+        mask[(y + 1) * w + x] === 0 ||
+        mask[y * w + (x - 1)] === 0 ||
+        mask[y * w + (x + 1)] === 0
+      ) {
+        pts.push([x, y]);
+      }
+    }
+  }
+  return pts;
 }
