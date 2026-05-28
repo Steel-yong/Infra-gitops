@@ -19,7 +19,7 @@
 
 ## 영구 수정
 1. **exit node 상시 사용 금지.** WSL 기본 = 직접 인터넷. (2026-05-28 `tailscale set --exit-node=`로 해제, 검증: ping 0% 손실 / api.anthropic.com 도달.)
-2. **집 IP는 다운로드 한정**: yt-dlp `--proxy socks5://<home-tailscale-ip>:port` 또는 집 머신에서 직접 실행. 집 PC 꺼져도 다운로드만 실패, WSL·API는 무사.
+2. **집 IP는 다운로드 한정 + host 폴백**: yt-dlp `--proxy socks5://<home-tailscale-ip>:port` 또는 집 머신 직접 실행. **집 IP가 안 되면(프록시/exit node 불가) 자동으로 host(회사 PC) 직접 IP로 폴백한다** — 집 IP 불가가 절대 전체 작업을 막지 않게. (host IP는 YouTube 차단이라 그 다운로드만 실패할 수 있으나, 시스템·다른 작업은 안 죽음. = "우회 안 되면 자기껄로".) 집 PC 꺼져도 WSL·API·비-YouTube 작업은 무사.
 3. **자율/장시간 작업 사전 점검(프리플라이트) 의무화** — 아래 게이트.
 
 ## 재발 방지 게이트 (자율 런·"꺼도 됨" 안내 전 반드시)
