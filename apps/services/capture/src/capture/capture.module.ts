@@ -4,9 +4,8 @@ import { CaptureGateway } from './capture.gateway';
 import { CaptureService } from './capture.service';
 import { MapDetectionService } from './map-detection.service';
 import { CircleService } from './circle.service';
-import { SiftZoneService } from './sift-zone.service';
 
 @Module({
-  providers: [CaptureGateway, CaptureService, MapDetectionService, CircleService, SiftZoneService],
+  providers: [CaptureGateway, CaptureService, MapDetectionService, CircleService],
 })
 export class CaptureModule {}
