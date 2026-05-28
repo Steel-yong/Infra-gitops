@@ -181,6 +181,31 @@ export default function Page() {
     }
   }, [gameEnd, handleFullReset]);
 
+  // 새 게임 안전망 — 결과화면 OCR을 놓쳐도(빨리 다음 게임 진입) "락된 페이즈보다 OCR 페이즈가
+  // 낮음 + 연속 N회"면 새 게임으로 보고 전체 초기화. 같은 페이즈 깜빡임은 무시.
+  const NEW_GAME_OCR_STREAK = 4; // OCR 1초 주기 × 4 = 4초 안에 확정
+  const lowerOcrPhaseStreakRef = useRef(0);
+  const prevOcrPhaseRef = useRef<number | null>(null);
+  useEffect(() => {
+    const ocrPhase = ocrTimer.currentPhase;
+    const lockedPhase = lockedCircle?.phase ?? null;
+    if (ocrPhase === null || lockedPhase === null) {
+      lowerOcrPhaseStreakRef.current = 0;
+      prevOcrPhaseRef.current = ocrPhase;
+      return;
+    }
+    if (ocrPhase < lockedPhase) {
+      lowerOcrPhaseStreakRef.current += 1;
+      if (lowerOcrPhaseStreakRef.current >= NEW_GAME_OCR_STREAK) {
+        lowerOcrPhaseStreakRef.current = 0;
+        handleFullReset();
+      }
+    } else {
+      lowerOcrPhaseStreakRef.current = 0;
+    }
+    prevOcrPhaseRef.current = ocrPhase;
+  }, [ocrTimer.currentPhase, lockedCircle?.phase, handleFullReset]);
+
   return (
     <main className={styles.root}>
       <header className={styles.header}>
