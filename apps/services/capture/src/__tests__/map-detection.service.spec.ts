@@ -46,8 +46,22 @@ describe('MapDetectionService', () => {
     expect(await service.isMapOpen(base64)).toBe(false);
   });
 
-  it('이미지 일부가 청록색이고 3% 이상이면 → true', async () => {
-    // 전체를 갈색으로 채우고 중앙 30% 구역만 청록색 (약 9% → 임계치 초과)
+  it('이미지 50% 폭 청록 영역(맵 모양) → true', async () => {
+    // 중앙 50%×50% 청록(=25% 픽셀) — bbox 폭 50% > 40% 임계 + 종횡비 1.0 → 맵 인식.
+    const w = 100, h = 100;
+    const l = Math.floor((w - Math.floor(w * 0.5)) / 2);
+    const r = l + Math.floor(w * 0.5);
+    const t = Math.floor((h - Math.floor(h * 0.5)) / 2);
+    const b = t + Math.floor(h * 0.5);
+    const base64 = await makeImage(w, h, (x, y) =>
+      x >= l && x < r && y >= t && y < b ? [0, 0, 200] : [200, 100, 50],
+    );
+    expect(await service.isMapOpen(base64)).toBe(true);
+  });
+
+  it('작은 청록 영역(30% 폭, 맵 아님) → false — false positive 거부', async () => {
+    // 게임화면 청록 산발(하늘·바다·UI 등)을 30% 폭에 모아둔 상황 시뮬레이션.
+    // 청록 픽셀 비율(9%)은 3% 임계 통과하지만 bbox 폭이 40% 미만 → 맵 모양 아님으로 거부.
     const w = 100, h = 100;
     const l = Math.floor((w - Math.floor(w * 0.3)) / 2);
     const r = l + Math.floor(w * 0.3);
@@ -56,7 +70,7 @@ describe('MapDetectionService', () => {
     const base64 = await makeImage(w, h, (x, y) =>
       x >= l && x < r && y >= t && y < b ? [0, 0, 200] : [200, 100, 50],
     );
-    expect(await service.isMapOpen(base64)).toBe(true);
+    expect(await service.isMapOpen(base64)).toBe(false);
   });
 
   it('PUBG 바다색(어두운 청록) 픽셀만 → true', async () => {

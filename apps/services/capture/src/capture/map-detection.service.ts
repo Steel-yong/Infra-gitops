@@ -1,5 +1,5 @@
 // 캡처 프레임에서 PUBG 전체맵 영역(정사각형)을 검출하는 서비스
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import sharp from 'sharp';
 
 /** 캡처 화면 내 PUBG 맵 영역 (픽셀 단위) */
@@ -20,6 +20,7 @@ const MAP_OPEN_TEAL_RATIO = 0.03;
 
 @Injectable()
 export class MapDetectionService {
+  private readonly logger = new Logger(MapDetectionService.name);
   /**
    * 캡처 프레임에서 PUBG 전체맵 영역을 검출한다.
    * 1차 시도: 청록(바다) 픽셀의 bounding box로 검출.
@@ -91,14 +92,14 @@ export class MapDetectionService {
       };
     }
 
-    // 2차 폴백: 화면 높이만큼의 정사각형이 중앙에 있다고 가정
-    const side = height;
-    return {
-      left: Math.floor((width - side) / 2),
-      top: 0,
-      width: side,
-      height: side,
-    };
+    // bbox 검증 실패 = 청록 픽셀은 3%↑이지만 모양이 맵 아님 (게임화면 산발 청록 = 하늘·바다·UI).
+    // 폴백("중앙 정사각형 가정")은 false positive 양산해서 게임화면에서 자기장 자동락 유발 → 제거.
+    // 진짜 전체맵 열리면 청록 20~30%+에 bbox도 정상 → 1차 path가 통과.
+    this.logger.debug(
+      `맵 검출 거부: 청록 ${(tealCount / totalSamples * 100).toFixed(1)}%지만 bbox 부적합 ` +
+      `(aspect=${aspect.toFixed(2)} sizeOK=${sizeOK} aspectOK=${aspectOK})`,
+    );
+    return null;
   }
 
   /** 기존 호환 — detectMapArea 결과의 null 여부로 전체맵 열림 판단 */
