@@ -43,3 +43,10 @@ A = 사용자의 "이전(앵커-링)" + "방금(페이즈 전이 역산)" 통합
 - **실프레임 검증**(`.local/validate-zoom-detect.cjs`, sharp+fitRing): 2v→(0.705,0.592)r312 / 4v→(0.644,0.627)r102 → **Python PoC와 일치**. TS 검출이 실제로 됨.
 - 줌 핵심 2모듈 완료: 검출(zoom-detect 4/4) + 변환(zoom-localize 8/8), 둘 다 실데이터 검증.
 - 다음: capture.service 줌 경로 배선(sharp 흰픽셀 추출 → fitRing → zoom-localize, 앵커 parentCircle 사용) — 실패하던 SIFT 대체.
+
+## capture 배선 완료 (2026-05-28)
+- capture.service: 실패하던 SIFT-zone 폴백 제거 → 줌(전체맵 미검출 + parentCircle 앵커) 시 `detectZoneZoom` 호출.
+- `detectZoneZoom`: sharp 흰픽셀 → fitRing(zoom-detect) → coverage<0.12면 null(retain) → 검출되면 앵커 절대위치로 현재 자기장 확인·출력.
+- SiftZoneService를 capture.module·service에서 제거 → **opencv 로드 자체가 빠져 startup 가벼워짐**(sift-zone.service.ts 파일은 보존).
+- Codex APPROVED(MINOR 죽은 provider 제거 반영).
+- **현 한계(정직)**: 원 1개+앵커 = 현재 자기장 "재확인"까지. 줌 중 페이즈 전환 능동추적 = 둘째 흰 원 안정검출 필요(현재 프레임 노이즈) → 후속. 라이브: 줌해도 자기장 유지/확인 검증.
