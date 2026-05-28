@@ -1,7 +1,7 @@
 'use client';
 // 메인 페이지 — 전체 컴포넌트 조립 및 데이터 흐름 연결
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { MapType } from '@pubg-helper/shared';
 import { MAP_TYPES } from '@pubg-helper/shared';
@@ -85,10 +85,17 @@ export default function Page() {
     setParentCircle(lockedCircle);
   }, [lockedCircle, setParentCircle]);
 
-  // 맵 전환 시 자기장 락 해제 — 이전 맵 자기장이 새 맵에 남지 않게.
-  useEffect(() => {
+  // 완전 초기화 — 락 + OCR sticky 페이즈(useOcrTimer.ts:86 룰) 둘 다 클리어.
+  // 다시잡기 버튼·맵 전환·게임 종료 등 "지금까지 잡힌 거 전부 버리고 처음부터" 케이스 공통.
+  const handleFullReset = useCallback(() => {
     unlockCircle();
-  }, [mapType, unlockCircle]);
+    ocrTimer.reset();
+  }, [unlockCircle, ocrTimer]);
+
+  // 맵 전환 시 자기장 락 해제 + OCR 초기화 — 이전 맵 상태가 새 맵에 남지 않게.
+  useEffect(() => {
+    handleFullReset();
+  }, [mapType, handleFullReset]);
 
   // 명당(정적 JSON). 자기장이 잡히면 그 안의 명당만 표시(MyungdangMarkers에서 필터).
   const myungdang = useMyungdang(mapType);
@@ -160,16 +167,15 @@ export default function Page() {
     highlightedKeys = new Set(rankedMyungdang.map((r) => r.key));
   }
 
-  // 게임 종료(치킨/죽음) 감지 → 알람 억제 + 자기장 락 해제(추천·마커 자동 초기화).
-  // 일반 화면 복귀 시 재무장(다음 판). unlockCircle은 idempotent.
+  // 게임 종료(치킨/죽음) 감지 → 알람 억제 + 자기장 락 + OCR 페이즈 완전 초기화(다음 판 깨끗하게).
   useEffect(() => {
     if (gameEnd) {
       gameEndedRef.current = true;
-      unlockCircle();
+      handleFullReset();
     } else {
       gameEndedRef.current = false;
     }
-  }, [gameEnd, unlockCircle]);
+  }, [gameEnd, handleFullReset]);
 
   return (
     <main className={styles.root}>
@@ -258,7 +264,7 @@ export default function Page() {
             {isCapturing && (
               <button
                 type="button"
-                onClick={unlockCircle}
+                onClick={handleFullReset}
                 disabled={!lockedCircle}
                 aria-label="자기장 위치 다시 잡기"
                 style={{

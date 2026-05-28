@@ -3,7 +3,7 @@
 // OCR은 노이즈 + 비용 크므로 락 후엔 10초마다만 드리프트 보정.
 // 빨간 느낌표 감지 = 자기장 줄어드는 중 = 알람 불필요.
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getTimerRegion,
   getPhaseRegion,
@@ -85,6 +85,17 @@ export function useOcrTimer(
   // ※ Sticky 룰: 한번 락된 currentPhase는 다른 페이즈가 확정될 때까지 유지.
   //   맵 닫힘/파밍 중 OCR이 빈 결과를 줘도 currentPhase 절대 null로 리셋 안 함.
   //   리셋이 필요하면 사용자가 명시적으로 새 페이즈를 인식시켜야 함 (예: 다음 페이즈 형성).
+  //   또는 사용자가 명시적으로 reset() 호출 (예: "다시 잡기" 버튼) — 페이즈 sticky 해제.
+
+  // 사용자 명시 초기화 — sticky 페이즈·히스토리·타이머 락 전부 클리어 (다시잡기 버튼용).
+  const reset = useCallback(() => {
+    phaseHistoryRef.current = [];
+    lastPhaseOcrRef.current = 0;
+    lockedAtRef.current = null;
+    lockedSecondsRef.current = null;
+    lastOcrTimeRef.current = 0;
+    setState(INITIAL_STATE);
+  }, []);
 
   useEffect(() => {
     if (!video || !enabled) {
@@ -429,5 +440,5 @@ export function useOcrTimer(
     };
   }, [video, enabled, intervalMs]);
 
-  return state;
+  return { ...state, reset };
 }

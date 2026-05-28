@@ -55,13 +55,13 @@ export function getPhaseRegion(screenWidth: number, screenHeight: number): Timer
   };
 }
 
-/** OCR이 페이즈 영역에서 인식한 텍스트에서 단독 숫자(1~8) 추출.
- * 한글 "페이즈"는 whitelist에 없어 무시됨, 결과 텍스트는 보통 숫자 + 잡음 문자.
- * 두 자리 이상이면 자기장 검출 신호로 사용하기 부적절 → null. */
+/** OCR이 페이즈 영역에서 인식한 텍스트에서 페이즈 숫자(1~8) 추출.
+ * whitelist가 숫자만이라 한글 "이"가 "2"로 강제해석돼 "21" 같은 다중자리가 흔함("페이즈 1" → "21").
+ * 실제 페이즈는 항상 마지막 글자(`페이즈 N` 구조)이므로 **마지막 [1-8] 추출**. */
 export function parsePhaseString(text: string): number | null {
-  const match = text.match(/[1-8]/);
-  if (!match) return null;
-  return parseInt(match[0], 10);
+  const matches = text.match(/[1-8]/g);
+  if (!matches) return null;
+  return parseInt(matches[matches.length - 1], 10);
 }
 
 /**
