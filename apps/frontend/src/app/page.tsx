@@ -87,10 +87,12 @@ export default function Page() {
 
   // 완전 초기화 — 락 + OCR sticky 페이즈(useOcrTimer.ts:86 룰) 둘 다 클리어.
   // 다시잡기 버튼·맵 전환·게임 종료 등 "지금까지 잡힌 거 전부 버리고 처음부터" 케이스 공통.
+  // ※ deps는 stable한 ocrTimer.reset만 의존 — ocrTimer 전체는 매 렌더 새 객체(spread)라 의존하면 무한 리렌더 루프.
+  const ocrReset = ocrTimer.reset;
   const handleFullReset = useCallback(() => {
     unlockCircle();
-    ocrTimer.reset();
-  }, [unlockCircle, ocrTimer]);
+    ocrReset();
+  }, [unlockCircle, ocrReset]);
 
   // 맵 전환 시 자기장 락 해제 + OCR 초기화 — 이전 맵 상태가 새 맵에 남지 않게.
   useEffect(() => {
