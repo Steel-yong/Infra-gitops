@@ -59,9 +59,9 @@ describe('MapDetectionService', () => {
     expect(await service.isMapOpen(base64)).toBe(true);
   });
 
-  it('작은 청록 영역(30% 폭, 맵 아님) → false — false positive 거부', async () => {
-    // 게임화면 청록 산발(하늘·바다·UI 등)을 30% 폭에 모아둔 상황 시뮬레이션.
-    // 청록 픽셀 비율(9%)은 3% 임계 통과하지만 bbox 폭이 40% 미만 → 맵 모양 아님으로 거부.
+  it('작은 청록 영역(30% 폭) → 중앙 정사각형 폴백 반환 (작은 자기장 페이즈 보존)', async () => {
+    // 작은 자기장 페이즈(4+)에 내륙 위주 맵: 청록 3~10%로 낮고 bbox 부적합.
+    // 검출 자체는 보존(중앙 정사각형), 가짜 false positive는 프론트 freshStreak 가드가 차단.
     const w = 100, h = 100;
     const l = Math.floor((w - Math.floor(w * 0.3)) / 2);
     const r = l + Math.floor(w * 0.3);
@@ -70,7 +70,7 @@ describe('MapDetectionService', () => {
     const base64 = await makeImage(w, h, (x, y) =>
       x >= l && x < r && y >= t && y < b ? [0, 0, 200] : [200, 100, 50],
     );
-    expect(await service.isMapOpen(base64)).toBe(false);
+    expect(await service.isMapOpen(base64)).toBe(true);
   });
 
   it('PUBG 바다색(어두운 청록) 픽셀만 → true', async () => {

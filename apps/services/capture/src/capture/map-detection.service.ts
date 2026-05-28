@@ -109,13 +109,19 @@ export class MapDetectionService {
       };
     }
 
-    // 청록 3~30% + bbox 부적합 = 게임화면 산발 청록(하늘·UI 등). false positive로 거부.
-    // (≥30%는 위에서 이미 처리됨.)
+    // 폴백: 청록 3%↑ 있지만 bbox 부적합 → 중앙 정사각형(높이 기준) 반환.
+    // (작은 자기장 페이즈 + 내륙 위주 맵에서 청록 비율이 3~10%로 낮은 경우 검출 보존.)
+    // 프론트 useLockedCircle의 freshStreak(위치-안정 3연속)이 게임화면 false positive 차단 — 폴백 OK.
     this.logger.debug(
-      `맵 검출 거부: 청록 ${(tealRatio * 100).toFixed(1)}%지만 bbox 부적합 ` +
-      `(aspect=${aspect.toFixed(2)} sizeOK=${sizeOK} aspectOK=${aspectOK})`,
+      `맵 폴백 (청록 ${(tealRatio * 100).toFixed(1)}%, bbox aspect=${aspect.toFixed(2)}) → 중앙 정사각형`,
     );
-    return null;
+    const sideF = Math.min(height, width);
+    return {
+      left: Math.floor((width - sideF) / 2),
+      top: Math.floor((height - sideF) / 2),
+      width: sideF,
+      height: sideF,
+    };
   }
 
   /** 기존 호환 — detectMapArea 결과의 null 여부로 전체맵 열림 판단 */
