@@ -37,3 +37,9 @@ A = 사용자의 "이전(앵커-링)" + "방금(페이즈 전이 역산)" 통합
 - 자기장은 **흰 원**: 큰 흰 원(현재 경계) + 안쪽 흰 원(다음). A는 흰 원만 사용.
 - 흰 원 재검증(`.local/poc_zoom_two_white.py`): **큰 흰 원은 안정 검출**(2v r310 inl1036, 4v r103 inl533). **둘째 흰 원(다음)은 불안정** — 흰 글자·라벨·경로선이 가짜 원으로 잡힘(4v 화면밖 r1798 가짜).
 - **다음 정밀화**: 검출된 흰 원 후보를 **알려진 페이즈 반경 비(N:N+1≈0.55)로 필터**해 현재/다음만 추출, 텍스트·라벨 노이즈 기각. 그 뒤 변환.
+
+## 줌 검출 TS 포팅 + 실프레임 검증 (2026-05-28)
+- `zoom-detect.ts`: 흰 자기장 원 RANSAC 검출(`fitRing`, `circleFromThree`) — opencv 무관 순수. 합성 유닛 4/4.
+- **실프레임 검증**(`.local/validate-zoom-detect.cjs`, sharp+fitRing): 2v→(0.705,0.592)r312 / 4v→(0.644,0.627)r102 → **Python PoC와 일치**. TS 검출이 실제로 됨.
+- 줌 핵심 2모듈 완료: 검출(zoom-detect 4/4) + 변환(zoom-localize 8/8), 둘 다 실데이터 검증.
+- 다음: capture.service 줌 경로 배선(sharp 흰픽셀 추출 → fitRing → zoom-localize, 앵커 parentCircle 사용) — 실패하던 SIFT 대체.
