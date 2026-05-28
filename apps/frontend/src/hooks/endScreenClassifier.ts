@@ -8,8 +8,9 @@ export type EndCandidate = 'chicken' | 'dark' | null;
 
 /** 치킨: 노란 픽셀 비율 임계 (치킨 0.14 vs 그 외 ~0). */
 export const CHICKEN_YELLOW_RATIO = 0.06;
-/** 어두움 게이트: 어두운 픽셀 비율 임계(죽음·결과화면 ~0.72+). 단독으로 죽음 확정 금지 — OCR 확인 필수. */
-export const DARK_RATIO = 0.72;
+/** 어두움 게이트: 어두운 픽셀 비율 임계. 결과화면은 캐릭터·UI·텍스트 빛 차감으로 0.55~0.7 범위라
+ *  0.72는 거의 통과 못 함. 0.55로 낮춤. 단독으론 죽음 확정 금지(OCR 확인 필수). */
+export const DARK_RATIO = 0.55;
 
 /** 결과/종료 화면 텍스트 패턴 — 어두움 게이트 통과 후 OCR로 죽음을 확정하는 키워드(순위·메뉴). */
 const RESULT_PATTERNS: RegExp[] = [

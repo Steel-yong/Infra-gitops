@@ -45,11 +45,12 @@ export function useGameEndDetect(
     ocr.height = OCR_H;
     const octx = ocr.getContext('2d', { willReadFrequently: true });
 
-    // 어두움 게이트 통과 시 1회 생성하는 tesseract 워커(영문 — 순위 "#N/99"가 핵심 신호).
+    // 어두움 게이트 통과 시 1회 생성하는 tesseract 워커(한국어+영문 — PUBG 결과화면은 '다음'/'결과'/
+    // '순위'/'로비' 한글 메뉴가 핵심, 영문은 #N/99 백업).
     const ensureWorker = async (): Promise<TesseractWorker> => {
       if (workerRef.current) return workerRef.current;
       const mod = await import('tesseract.js');
-      const w = await mod.createWorker('eng');
+      const w = await mod.createWorker('kor+eng');
       if (stopped) {
         // 생성 대기 중 unmount/비활성 전환 → cleanup이 이미 지나 ref에 못 담으면 누수.
         // 여기서 즉시 종료하고 저장하지 않는다(누수 방지).
