@@ -85,3 +85,17 @@ describe('MapDetectionService', () => {
     expect(await service.isMapOpen(base64)).toBe(false);
   });
 });
+
+describe('MapDetectionService - 청록 ≥30% 정상 맵 회귀', () => {
+  let svc: MapDetectionService;
+  beforeEach(() => { svc = new MapDetectionService(); });
+
+  it('청록 50%+ + bbox 종횡비 화면비(1.78) → 맵 영역 반환 (false negative 방지)', async () => {
+    // 1920×1080 화면 가득 청록(=화면비 1.78). 종횡비 검사 fail해도 청록 ≥30%라 통과해야 함.
+    const w = 192, h = 108; // 16:9 축약본 (1920×1080의 1/10), bbox aspect 1.78
+    const base64 = await makeImage(w, h, () => [0, 0, 200]);
+    const area = await svc.detectMapArea(base64);
+    expect(area).not.toBeNull();
+    expect(area!.width).toBe(area!.height); // 정사각형 반환
+  });
+});

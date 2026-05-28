@@ -17,6 +17,9 @@ const MIN_BBOX_WIDTH_RATIO = 0.4;
 /** 1차 검증: 청록 픽셀이 전체 샘플의 2% 이상이어야 신뢰. (3% 미만은 이미 null 처리됨) */
 const MIN_TEAL_RATIO_FOR_BBOX = 0.02;
 const MAP_OPEN_TEAL_RATIO = 0.03;
+/** 청록 ≥ 15% = 진짜 전체맵 열림(맵에 따라 청록 비율 다양: 에란겔 50%+, 태이고/사녹 15~30%).
+ *  bbox 모양(aspect)이 화면비여서 좁은 검사를 통과 못 해도 이 비율 넘으면 맵 인정. 게임화면(3~5%)과 격차 충분. */
+const HIGH_TEAL_RATIO = 0.15;
 
 @Injectable()
 export class MapDetectionService {
@@ -65,8 +68,22 @@ export class MapDetectionService {
     }
 
     const totalSamples = Math.ceil(width / 4) * Math.ceil(height / 4);
-    if (tealCount / totalSamples < MAP_OPEN_TEAL_RATIO) {
+    const tealRatio = tealCount / totalSamples;
+    if (tealRatio < MAP_OPEN_TEAL_RATIO) {
       return null;
+    }
+
+    // 청록 ≥30% = 화면 대부분이 바다(진짜 전체맵). bbox는 보통 화면 전체로 퍼져 aspect가 화면비
+    // (예: 1920×1080→1.78)가 되어 좁은 종횡비 검사를 통과하지 못함 → 모양 무시하고 중앙 정사각형
+    // (높이 기준)으로 반환. 정상 맵을 거짓음성으로 거부 못 하게 하는 핵심 가드.
+    if (tealRatio >= HIGH_TEAL_RATIO) {
+      const side = Math.min(height, width);
+      return {
+        left: Math.floor((width - side) / 2),
+        top: Math.floor((height - side) / 2),
+        width: side,
+        height: side,
+      };
     }
 
     // 1차: bounding box 검증
@@ -75,7 +92,7 @@ export class MapDetectionService {
     const aspect = bboxH === 0 ? 0 : bboxW / bboxH;
     const aspectOK = aspect > ASPECT_MIN && aspect < ASPECT_MAX;
     const sizeOK = bboxW > width * MIN_BBOX_WIDTH_RATIO;
-    const pixelOK = tealCount / totalSamples > MIN_TEAL_RATIO_FOR_BBOX;
+    const pixelOK = tealRatio > MIN_TEAL_RATIO_FOR_BBOX;
 
     if (aspectOK && sizeOK && pixelOK) {
       // 정사각형으로 맞춰 반환
@@ -92,11 +109,10 @@ export class MapDetectionService {
       };
     }
 
-    // bbox 검증 실패 = 청록 픽셀은 3%↑이지만 모양이 맵 아님 (게임화면 산발 청록 = 하늘·바다·UI).
-    // 폴백("중앙 정사각형 가정")은 false positive 양산해서 게임화면에서 자기장 자동락 유발 → 제거.
-    // 진짜 전체맵 열리면 청록 20~30%+에 bbox도 정상 → 1차 path가 통과.
+    // 청록 3~30% + bbox 부적합 = 게임화면 산발 청록(하늘·UI 등). false positive로 거부.
+    // (≥30%는 위에서 이미 처리됨.)
     this.logger.debug(
-      `맵 검출 거부: 청록 ${(tealCount / totalSamples * 100).toFixed(1)}%지만 bbox 부적합 ` +
+      `맵 검출 거부: 청록 ${(tealRatio * 100).toFixed(1)}%지만 bbox 부적합 ` +
       `(aspect=${aspect.toFixed(2)} sizeOK=${sizeOK} aspectOK=${aspectOK})`,
     );
     return null;
