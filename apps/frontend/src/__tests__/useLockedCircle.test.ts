@@ -55,9 +55,21 @@ describe('useLockedCircle', () => {
     expect(result.current.circle?.phase).toBe(1);
   });
 
-  it('unlock() 후 다음 검출을 새로 락한다', () => {
+  it('unlock() 후 단발 가짜 검출(위치 흔들림)은 자동 재락 안 됨 (false-positive 차단)', () => {
     const { result, rerender } = setup(c(2));
     act(() => result.current.unlock());
+    // 같은 페이즈지만 매 프레임 위치가 다른 가짜 검출 — 위치 안정성 fail → 락 안 됨.
+    rerender({ rc: c(4, 0.1, 0.1) });
+    rerender({ rc: c(4, 0.5, 0.5) });
+    rerender({ rc: c(4, 0.9, 0.9) });
+    expect(result.current.circle).toBeNull();
+  });
+
+  it('unlock() 후 같은 페이즈+같은 위치 3연속이면 락 채택 (정상 맵 열림)', () => {
+    const { result, rerender } = setup(c(2));
+    act(() => result.current.unlock());
+    rerender({ rc: c(4, 0.3, 0.3) });
+    rerender({ rc: c(4, 0.31, 0.31) }); // 드리프트 1% 허용
     rerender({ rc: c(4, 0.3, 0.3) });
     expect(result.current.circle?.phase).toBe(4);
   });
