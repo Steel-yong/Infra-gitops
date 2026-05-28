@@ -18,6 +18,8 @@ export interface UseCaptureSocketReturn {
   setCurrentPhase: (v: number | null) => void;
   /** 이전 페이즈 락 (parentCircle). 다음 페이즈는 이 원 안에서만 검색되도록 backend에 전달. */
   setParentCircle: (v: CircleData | null) => void;
+  /** "다시 잡기" 같은 사용자 명시 초기화 — 마지막 검출 circleData를 비워 useLockedCircle 즉시 재락 방지. */
+  reset: () => void;
 }
 
 /**
@@ -61,5 +63,11 @@ export function useCaptureSocket(): UseCaptureSocketReturn {
     socketRef.current?.emit(SocketEvents.FRAME_UPLOAD, payload);
   }, []);
 
-  return { circleData, connected, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle };
+  const reset = useCallback(() => {
+    setCircleData(null);
+    parentCircleRef.current = null;
+    currentPhaseRef.current = null;
+  }, []);
+
+  return { circleData, connected, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle, reset };
 }

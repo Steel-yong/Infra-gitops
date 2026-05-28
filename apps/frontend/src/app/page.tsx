@@ -60,7 +60,7 @@ export default function Page() {
   const [showStash, setShowStash] = useState(true);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
-  const { circleData, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle } = useCaptureSocket();
+  const { circleData, sendFrame, setIsShrinking, setCurrentPhase, setParentCircle, reset: captureReset } = useCaptureSocket();
   const { isCapturing, stream, start, stop } = useScreenCapture({
     onFrame: sendFrame,
     onError: (msg) => setCaptureError(msg),
@@ -85,14 +85,16 @@ export default function Page() {
     setParentCircle(lockedCircle);
   }, [lockedCircle, setParentCircle]);
 
-  // 완전 초기화 — 락 + OCR sticky 페이즈(useOcrTimer.ts:86 룰) 둘 다 클리어.
+  // 완전 초기화 — 락 + OCR sticky 페이즈 + capture 마지막 검출(circleData) 셋 다 클리어.
+  // (circleData 잔존 시 useLockedCircle effect가 unlock 직후 stale rawCircle로 즉시 재락 — race.)
   // 다시잡기 버튼·맵 전환·게임 종료 등 "지금까지 잡힌 거 전부 버리고 처음부터" 케이스 공통.
-  // ※ deps는 stable한 ocrTimer.reset만 의존 — ocrTimer 전체는 매 렌더 새 객체(spread)라 의존하면 무한 리렌더 루프.
+  // ※ deps는 stable callback만 — ocrTimer/captureReset 전체는 매 렌더 새 객체(spread)라 무한 리렌더 위험.
   const ocrReset = ocrTimer.reset;
   const handleFullReset = useCallback(() => {
     unlockCircle();
     ocrReset();
-  }, [unlockCircle, ocrReset]);
+    captureReset();
+  }, [unlockCircle, ocrReset, captureReset]);
 
   // 맵 전환 시 자기장 락 해제 + OCR 초기화 — 이전 맵 상태가 새 맵에 남지 않게.
   useEffect(() => {
