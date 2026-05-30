@@ -30,14 +30,14 @@ const PUBG_PHASE_RADII = [
   0.00254, // phase 8: 20.75m
 ] as const;
 
-/** 페이즈별 최소 점수 — 반경 비례 + floor 200.
- * 페이즈 1: 800점 기준, 페이즈 4 이하는 floor 200 강제.
- * 외곽선 두께가 1px일 수 있어 40% 그라디언트는 진짜 자기장도 못 넘을 위험. 보수적 값 유지.
- * 페이즈 5~8 잡음 차단은 coldStartPhases [1,2,3,4] 후보 제한으로 1차 방어. */
+/** 페이즈별 최소 점수 — 반경 비례 + floor 150.
+ * 후반 페이즈(3페↑)는 자기장이 작아 둘레가 짧고, 블루존이 흰 테두리를 가려 흰 픽셀이 부족하다.
+ * 기존 800 기준은 3페 임계가 241까지 올라가 실측 점수(~168)가 못 넘어 검출이 느렸다.
+ * → baseScore 450·floor 150으로 완화(3페 임계 ~150). 오검출은 parentCircle 제약 + 페이즈 반경 후보 제한으로 방어. */
 function minScoreForPhase(phase: number): number {
-  const baseScore = 800;
+  const baseScore = 450;
   const ratio = PUBG_PHASE_RADII[phase - 1] / PUBG_PHASE_RADII[0];
-  return Math.max(200, Math.floor(baseScore * ratio));
+  return Math.max(150, Math.floor(baseScore * ratio));
 }
 
 interface CropArea {
@@ -309,10 +309,13 @@ export class CircleService {
       }
       if (matchedPhase === -1) continue;
 
+      // 거리 비교를 제곱끼리 — sqrt 제거(|d-r|<2 ⟺ (r-2)²≤d²≤(r+2)², r≫2). RANSAC 핫루프 최적화.
+      const rMinSq = (r - 2.0) ** 2;
+      const rMaxSq = (r + 2.0) ** 2;
       let score = 0;
       for (const [px, py] of pts) {
-        const d = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
-        if (Math.abs(d - r) < 2.0) score++;
+        const dSq = (px - cx) ** 2 + (py - cy) ** 2;
+        if (dSq >= rMinSq && dSq <= rMaxSq) score++;
       }
 
       if (!best || score > best.score) {
@@ -322,9 +325,12 @@ export class CircleService {
     if (!best) return null;
     // 가설은 서브샘플(pts)로 빠르게 찾되, 최종 채택 점수는 전체 점(points)으로 재계산.
     // 서브샘플(maxPts)이 얇은 자기장 원 외곽을 솎아내 점수가 실제보다 낮게 나오던 문제 보정.
+    const fMinSq = (best.r - 2.0) ** 2;
+    const fMaxSq = (best.r + 2.0) ** 2;
     let fullScore = 0;
     for (const [px, py] of points) {
-      if (Math.abs(Math.hypot(px - best.cx, py - best.cy) - best.r) < 2.0) fullScore++;
+      const dSq = (px - best.cx) ** 2 + (py - best.cy) ** 2;
+      if (dSq >= fMinSq && dSq <= fMaxSq) fullScore++;
     }
     best.score = fullScore;
     this.logger.debug(`RANSAC ${mode} 후보: r=${best.r.toFixed(0)}px(기대 ${best.rExpected.toFixed(0)}) 전체점수 ${fullScore}/${minScoreForPhase(best.phase)}`);
