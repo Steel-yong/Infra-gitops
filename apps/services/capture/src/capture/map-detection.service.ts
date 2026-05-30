@@ -17,6 +17,9 @@ const MIN_BBOX_WIDTH_RATIO = 0.4;
 /** 1차 검증: 청록 픽셀이 전체 샘플의 2% 이상이어야 신뢰. (3% 미만은 이미 null 처리됨) */
 const MIN_TEAL_RATIO_FOR_BBOX = 0.02;
 const MAP_OPEN_TEAL_RATIO = 0.03;
+/** bbox 검증 실패 시 폴백 허용 임계 — 청록(바다)이 이만큼이면 전체맵 확실(실측 0.46~0.58).
+ * 게임 플레이·결과화면의 산발 청록(~0)은 미달이라 폴백 안 함 → 맵 안 켰는데 잡는 오검출 방지. */
+const TEAL_RATIO_FOR_FALLBACK = 0.3;
 
 @Injectable()
 export class MapDetectionService {
@@ -91,14 +94,18 @@ export class MapDetectionService {
       };
     }
 
-    // 2차 폴백: 화면 높이만큼의 정사각형이 중앙에 있다고 가정
-    const side = height;
-    return {
-      left: Math.floor((width - side) / 2),
-      top: 0,
-      width: side,
-      height: side,
-    };
+    // bbox 검증 실패. 단 청록(바다)이 충분히 많으면(전체맵 확실, 실측 0.46~0.58) 중앙 정사각형 폴백.
+    // 게임 플레이의 산발 청록·결과화면(~0)은 미달이라 폴백 안 함 → 맵 안 켰는데 잡는 오검출 방지.
+    if (tealCount / totalSamples >= TEAL_RATIO_FOR_FALLBACK) {
+      const side = height;
+      return {
+        left: Math.floor((width - side) / 2),
+        top: 0,
+        width: side,
+        height: side,
+      };
+    }
+    return null;
   }
 
   /** 기존 호환 — detectMapArea 결과의 null 여부로 전체맵 열림 판단 */
