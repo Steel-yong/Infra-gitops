@@ -49,19 +49,18 @@ describe('classifyEndFrame', () => {
   });
 });
 
-describe('isResultScreenText (어두움 게이트 통과 후 죽음 확정용)', () => {
-  it('순위 "#N" 텍스트를 결과화면으로 인식', () => {
-    expect(isResultScreenText('#35  KYUGOO')).toBe(true);
-  });
-  it('"N / 99" 순위 표기 인식', () => {
-    expect(isResultScreenText('35 / 99')).toBe(true);
-  });
-  it('메뉴 키워드(다음/결과/관전) 인식', () => {
+describe('isResultScreenText ("다음"만 종료 확정 — 사용자 지정)', () => {
+  it('"다음" 텍스트만 종료화면으로 인식', () => {
     expect(isResultScreenText('다음으로')).toBe(true);
-    expect(isResultScreenText('매치 결과')).toBe(true);
-    expect(isResultScreenText('관전 모드')).toBe(true);
+    expect(isResultScreenText('다음')).toBe(true);
   });
-  it('일반 게임플레이 텍스트·빈 문자열은 결과화면 아님', () => {
+  it('"다음" 외 키워드(#N·순위·결과·관전)는 종료화면 아님 (어두운 화면 OCR 오판 방지)', () => {
+    expect(isResultScreenText('#35  KYUGOO')).toBe(false);
+    expect(isResultScreenText('35 / 99')).toBe(false);
+    expect(isResultScreenText('매치 결과')).toBe(false);
+    expect(isResultScreenText('관전 모드')).toBe(false);
+  });
+  it('일반 게임플레이 텍스트·빈 문자열은 종료화면 아님', () => {
     expect(isResultScreenText('123m  ammo')).toBe(false);
     expect(isResultScreenText('')).toBe(false);
   });
