@@ -7,6 +7,7 @@ vi.mock('leaflet/dist/leaflet.css', () => ({}));
 
 const mockFitBounds = vi.fn();
 const mockSetZoom = vi.fn();
+const mockSetMinZoom = vi.fn();
 const mockGetZoom = vi.fn(() => 1);
 const mockGetSize = vi.fn(() => ({ x: 800, y: 600 }));
 
@@ -22,6 +23,7 @@ vi.mock('react-leaflet', () => ({
     getSize: mockGetSize,
     getZoom: mockGetZoom,
     setZoom: mockSetZoom,
+    setMinZoom: mockSetMinZoom,
   })),
 }));
 
@@ -33,6 +35,7 @@ describe('MapCanvas', () => {
   beforeEach(() => {
     mockFitBounds.mockClear();
     mockSetZoom.mockClear();
+    mockSetMinZoom.mockClear();
     mockGetZoom.mockClear();
     mockGetSize.mockClear();
   });
@@ -54,7 +57,7 @@ describe('MapCanvas', () => {
 
   it('마운트 시 fitBounds가 호출된다', () => {
     render(<MapCanvas mapType="erangel" />);
-    expect(mockFitBounds).toHaveBeenCalledWith([[0, 0], [1, 1]], { padding: [0, 0] });
+    expect(mockFitBounds).toHaveBeenCalledWith([[0, 0], [1, 1]], { padding: [0, 0], animate: false });
   });
 
   it('맵 타입 변경 시 fitBounds가 재호출된다', () => {
@@ -63,7 +66,7 @@ describe('MapCanvas', () => {
     act(() => {
       rerender(<MapCanvas mapType="taego" />);
     });
-    expect(mockFitBounds).toHaveBeenCalledWith([[0, 0], [1, 1]], { padding: [0, 0] });
+    expect(mockFitBounds).toHaveBeenCalledWith([[0, 0], [1, 1]], { padding: [0, 0], animate: false });
   });
 
   it('children이 MapContainer 안에 렌더링된다', () => {

@@ -27,7 +27,8 @@ function MapUpdater({ mapType }: { mapType: MapType }) {
       const ratio = size.x / size.y;
       map.setZoom(map.getZoom() + Math.log2(ratio), { animate: false });
     }
-    // 보정된 줌을 최소 줌으로 고정 — 사용자가 더 축소해서 맵이 작아지지 않게.
+    // 화면 fit에서 한 단계(0.5) 줌아웃한 크기를 최소 줌으로 고정 (사용자 지정 고정값).
+    map.setZoom(map.getZoom() - 0.5, { animate: false });
     map.setMinZoom(map.getZoom());
   }, [mapType, map]);
   return null;
