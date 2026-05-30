@@ -2,15 +2,11 @@
 // 1) mapDetection으로 PUBG 맵 영역(사용자 모니터 어디에 있든) 동적 검출
 // 2) 맵 영역만 잘라 circle.service에 전달
 import { Injectable, Logger, Inject } from '@nestjs/common';
-import * as fs from 'node:fs/promises';
 import sharp from 'sharp';
 import type { CircleData } from '@pubg-helper/shared';
 import { MapDetectionService } from './map-detection.service';
 import { CircleService } from './circle.service';
 import { fitRing, type PixelPoint } from './zoom-detect';
-
-// 디버그: 첫 frame 저장 (capture가 실제로 받는 데이터 확인용)
-let debugFrameSaved = false;
 
 const ZOOM_ANALYSIS_MAX = 1280; // 줌 검출 분석 해상도(긴 변)
 const ZOOM_MIN_COVERAGE = 0.12; // 흰 원 신뢰 게이트(검출 흰픽셀 대비 inlier 비율). 미달이면 retain에 맡김.
@@ -33,14 +29,6 @@ export class CaptureService {
     hintPhase?: number,
     parentCircle?: { x: number; y: number; r: number; phase?: number },
   ): Promise<CircleData | null> {
-    // 디버그: capture가 실제로 받는 첫 frame을 파일로 저장 (한 번만)
-    if (!debugFrameSaved) {
-      debugFrameSaved = true;
-      const buf = Buffer.from(base64, 'base64');
-      await fs.writeFile('/tmp/capture-debug-frame.jpg', buf);
-      this.logger.log(`[DEBUG] 첫 frame 저장: /tmp/capture-debug-frame.jpg (${buf.length} bytes)`);
-    }
-
     const mapArea = await this.mapDetection.detectMapArea(base64);
     let circle: CircleData | null = null;
 
