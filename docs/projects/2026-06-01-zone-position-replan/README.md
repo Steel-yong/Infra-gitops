@@ -11,13 +11,13 @@
 | # | 플랜 | 목표 | 상태 | 폴더 |
 |---|---|---|---|---|
 | 1 | 프로위치 telemetry 추출 | 페이즈별(P1~5) "자기장 안 정지" 명당 DB (절대좌표) | 활성 | `plan-1-pro-position-telemetry/` |
-| 2 | 유튜브 영상추출 | 영상 YOLO 프로위치 추출 (이전 접근) | **보류(PAUSED)** | `plan-2-youtube-pro-position/` |
+| 2 | 유튜브 영상추출 | 영상 YOLO 프로위치 추출 (이전 접근) | **폐기(ARCHIVED)** | `archives/2026-06-01-plan2-youtube-pro-position-archived/` |
 | 3 | 자기장 시스템 | 라이브 추출 + telemetry prior 발전 + 검증 (셋 통합) | 활성 | `plan-3-live-zone-extraction/` |
 
 - `trackA-zoom-zone/` — **플랜3로 통합**(A-* → P3-*). 원문 보존.
 
-## 플랜2 보류 사유
-- 유튜브 영상추출(검출률 10%·1페이즈·저작권 회색)을 telemetry(정확·전구간·합법)로 대체 → **중단**. 단 계획은 **보존**(telemetry 미커버 = 비-토너먼트/일반 스트리머 영역의 fallback 가치). 재개 시 그 영역 한정.
+## 플랜2 폐기 사유 (2026-06-01 사용자 승인)
+- telemetry가 **최근 대회(2026-05-31)까지 전구간·정확·합법**으로 프로 위치를 직접 제공 → 유튜브 영상추출(검출10%·1페이즈·저작권 회색) **완전 대체**. 보존 명분이던 비-토너먼트/일반 스트리머 fallback도 제품 목적(프로 명당 추천)엔 불필요해 **폐기**. 원문은 `docs/archives/2026-06-01-plan2-youtube-pro-position-archived/` 보존. (바이블 6부 보존규칙: 삭제 아닌 archives 이동.)
 
 ## 의존 관계
 ```
