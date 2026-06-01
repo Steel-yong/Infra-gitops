@@ -21,14 +21,9 @@ function MapUpdater({ mapType }: { mapType: MapType }) {
     map.setMinZoom(-10);
     // animate:false 필수 — 애니메이션되면 직후 getZoom()이 이전(확대했던) 줌값을 반환해
     // 그게 새 맵 minZoom으로 잘못 고정됨 (맵 전환 시 확대 상태가 최소줌으로 박히던 버그).
+    // contain fit — 정사각 맵 전체가 화면 안에 들어오게 맞춤. 이 값을 최소 줌으로 고정.
+    // (가로 채움(cover) 줌인은 위/아래를 잘라 전체맵이 안 보였으므로 제거.)
     map.fitBounds(BOUNDS, { padding: [0, 0], animate: false });
-    const size = map.getSize();
-    if (size.x > size.y) {
-      const ratio = size.x / size.y;
-      map.setZoom(map.getZoom() + Math.log2(ratio), { animate: false });
-    }
-    // 화면 fit에서 한 단계(0.5) 줌아웃한 크기를 최소 줌으로 고정 (사용자 지정 고정값).
-    map.setZoom(map.getZoom() - 0.5, { animate: false });
     map.setMinZoom(map.getZoom());
   }, [mapType, map]);
   return null;
