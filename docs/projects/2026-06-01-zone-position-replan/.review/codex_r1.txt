@@ -1,0 +1,2 @@
+- [MAJOR] README는 플랜1 목표를 P1~5로 정리하지만 연결된 plan/checklist에는 P1~6, P6+ 기준이 남아 있어 사용자 결정인 P5까지와 구현 범위가 충돌한다.
+VERDICT: CHANGES_REQUESTED
