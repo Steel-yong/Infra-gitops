@@ -61,7 +61,8 @@
       "PowerShell(wsl -- bash -lc \"cd '/mnt/d/infra project/Infra-gitops' && python3 .local/poc_zoom_template.py 2>&1 | tail -15\")",
       "PowerShell(nvidia-smi *)",
       "PowerShell(corepack pnpm *)",
-      "PowerShell(Get-Command *)"
+      "PowerShell(Get-Command *)",
+      "PowerShell($base = \"$env:LOCALAPPDATA\\\\OpenAI\\\\Codex\\\\bin\"; if \\(Test-Path $base\\) { Get-ChildItem -Path $base -Recurse -Filter codex.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName } else { Write-Output \"NO CODEX DIR: $base\" }; Write-Output \"--- claude ---\"; $c = \"$env:USERPROFILE\\\\.local\\\\bin\\\\claude.exe\"; if \\(Test-Path $c\\) { Write-Output $c } else { Write-Output \"NO claude.exe at $c\" })"
     ],
     "deny": []
   }
