@@ -1,0 +1,12 @@
+- [BLOCKER] trackB-pro-position/plan.md: B-6의 telemetry 검증이 자기장/시각 교차검증에 머물러 있어 프로 위치 pseudo-label 자체를 검증하지 못한다. player location telemetry, 선수 ID 매칭, 방송 프레임 타임싱크 기준이 없으면 PUB-41 BLOCKER 4가 해소되지 않는다.
+- [BLOCKER] trackB-pro-position/plan.md: D-SEED는 01-research-findings.md에서 원 ruler 1순위로 해결됐다고 정리했는데, B-3와 열린 결정에는 여전히 “결정 후”로 남아 있어 구현 시작 기준이 모순된다.
+- [MAJOR] trackB-pro-position/plan.md: B-1은 IP 우회 확정, 98편 고화질 수집, 480p 대비 검출수 비교를 한 이슈에 묶어 1일 이내 문제격리 기준을 넘는다. IP preflight, 샘플 검증, 배치 수집으로 분리해야 한다.
+- [MAJOR] trackB-pro-position/plan.md: B-4는 YOLO 출력에 팀색/팀명/타입이 있는지와 fps가 확정되지 않았는데 색상/팀라벨/optical flow 후보 제한 구현을 한 이슈로 잡았다. 선행 조사 이슈와 구현 이슈가 분리되지 않았다.
+- [MAJOR] trackB-pro-position/plan.md: B-3 검증 기준이 “프로 좌표 추출 성공”이라 모호하다. B-4 correspondence 전에는 선수 정체성 검증이 불가능하므로 좌표점 추출, 선수 매칭, 라벨 품질 기준을 분리해 측정해야 한다.
+- [MAJOR] trackA-zoom-zone/plan.md: A-5의 핵심 검증 기준이 “목표 임계는 D-TEL 후 확정”으로 남아 있어 현재 단계 계획만으로 통과/실패를 판정할 수 없다. telemetry 가능/불가 각각의 오차 임계값과 표본 수가 필요하다.
+- [MAJOR] trackA-zoom-zone/plan.md: A-4의 “hard 대비 오검출률 감소”는 데이터셋, baseline, 허용 오검출률이 없어 측정 가능성이 부족하다.
+- [MAJOR] trackA-zoom-zone/plan.md: A-1이 SUPER v5.0.5 반경 테이블을 `circle.service.ts`의 기존 phase prior로 교체한다고만 되어 있어 일반전/랭크/방송 e스포츠 ruleset 선택 경로가 불명확하다. ruleset_id를 저장하더라도 런타임 선택 기준이 없으면 기존 화면공유 검출을 회귀시킬 수 있다.
+- [MAJOR] trackA-zoom-zone/plan.md: A-3의 map_square_px 검출은 “4꼭짓점 또는 변” 기준인데 줌 프레임에서는 전체맵 사각형 경계가 보이지 않을 수 있다. 전체맵 프레임에서 캐시하는지, 줌 프레임에서 추정하는지 실패모드가 분리되어 있지 않다.
+- [MINOR] trackA-zoom-zone/checklist.md: A-3와 A-4 체크 항목 일부가 “오차 ≤%”, “N(≥10)”처럼 값이 비어 있거나 깨져 있어 완료 체크 기준으로 쓰기 어렵다.
+- [MINOR] trackB-pro-position/checklist.md: B-1의 “N편”, B-6의 “수동검수 일치율”처럼 표본 수와 통과 임계가 비어 있어 체크리스트가 검증 기준 역할을 못 한다.
+VERDICT: CHANGES_REQUESTED
