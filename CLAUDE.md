@@ -1,6 +1,6 @@
 # pubg — Claude 바이블 (collab)
 
-<!-- 생성됨: build_bibles.sh collab (2026-05-27). 직접 수정 금지 — generic/CORE.md·project/pubg.md·역할 파일을 고치고 재빌드. -->
+<!-- 생성됨: build_bibles.sh collab (2026-06-01). 직접 수정 금지 — generic/CORE.md·project/pubg.md·역할 파일을 고치고 재빌드. -->
 <!-- 현재 모드: collab -->
 
 <!-- 공통 CORE (프로젝트 무관 방법론) — Claude·Codex 공통, 협업·단독 모드 공통.
@@ -212,6 +212,14 @@ docs/
 
 ### 보고서·분석은 시각화 자료로
 보고서, 분석 결과, 진행 요약 등은 가능하면 텍스트만이 아니라 **시각화 자료**(주로 자급자족 HTML, 표·차트)로 만들어 올린다. 경로·형식은 위 HTML 시각화와 동일(`docs/resources/mockups/`).
+
+### 사용자가 요청한 보고서 — 한국어 제목 + 별도 폴더
+사용자가 직접 "보고서 만들어라"고 시킨 결과물은 mockups 안에 **단일 파일이 아니라 별도 폴더**로 묶는다.
+- 폴더명. `docs/resources/mockups/YYYY-MM-DD-한국어-주제/` (제목·폴더명 모두 한국어).
+- 폴더 안에 `index.html` + 보조 이미지·json.
+- 이렇게 해야 mockups 루트가 안 어지러진다.
+
+예. `docs/resources/mockups/2026-06-01-배그-자기장-시스템-리서치/index.html`.
 
 ### 작업 산출물 경로
 ```
