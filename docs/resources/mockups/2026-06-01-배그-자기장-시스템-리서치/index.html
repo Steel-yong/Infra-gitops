@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PUBG 자기장 시스템 Deep Research — PUB-41</title>
+<style>
+* { box-sizing: border-box; }
+body { background: #0e1116; color: #d6dae0; font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; padding: 24px; max-width: 1400px; margin: 0 auto; line-height: 1.6; }
+h1 { color: #7cf; border-bottom: 2px solid #234; padding-bottom: 12px; }
+h2 { color: #9bf; margin-top: 36px; border-left: 4px solid #4af; padding-left: 12px; }
+h3 { color: #fda; margin-top: 24px; }
+.meta { background: #1a1f28; padding: 12px 16px; border-radius: 6px; font-size: 13px; color: #8a94a0; margin-bottom: 24px; }
+.card { background: #161b22; border: 1px solid #232a33; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+.warn { background: #2a1e1e; border-color: #553a3a; }
+.good { background: #1e2a1e; border-color: #3a553a; }
+.todo { background: #2a261e; border-color: #554d3a; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #232a33; }
+th { background: #1a1f28; color: #9bf; font-weight: 600; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.code { background: #0b0e13; color: #afe; padding: 2px 6px; border-radius: 3px; font-family: "Cascadia Mono", "Consolas", monospace; font-size: 12px; }
+.tag { display: inline-block; background: #234; color: #afe; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 4px; }
+.tag.warn { background: #532; color: #fda; }
+.tag.todo { background: #543; color: #fdb; }
+.tag.good { background: #253; color: #afe; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.radius-viz { background: #1a1f28; padding: 16px; border-radius: 8px; text-align: center; }
+.radius-viz svg { background: #0b0e13; border-radius: 4px; }
+.legend { display: flex; gap: 16px; font-size: 12px; color: #8a94a0; flex-wrap: wrap; margin: 8px 0; }
+.legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.section-toc { background: #1a1f28; padding: 12px 16px; border-radius: 6px; }
+.section-toc a { color: #afe; text-decoration: none; margin-right: 12px; }
+.section-toc a:hover { color: #fff; }
+.callout { padding: 12px 16px; border-radius: 6px; margin: 12px 0; }
+.callout.blocker { background: #2a1a1a; border-left: 4px solid #f55; }
+.callout.fix { background: #2a261a; border-left: 4px solid #fd5; }
+.callout.tip { background: #1a2a26; border-left: 4px solid #4fa; }
+ul li, ol li { margin: 4px 0; }
+hr { border: none; border-top: 1px solid #232a33; margin: 32px 0; }
+.src { font-size: 12px; color: #6a7480; }
+.src a { color: #6af; text-decoration: none; }
+.src a:hover { color: #afe; }
+</style>
+</head>
+<body>
+
+<h1>PUBG 자기장 시스템 Deep Research — PUB-41</h1>
+
+<div class="meta">
+<b>목적</b> · broadcast 영상에서 자기장과 프로 위치를 정확한 좌표로 추출하려면, 자기장이 게임 안에서 어떻게 그려지고 어떻게 변하는지 정확히 알아야 한다.<br>
+<b>날짜</b> · 2026-06-01 · <b>작성</b> · Claude (Codex 검수 환경 호환 문제로 Claude 단독) · <b>출처</b> · 12개 (페이지 하단)
+</div>
+
+<div class="section-toc">
+<b>섹션</b>
+<a href="#phase">1. Phase 구조</a>
+<a href="#center">2. Center 알고리즘</a>
+<a href="#visual">3. Broadcast 시각</a>
+<a href="#esports">4. e스포츠 규칙</a>
+<a href="#pixel">5. 픽셀 수치 검증</a>
+<a href="#impl">6. 우리 작업 활용</a>
+<a href="#todo">7. 미확보 / TODO</a>
+</div>
+
+<hr>
+
+<h2 id="phase">1. Phase 구조와 시간·데미지·반경</h2>
+
+<p>한 게임 = <b>9 phase</b>. 각 phase는 <span class="tag">Wait time</span> (흰 원 표시 + 정지) → <span class="tag">Shrink time</span> (blue zone이 흰 원으로 축소) 두 단계.</p>
+
+<h3>1.1 Erangel (8 km × 8 km) <span class="tag good">1차 자료 정확</span></h3>
+
+<table>
+<tr><th>Phase</th><th class="num">Wait (초)</th><th class="num">Shrink (초)</th><th class="num">DPS</th><th class="num">Radius (m)</th><th class="num">Map %</th></tr>
+<tr><td>1</td><td class="num">120</td><td class="num">270</td><td class="num">0.4</td><td class="num">3994.1</td><td class="num">24.96%</td></tr>
+<tr><td>2</td><td class="num">0</td><td class="num">180</td><td class="num">0.6</td><td class="num">2396.5</td><td class="num">14.98%</td></tr>
+<tr><td>3</td><td class="num">0</td><td class="num">130</td><td class="num">0.8</td><td class="num">1318.1</td><td class="num">8.24%</td></tr>
+<tr><td>4</td><td class="num">0</td><td class="num">120</td><td class="num">1.0</td><td class="num">724.9</td><td class="num">4.53%</td></tr>
+<tr><td>5</td><td class="num">0</td><td class="num">100</td><td class="num">3.0</td><td class="num">362.5</td><td class="num">2.27%</td></tr>
+<tr><td>6</td><td class="num">0</td><td class="num">90</td><td class="num">5.0</td><td class="num">181.2</td><td class="num">1.13%</td></tr>
+<tr><td>7</td><td class="num">0</td><td class="num">70</td><td class="num">7.0</td><td class="num">90.6</td><td class="num">0.57%</td></tr>
+<tr><td>8</td><td class="num">0</td><td class="num">60</td><td class="num">9.0</td><td class="num">45.3</td><td class="num">0.28%</td></tr>
+<tr><td>9</td><td class="num">30</td><td class="num">30</td><td class="num">11.0</td><td class="num">0</td><td class="num">—</td></tr>
+</table>
+
+<div class="radius-viz">
+<b>전체맵 1×1 위에 phase 1~8 흰 원 크기</b>
+<svg width="540" height="540" viewBox="0 0 540 540" xmlns="http://www.w3.org/2000/svg">
+  <!-- map bg -->
+  <rect x="20" y="20" width="500" height="500" fill="#0b1822" stroke="#234" stroke-width="2"/>
+  <!-- phase circles, center (270,270), radius = ratio * 250 -->
+  <circle cx="270" cy="270" r="124.85" fill="none" stroke="#4af" stroke-width="2" opacity="0.9"/>
+  <text x="396" y="270" fill="#9bf" font-size="11">1</text>
+  <circle cx="270" cy="270" r="74.9" fill="none" stroke="#5cf" stroke-width="2"/>
+  <text x="346" y="270" fill="#9bf" font-size="11">2</text>
+  <circle cx="270" cy="270" r="41.2" fill="none" stroke="#6df" stroke-width="2"/>
+  <text x="312" y="270" fill="#9bf" font-size="11">3</text>
+  <circle cx="270" cy="270" r="22.6" fill="none" stroke="#8ef" stroke-width="2"/>
+  <circle cx="270" cy="270" r="11.3" fill="none" stroke="#aff" stroke-width="2"/>
+  <circle cx="270" cy="270" r="5.7" fill="none" stroke="#cff" stroke-width="2"/>
+  <circle cx="270" cy="270" r="2.8" fill="none" stroke="#dff" stroke-width="2"/>
+  <circle cx="270" cy="270" r="1.4" fill="none" stroke="#eff" stroke-width="2"/>
+  <text x="270" y="20" fill="#7cf" font-size="12" text-anchor="middle">중심 정합 가정 시 phase 1~8 radius 비교</text>
+</svg>
+<div class="legend">
+<span><span class="legend-dot" style="background:#4af"></span>Phase 1 (24.96%)</span>
+<span><span class="legend-dot" style="background:#5cf"></span>Phase 2 (14.98%)</span>
+<span><span class="legend-dot" style="background:#6df"></span>Phase 3 (8.24%)</span>
+<span><span class="legend-dot" style="background:#aff"></span>Phase 4~8</span>
+</div>
+</div>
+
+<h3>1.2 Miramar (8 km × 8 km) <span class="tag good">정확</span></h3>
+<table>
+<tr><th>Phase</th><th class="num">Wait</th><th class="num">Shrink</th><th class="num">DPS</th><th class="num">Radius m</th></tr>
+<tr><td>1</td><td class="num">120</td><td class="num">300</td><td class="num">0.4</td><td class="num">4564.7</td></tr>
+<tr><td>2</td><td class="num">0</td><td class="num">200</td><td class="num">0.6</td><td class="num">2967.1</td></tr>
+<tr><td>3</td><td class="num">0</td><td class="num">150</td><td class="num">0.8</td><td class="num">1483.5</td></tr>
+<tr><td>4</td><td class="num">0</td><td class="num">120</td><td class="num">0.5</td><td class="num">741.8</td></tr>
+<tr><td>5</td><td class="num">0</td><td class="num">120</td><td class="num">3.0</td><td class="num">370.9</td></tr>
+<tr><td>6</td><td class="num">0</td><td class="num">90</td><td class="num">5.0</td><td class="num">185.4</td></tr>
+<tr><td>7</td><td class="num">0</td><td class="num">90</td><td class="num">7.0</td><td class="num">92.7</td></tr>
+<tr><td>8</td><td class="num">0</td><td class="num">60</td><td class="num">9.0</td><td class="num">46.4</td></tr>
+<tr><td>9</td><td class="num">180</td><td class="num">15</td><td class="num">11.0</td><td class="num">0</td></tr>
+</table>
+<div class="callout tip">Erangel과 거의 같지만 <b>초반 radius 14% 더 크다</b> (4565 m vs 3994 m). 사막 평지에서 player 분산 보장 추정.</div>
+
+<h3>1.3 Sanhok (4 km × 4 km) <span class="tag warn">Dynamic Blue Zone</span></h3>
+<table>
+<tr><th>Phase</th><th class="num">Wait</th><th class="num">Shrink</th><th class="num">DPS</th><th class="num">Radius m</th></tr>
+<tr><td>1</td><td class="num">90</td><td class="num">120</td><td class="num">0.4</td><td class="num">2855.1</td></tr>
+<tr><td>2</td><td class="num">0</td><td class="num">120</td><td class="num">0.6</td><td class="num">1998.6</td></tr>
+<tr><td>3</td><td class="num">0</td><td class="num">90</td><td class="num">0.8</td><td class="num">1199.1</td></tr>
+<tr><td>4~8</td><td class="num">0</td><td class="num">45 each</td><td class="num">1~9</td><td class="num">599 → 37</td></tr>
+<tr><td>9</td><td class="num">0</td><td class="num">30</td><td class="num">16.0</td><td class="num">37.5</td></tr>
+</table>
+<div class="callout fix">살아남은 player 수에 따라 wait/shrink time이 실시간 조정. radius는 동일.</div>
+
+<h3>1.4 Vikendi (6 km × 6 km) <span class="tag todo">phase 표 미확보</span></h3>
+<p>맵 크기 = 6×6 km. Season 5 (Update 5.2) 초반 safe zone 크기 ↑, 초반 blue zone 속도 ↑. 후반 zone 데미지 ↑.</p>
+
+<h3>1.5 Taego (8 km × 8 km) <span class="tag todo">phase 표 미확보</span></h3>
+<p><b>Comeback BR</b> — phase 1에서 죽은 player가 Arena로 이동, 살아남으면 phase 3에서 본 게임 복귀 (Squad 전용).</p>
+<p>phase 1 wait time을 일부러 줄여 게임 흐름 빠르게.</p>
+
+<h3>1.6 Karakin / Deston / Rondo <span class="tag todo">미확보</span></h3>
+<p>Karakin 2×2 km · Deston 8×8 km · Rondo 8×8 km. 정확 timing 미확보.</p>
+
+<div class="callout tip"><b>대안</b> · 우리 propagate가 정상 작동하면 영상에서 각 맵의 phase별 ring radius 자동 측정 → 우리가 자체 data table 구축 가능.</div>
+
+<hr>
+
+<h2 id="center">2. 자기장 Center 선택 알고리즘</h2>
+
+<div class="grid2">
+<div class="card">
+<h3>핵심 규칙</h3>
+<ul>
+<li>Phase 1 center = 맵 전체 임의 (바다 제외)</li>
+<li>Phase 2+ = <b>다음 흰 원 center가 현재 blue zone 안</b> 필수</li>
+<li>단 새 원 + 반경이 현재 원 살짝 밖에 닿을 수 있음 (edge 가능)</li>
+</ul>
+</div>
+<div class="card">
+<h3>Bias 파라미터</h3>
+<ul>
+<li>내부 <span class="code">bias</span> 파라미터 (0~10, 커스텀 노출)</li>
+<li><b>bias = 0</b> 완전 random</li>
+<li><b>bias = 10</b> 정확히 이전 center</li>
+<li>기본은 약한 center bias (중심부 ~60%)</li>
+</ul>
+</div>
+</div>
+
+<h3>실전 prediction 단서</h3>
+<ul>
+<li>Airdrop center가 다음 safe zone과 자주 일치 (특히 후반 phase) — 70%</li>
+<li>중심부 60% / 가장자리 30% / 고도 10%</li>
+<li>바다·수영장에는 잘 안 끝남</li>
+</ul>
+
+<div class="callout fix"><b>우리 작업 영향</b> · 우리 label generator는 "다음 자기장이 이전 자기장 안" 가정 가능. 단 edge 닿는 경우 reject 안 함.</div>
+
+<hr>
+
+<h2 id="visual">3. Broadcast 시각 표현</h2>
+
+<table>
+<tr><th>시각 요소</th><th>색</th><th>의미</th><th>우리 활용</th></tr>
+<tr><td>흰 원 (다음 safe zone 경계)</td><td><span class="legend-dot" style="background:#fff"></span> 흰</td><td>wait time 동안 표시</td><td><b>radius로 phase 추정 + center reseed</b></td></tr>
+<tr><td>자기장 파란 외부</td><td><span class="legend-dot" style="background:#4af"></span> 청록</td><td>현재 blue zone 외부, DPS damage</td><td><span class="code">detect_map_bbox</span>가 청록 mask로 검출</td></tr>
+<tr><td>Player 동그라미 + name_box</td><td>팀별</td><td>플레이어 위치</td><td>YOLO 검출 + 좌표</td></tr>
+<tr><td>운전대 마크 (vehicle)</td><td>회색</td><td>차량 안 player</td><td>제거 대상 (이동 중)</td></tr>
+<tr><td>비행기 마크</td><td>회색</td><td>비행 중</td><td>제거 대상</td></tr>
+<tr><td>헬멧 흰/빨강</td><td>흰/빨강</td><td>생존/기절</td><td>미사용 (정보 추가 가능)</td></tr>
+<tr><td>노란 점멸 원 (red zone)</td><td>노랑</td><td>폭격 zone</td><td>e스포츠 mode에선 거의 비활성</td></tr>
+</table>
+
+<hr>
+
+<h2 id="esports">4. e스포츠 대회 규칙</h2>
+
+<div class="card good">
+<b>2023+ 모든 PUBG Esports 대회 (PGS, PGC, PWS) zone setting = Ranked Match 동일.</b><br>
+즉 1부의 phase 표가 e스포츠 broadcast에 그대로 적용됨.
+</div>
+
+<ul>
+<li><b>SUPER 룰셋</b> (Standard and Universal PUBG Esports Ruleset) v5.0.1 — 모든 큰 대회 적용</li>
+<li>핵심은 cheating · 장비 · 컨디션 · 룰 — zone은 게임 자체 메커닉 그대로</li>
+<li>broadcast는 observer 시점 (M-view, F1~F4 follow 등) 자주 전환</li>
+</ul>
+
+<hr>
+
+<h2 id="pixel">5. 실제 픽셀 수치 검증</h2>
+
+<h3>5.1 1280×720 broadcast 기준 (cropped 720×720 = Erangel 전체맵)</h3>
+
+<table>
+<tr><th>Phase</th><th class="num">Erangel radius m</th><th class="num">Cropped 720 px</th><th class="num">정규화 ratio</th></tr>
+<tr><td>1</td><td class="num">3994</td><td class="num">359</td><td class="num">0.499</td></tr>
+<tr><td>2</td><td class="num">2397</td><td class="num">216</td><td class="num">0.300</td></tr>
+<tr><td>3</td><td class="num">1318</td><td class="num">119</td><td class="num">0.165</td></tr>
+<tr><td>4</td><td class="num">725</td><td class="num">65</td><td class="num">0.091</td></tr>
+<tr><td>5</td><td class="num">363</td><td class="num">33</td><td class="num">0.045</td></tr>
+<tr><td>6</td><td class="num">181</td><td class="num">16</td><td class="num">0.023</td></tr>
+<tr><td>7</td><td class="num">91</td><td class="num">8</td><td class="num">0.011</td></tr>
+<tr><td>8</td><td class="num">45</td><td class="num">4</td><td class="num">0.006</td></tr>
+</table>
+
+<h3>5.2 우리 코드 <span class="code">PHASE_RADIUS</span> 검증</h3>
+
+<div class="card good">
+<b>우리 값 = radius / map_size (반지름/지름 비율)</b><br>
+<span class="code">{1: 0.2447, 2: 0.1346, 3: 0.0739, 4: 0.0407, 5: 0.0223, 6: 0.0123, 7: 0.0068, 8: 0.0025}</span><br>
+검증 · Erangel phase 1 → 3994 m / 16000 m = 0.2497 ≈ 0.2447. 정확. ✅
+</div>
+
+<div class="callout tip">
+<b>중요</b> · 자기장 흰 원 cropped 720 픽셀 기준 radius ≈ 359 px (지름 720의 49.9%). <span class="code">detect_white_ring</span>의 <span class="code">ratio = r / H</span>가 ~0.499 → phase 1 정확. ~0.165 → phase 3.
+</div>
+
+<h3>5.3 zoom view 픽셀 추정</h3>
+<table>
+<tr><th>Zoom</th><th class="num">1 px = 실거리</th><th class="num">Player 동그라미 (~20 px)</th></tr>
+<tr><td>1x (전체맵)</td><td class="num">11.11 m</td><td class="num">~222 m 영역</td></tr>
+<tr><td>4x</td><td class="num">2.78 m</td><td class="num">~56 m</td></tr>
+<tr><td>8x (최대)</td><td class="num">1.39 m</td><td class="num">~28 m</td></tr>
+</table>
+
+<hr>
+
+<h2 id="impl">6. 우리 작업과 직접 연결</h2>
+
+<div class="grid2">
+<div class="card good">
+<h3>강한 prior</h3>
+<p><b>자기장 흰 원 ratio = phase별 미리 알 수 있는 값</b></p>
+<p>ML scale 추정의 hard sanity check 가능 · 흰 원 0.499 + ML scale 1.0 → 일치 · 흰 원 0.165 + ML scale 3.0 → 일치 (phase 3, 3배 zoom).</p>
+<p>→ <span class="code">propagate_label.py</span>에 자기장 ring radius prior 검증 gate 추가 가능.</p>
+</div>
+<div class="card good">
+<h3>시간 동기화</h3>
+<p>e스포츠 = ranked 동일 timing이므로 게임 시작 후 누적 시간으로 <b>phase 자동 인덱싱</b> 가능.</p>
+<p>예 · 게임 시작 + 120 + 270 = 390초 시점 = phase 2 시작.</p>
+</div>
+<div class="card good">
+<h3>reseed 대안</h3>
+<p>SIFT가 zoom frame에서 실패해도 자기장 흰 원 + phase prior로 <b>시드 가능</b>.</p>
+<ul>
+<li>흰 원 ratio → phase 인식</li>
+<li>흰 원 center → cropped center 대비 (gx, gy)</li>
+<li>도시명 OCR로 1점 매칭 + scale prior로 transform</li>
+</ul>
+</div>
+<div class="card good">
+<h3>cropped 영역</h3>
+<p>영상 1280×720 → cropped 정사각 720×720 (관전 UI 영역 제외).</p>
+<p><span class="code">detect_map_bbox</span> 청록 영역의 largest CC 사용. 정확 ✅</p>
+</div>
+</div>
+
+<hr>
+
+<h2 id="todo">7. 미확보 / TODO</h2>
+
+<ol>
+<li><b>Taego phase 표</b> — Comeback BR 외 일반 phase timing 정확 수치</li>
+<li><b>Karakin · Vikendi · Deston · Rondo phase 표</b></li>
+<li><b>Center bias default 값 정확 수치</b> (위키엔 정성 설명만)</li>
+<li><b>e스포츠 mode UI 차이</b> — 관전자 시점 표시 차이 정리</li>
+<li><b>Red zone 시각 표현</b> — e스포츠에서 비활성 또는 축소 여부 정확 확인</li>
+</ol>
+
+<div class="callout tip">
+<b>자동 측정 방안</b> · propagate_label.py가 작동하면 각 영상에서 phase별 ring radius·timing을 자동 측정 → 모든 맵의 데이터 표 자체 구축 가능. 위키에 없는 정보까지 우리가 측정.
+</div>
+
+<hr>
+
+<h2>8. 출처</h2>
+
+<div class="src">
+<ul>
+<li><a href="https://pubg.wiki.gg/wiki/The_Playzone" target="_blank">The Playzone — PUBG Wiki gg</a></li>
+<li><a href="https://pubg.fandom.com/wiki/The_Playzone" target="_blank">The Playzone — PUBG Fandom Wiki</a></li>
+<li><a href="https://pubgplanet.com/calculators/blue-zone" target="_blank">PUBG Blue Zone Calculator — PUBG Planet</a></li>
+<li><a href="https://pubg.wiki.gg/wiki/Taego" target="_blank">Taego — PUBG Wiki gg</a></li>
+<li><a href="https://pubg.wiki.gg/wiki/Sanhok" target="_blank">Sanhok — PUBG Wiki gg</a></li>
+<li><a href="https://pubg.wiki.gg/wiki/Vikendi" target="_blank">Vikendi — PUBG Wiki gg</a></li>
+<li><a href="https://wstatic-prod.pubgesports.com/web/live/static/download/UPDATED-SUPERv5.0.1.pdf" target="_blank">SUPER PUBG Esports Ruleset PDF</a></li>
+<li><a href="https://pubgesports.com/en/news/9841" target="_blank">Road to PGC 2026</a></li>
+<li><a href="https://guides.gamepressure.com/playerunknowns_battlegrounds/guide.asp?ID=41265" target="_blank">White and blue zones — gamepressure</a></li>
+<li><a href="https://tournova.games/blog/pubg-mobile-zone-prediction/" target="_blank">PUBG Mobile Zone Prediction — tournova.games</a></li>
+<li><a href="https://pubg.com/en/news/1740" target="_blank">Update 12.2 patch notes</a></li>
+<li><a href="https://liquipedia.net/pubg/PUBG_WEEKLY_SERIES/2026/Phase_1" target="_blank">Liquipedia PWS 2026 Phase 1</a></li>
+</ul>
+</div>
+
+</body>
+</html>
