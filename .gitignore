@@ -2,6 +2,9 @@
 # Compound Engineering local config
 .compound-engineering/*.local.yaml
 
+# 임시 작업 스크래치 (codex 리뷰 산출물 등)
+tmp/
+
 # Node
 node_modules/
 dist/
