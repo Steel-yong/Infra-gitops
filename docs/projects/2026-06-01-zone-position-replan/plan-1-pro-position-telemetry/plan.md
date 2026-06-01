@@ -17,6 +17,15 @@
 
 ## 이슈 분할
 
+### P1-0. 좌표계 ground-truth 검증 게이트  `worktree: feature/pos-coord-verify`  ★수집 P1-1 후 · 추출 P1-2 전 필수 게이트
+telemetry 정규화 좌표(cm/map_side, 좌상단·y아래)와 **사용자 검증 완료** 27도시 anchor(`packages/shared/src/data/erangel-cities.ts`, 동일 좌표계 0~1·좌상단·y아래)가 실제 지형에서 일치하는지 확정한다. **통과 전 명당 DB는 무의미.** 영상 homography 검증은 노이즈(검출10%·OCR fallback 폐기 전적)라 2차 보조로만 — anchor 대조가 1차([[pub34-coordinate-transform-anchor-verification-2026-05-22]] 교훈).
+1. telemetry `character.zone`(POI명) 라벨이 붙은 정지 holding 평균좌표 ↔ 해당 anchor 거리 측정(격자 0.0125 단위), median·분포 보고.
+   → 검증: 도시별 거리 ≤1격자(0.0125) 비율 + 표본 도시 수. 자가 ✓ 선언 금지(수치만).
+2. 27도시 anchor + telemetry holding 오버레이 HTML(에란겔 맵 배경), **사용자 본인** 시각 확인.
+   → 검증: 사용자 "일치" 확인(self-confirm 금지, solution 교훈).
+3. 불일치 시(y축 반전·map_side 오류 등) 원인 교정 후 재측정.
+   → 검증: 교정 후 거리 분포 임계 내.
+
 ### P1-1. telemetry 수집 파이프라인  `worktree: feature/pos-telemetry-collect`
 1. tournaments 열거 → 대상 대회(예 PGS5) 매치ID → telemetry URL → 다운로드·로컬 캐시(맵명·경기시각 메타).
    → 검증: N개 매치 telemetry 캐시 성공, 맵별 경기수 집계 출력.

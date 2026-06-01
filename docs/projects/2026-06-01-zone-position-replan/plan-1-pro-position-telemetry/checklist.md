@@ -4,7 +4,11 @@
 
 ## 선행
 - [ ] Linear 이슈번호 부여(P1-1~P1-6)
-- [ ] telemetry 키 환경변수 세팅(시크릿, 깃 금지)
+- [x] telemetry 키 환경변수 세팅(시크릿, 깃 금지) — .env PUBG_API_KEY(gitignore)
+
+## P1-0 좌표계 검증 게이트 (통과 2026-06-01)
+- [x] telemetry zone POI 좌표 ↔ erangel-cities anchor 수치 대조(15경기, 25/27, 중앙값 88m)
+- [x] 맵 오버레이 시각화 + 사용자 확인(좌표계 동일 승인)
 
 ## P1-1 수집 파이프라인
 - [ ] tournaments→매치→telemetry URL→캐시(맵·시각 메타)

@@ -17,6 +17,13 @@
 ## 왜 차량·공중 제외
 - 운전 중/낙하 중 위치는 "자리"가 아님. `isInVehicle`·착지시각으로 제거. (사용자 스펙)
 
+## 좌표계 검증 게이트 (P1-0) — 통과 ★ (사용자 2026-06-01 승인)
+- **방법**: telemetry `character.zone`(API가 명시한 POI명) 좌표 ↔ `erangel-cities.ts`(사용자 검증 완료) 직접 대조. 영상 homography(검출10%·폐기전적)가 아니라 데이터 자기검증이라 순환 없음.
+- **결과(15경기 누적, 표본 ~3.5만)**: 25/27 매칭, 거리 중앙값 0.88격자(88m), ≤2격자 22/25. 빈 2개(MilBase·SosnovkaIsl)는 데이터 없음이 아니라 PUBG가 군사기지섬을 `sosnovkamilitarybase` 하나(표본 6959)로 묶어 생긴 이름매핑 누락.
+- **결론**: 차이 방향이 도시마다 제각각(Georgopol 아래/Hospital 오른쪽/MyltaPower 왼쪽) → 체계적 좌표계 오류 없음. 좌표계 축·원점·스케일 동일 확정. 88m 차이는 "zone 영역평균 vs 마을 대표점"의 정의 차이.
+- **의의**: 명당 DB는 telemetry 절대좌표를 그대로 쓰고 anchor는 검증 눈금일 뿐 → anchor 88m 차이가 명당 정확도에 영향 없음.
+- **산출물**: `.local/verify-zone-anchors.py`(여러경기 누적+캐시), `docs/resources/mockups/2026-06-01-telemetry-탐색/erangel-zone-vs-anchor-multi.png`.
+
 ## 리스크/미해결
 - 정지 임계 T 미확정(5~20m 후보) → P1-4 수동 대조로 확정.
 - skip_air=0 현상(착지 이름매칭) → P1-3.
