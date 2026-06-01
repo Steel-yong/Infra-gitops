@@ -1,19 +1,18 @@
 'use client';
 // 명당(프로 위치)을 등급별 도넛 마커로 Leaflet 지도에 렌더링하는 컴포넌트
 
-import { Fragment } from 'react';
-import { CircleMarker, Marker, Tooltip } from 'react-leaflet';
+import { Fragment, useState } from 'react';
+import { CircleMarker, Marker, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import type { CircleData } from '@pubg-helper/shared';
 import { TIER_COLOR, type MyungdangPoint, type MyungdangTier } from '../hooks/useMyungdang';
 
-/** 크기 최대 = A(주황). S도 A와 동일 캡(빨강이 너무 커서). B<A, C 최소. */
-const TIER_RADIUS: Record<MyungdangTier, number> = {
-  S: 6,
-  A: 6,
-  B: 5,
-  C: 4,
-};
+/** 4~5확대(줌 델타 GROW_ZOOM)에서 도달할 목표 도넛 반경. 최소줌에선 점(DOT_RADIUS)에서 시작해 여기까지 커진다. */
+const TIER_TARGET: Record<MyungdangTier, number> = { S: 6, A: 6, B: 5, C: 1.3 };
+/** 최소줌(전체맵)에서의 점 크기. */
+const DOT_RADIUS = 1.5;
+/** 이 줌 델타(최소줌 기준)에서 목표 크기 도달. */
+const GROW_ZOOM = 5;
 
 /** hover 시 가리키는 빨간 화살표 — 점 위에서 ▼ 끝이 점을 가리킴. */
 const arrowIcon = divIcon({
@@ -53,6 +52,13 @@ function insideZone(p: MyungdangPoint, zone: CircleData): boolean {
  * zone이 있으면 원 안의 명당만 남긴다. MapCanvas children으로 렌더링해야 Leaflet 컨텍스트를 쓴다.
  */
 export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys, hoveredKey }: MyungdangMarkersProps) {
+  const map = useMap();
+  const [zoom, setZoom] = useState<number>(() => map.getZoom());
+  useMapEvents({ zoom: () => setZoom(map.getZoom()) });
+  // 최소줌=0, GROW_ZOOM 델타에서 1. 점(DOT)에서 목표 반경까지 선형 보간. C(파랑)는 항상 점.
+  const t = Math.min(Math.max((zoom - map.getMinZoom()) / GROW_ZOOM, 0), 1);
+  const radiusOf = (tier: MyungdangTier): number =>
+    tier === 'C' ? TIER_TARGET.C : DOT_RADIUS + (TIER_TARGET[tier] - DOT_RADIUS) * t;
   return (
     <>
       {points
@@ -67,7 +73,7 @@ export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys, 
                 <>
                   <CircleMarker
                     center={[1 - p.gy, p.gx]}
-                    radius={TIER_RADIUS[p.tier] + 7}
+                    radius={radiusOf(p.tier) + 7}
                     pathOptions={{ color: '#22d3ee', weight: 3, fillOpacity: 0 }}
                   />
                   <Marker position={[1 - p.gy, p.gx]} icon={arrowIcon} />
@@ -76,17 +82,18 @@ export function MyungdangMarkers({ points, visibleTiers, zone, highlightedKeys, 
               {highlighted && (
                 <CircleMarker
                   center={[1 - p.gy, p.gx]}
-                  radius={TIER_RADIUS[p.tier] + 4}
+                  radius={radiusOf(p.tier) + 4}
                   pathOptions={{ color: '#ffffff', weight: 2, fillOpacity: 0 }}
                 />
               )}
               <CircleMarker
                 center={[1 - p.gy, p.gx]}
-                radius={TIER_RADIUS[p.tier]}
+                radius={radiusOf(p.tier)}
                 pathOptions={{
                   color: TIER_COLOR[p.tier],
                   weight: highlighted ? 3 : 2,
-                  fillOpacity: 0,
+                  fillColor: TIER_COLOR[p.tier],
+                  fillOpacity: p.tier === 'C' ? 1 : 0,
                 }}
               >
                 <Tooltip>{p.tier}</Tooltip>
