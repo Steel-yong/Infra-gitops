@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: capture
+  namespace: pubg-helper
+spec:
+  selector:
+    app: capture
+  ports:
+    - port: 3001
+      targetPort: 3001
